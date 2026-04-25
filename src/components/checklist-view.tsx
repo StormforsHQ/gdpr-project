@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { CheckGuideDrawer } from "@/components/check-guide-drawer";
 import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
 import { runPageScan, runSingleAICheck, runAllAIChecks } from "@/app/actions/scan";
+import { saveCheckResult } from "@/app/actions/audits";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
 import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles } from "lucide-react";
 
@@ -17,10 +18,22 @@ type CheckState = Record<string, { status: CheckStatus; notes: string }>;
 
 interface ChecklistViewProps {
   siteUrl?: string;
+  auditId?: string;
+  initialStates?: Record<string, { status: string; notes: string }>;
 }
 
-export function ChecklistView({ siteUrl }: ChecklistViewProps) {
-  const [checkStates, setCheckStates] = useState<CheckState>({});
+export function ChecklistView({ siteUrl, auditId, initialStates }: ChecklistViewProps) {
+  const [checkStates, setCheckStates] = useState<CheckState>(() => {
+    if (!initialStates) return {};
+    const states: CheckState = {};
+    for (const [key, value] of Object.entries(initialStates)) {
+      states[key] = {
+        status: value.status as CheckStatus,
+        notes: value.notes,
+      };
+    }
+    return states;
+  });
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(CHECKLIST.map((c) => c.id))
   );
@@ -34,6 +47,8 @@ export function ChecklistView({ siteUrl }: ChecklistViewProps) {
   const [scanDrawerOpen, setScanDrawerOpen] = useState(false);
   const [scanDrawerCheckKey, setScanDrawerCheckKey] = useState<string | null>(null);
 
+  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
   const openGuide = (key: string) => {
     setGuideKey(key);
     setGuideOpen(true);
@@ -42,11 +57,28 @@ export function ChecklistView({ siteUrl }: ChecklistViewProps) {
   const getCheckState = (key: string) =>
     checkStates[key] ?? { status: "not_checked" as CheckStatus, notes: "" };
 
+  const persistCheck = useCallback(
+    (key: string, status: CheckStatus, notes: string) => {
+      if (!auditId) return;
+
+      if (saveTimers.current[key]) {
+        clearTimeout(saveTimers.current[key]);
+      }
+
+      saveTimers.current[key] = setTimeout(() => {
+        saveCheckResult(auditId, key, status, notes).catch(() => {});
+      }, 500);
+    },
+    [auditId]
+  );
+
   const updateCheck = (key: string, field: "status" | "notes", value: string) => {
-    setCheckStates((prev) => ({
-      ...prev,
-      [key]: { ...getCheckState(key), [field]: value },
-    }));
+    setCheckStates((prev) => {
+      const current = prev[key] ?? { status: "not_checked" as CheckStatus, notes: "" };
+      const updated = { ...current, [field]: value };
+      persistCheck(key, updated.status as CheckStatus, updated.notes);
+      return { ...prev, [key]: updated };
+    });
   };
 
   const applyCheckResults = (results: CheckResult[]) => {
@@ -56,10 +88,10 @@ export function ChecklistView({ siteUrl }: ChecklistViewProps) {
         const findingSummary = check.findings
           .map((f) => f.detail)
           .join("; ");
-        next[check.checkKey] = {
-          status: check.status,
-          notes: findingSummary || check.summary,
-        };
+        const status = check.status as CheckStatus;
+        const notes = findingSummary || check.summary;
+        next[check.checkKey] = { status, notes };
+        persistCheck(check.checkKey, status, notes);
       }
       return next;
     });

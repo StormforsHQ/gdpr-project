@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   Menu,
   X,
   LayoutDashboard,
@@ -74,13 +75,33 @@ export function Sidebar({ sites }: SidebarProps) {
         </Link>
 
         <div>
-          <button
-            onClick={() => setSitesOpen(!sitesOpen)}
-            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
-          >
-            <Globe className="h-4 w-4" />
-            Sites ({sites.length})
-          </button>
+          <div className="flex items-center">
+            <Link
+              href="/sites"
+              onClick={() => setMobileOpen(false)}
+              className={`flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
+                pathname.startsWith("/sites")
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              }`}
+            >
+              <Globe className="h-4 w-4" />
+              Sites ({sites.length})
+            </Link>
+            {sites.length > 0 && (
+              <button
+                onClick={() => setSitesOpen(!sitesOpen)}
+                className="p-1 rounded hover:bg-sidebar-accent/50 text-muted-foreground"
+                aria-label={sitesOpen ? "Collapse sites" : "Expand sites"}
+              >
+                {sitesOpen ? (
+                  <ChevronDown className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5" />
+                )}
+              </button>
+            )}
+          </div>
           {sitesOpen && (
             <div className="ml-6 space-y-0.5">
               {sites.length === 0 ? (

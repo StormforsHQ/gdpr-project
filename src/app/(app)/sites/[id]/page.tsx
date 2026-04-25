@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ChecklistView } from "@/components/checklist-view";
 
 interface SitePageProps {
   params: Promise<{ id: string }>;
@@ -15,16 +15,7 @@ export default async function SitePage({ params }: SitePageProps) {
         <Badge variant="secondary">Not started</Badge>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Compliance Checklist</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-            Site {id} - checklist coming soon
-          </div>
-        </CardContent>
-      </Card>
+      <ChecklistView />
     </div>
   );
 }

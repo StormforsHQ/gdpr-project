@@ -24,8 +24,16 @@
 - [x] Found Webflow site list in Google Drive (json-ld-sites/siteId_and_siteName, ~300+ sites)
 - [x] Filter site list and create Google Sheet with 99 potential client sites (siteId + siteName + review notes)
 - [x] Verify technical configuration guide against current docs (7 corrections applied)
+- [x] Filter Webflow site list to 72 client sites (from 406)
+- [x] Scaffold Next.js 16 app (shadcn/ui, Prisma 7, design system from json-ld-generator)
+- [x] Set up GitHub repo (private, StormforsHQ/gdpr-project) and push feat/scaffold branch
 
 ## To do now
+- [ ] Build audit checklist UI (expandable categories, check items with status/notes)
+- [ ] Import 72 Webflow sites from filtered list into app
+- [ ] Get Coolify/Hetzner back online (server unreachable as of 2026-04-25, Cloudflare 522 timeout)
+- [ ] Create PostgreSQL database on Coolify for audit data (plain Postgres + Prisma, same pattern as json-ld-generator)
+- [ ] Set up Docker + Coolify deployment (Dockerfile, entrypoint.sh with prisma db push)
 - [ ] Apply formatting to Google Sheet v2 (fonts, colors, column widths, data validation dropdowns) -- manual in Google Sheets
 - [ ] Apply formatting to Google Docs (fonts, heading sizes) -- manual in Google Docs
 - [ ] Delete old files from Google Drive: v1 Google Sheet + old Project Overview (both superseded by v2 versions)
@@ -39,11 +47,8 @@
 ## To do later
 - [ ] Research open source CMP alternatives to Cookiebot (cost comparison, GTM integration, feature parity)
 - [ ] GDPR audit report template: HTML/CSS based on Stormfors branding/design system
-- [ ] Small React app that pulls check results from Google Sheet and generates client-facing report
 - [ ] Extend checklist and protocols for HubSpot
 - [ ] Extend checklist and protocols for Next.js apps
-- [ ] Set up GitHub repo (private, StormforsAdmin account)
-- [ ] Set up PostgreSQL on Coolify/Hetzner for audit data (plain Postgres + Prisma, same pattern as json-ld-generator)
 - [ ] Agency DPA template (standard DPA between Stormfors and each client)
 - [ ] DSAR handling procedure template
 - [ ] Data breach response plan template

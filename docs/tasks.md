@@ -88,6 +88,37 @@ Limited API - parse cc.js endpoint for cookie categories, rest is dashboard-only
 - [ ] Delete old files from Google Drive: v1 Google Sheet + old Project Overview
 - [ ] Add links between Google Docs and Google Sheet
 
+## To do soon: Fix automation (phase 2)
+When an audit check finds an issue, offer automated fixes where possible.
+UI: "Fix this" button appears on checks with status "issue" that have an auto-fix available.
+
+### Webflow fixes (via Webflow API/MCP)
+- [ ] Set up Webflow MCP server for the project (official: webflow/mcp-server)
+- [ ] Remove hardcoded scripts from site header (A1 fix)
+- [ ] Remove hardcoded scripts from site footer/body (A2 fix)
+- [ ] Remove ghost scripts from discontinued services (D1 fix)
+- [ ] Remove orphaned pixels from header (D3 fix)
+- [ ] Inject GTM snippet into site header (B1 fix - adds GTM where missing)
+- [ ] Replace YouTube embeds with youtube-nocookie.com (E1 fix)
+- [ ] Add privacy policy link to footer (I4 fix - if missing)
+
+### GTM fixes (via GTM API/MCP)
+- [ ] Set up GTM MCP server for the project (paolobietolini/gtm-mcp-server)
+- [ ] Update Cookiebot CMP tag trigger to Consent Initialization (A3 fix)
+- [ ] Switch Custom HTML to official Cookiebot template (A4 fix)
+- [ ] Disable AutoBlock in Cookiebot CMP tag (A5 fix)
+- [ ] Set consent settings on non-Google tags (B3 fix)
+- [ ] Fix non-Google tag triggers to use cookie_consent_update (B4 fix)
+
+### Manual fix guides (not auto-fixable)
+These need clear step-by-step instructions in the guide drawer (already have them).
+- Cookiebot configuration (cookie categories, scan settings) - dashboard only
+- HubSpot consent banner setup - dashboard only
+- Google Fonts self-hosting - needs build/deploy process changes
+- Privacy policy content - legal writing
+- DPA agreements - legal docs
+- Data breach response plans - process docs
+
 ## To do later
 - [ ] Extend checklist and protocols for HubSpot (consent is dashboard-only, manual checks)
 - [ ] Extend checklist and protocols for Next.js apps

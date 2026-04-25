@@ -12,6 +12,8 @@ model Site {
   url         String   @default("")
   platform    String   @default("webflow")
   webflowId   String?  @unique @map("webflow_id")
+  cookiebotId String?  @map("cookiebot_id")
+  gtmId       String?  @map("gtm_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -30,6 +32,7 @@ model Audit {
 
   site    Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
   results CheckResult[]
+  scans   ScanRun[]
 
   @@map("audits")
 }
@@ -47,4 +50,20 @@ model CheckResult {
 
   @@unique([auditId, checkKey])
   @@map("check_results")
+}
+
+model ScanRun {
+  id          String   @id @default(cuid())
+  auditId     String   @map("audit_id")
+  scanType    String   @map("scan_type")
+  url         String
+  status      String   @default("running")
+  findings    String   @default("[]")
+  error       String?
+  startedAt   DateTime @default(now()) @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  audit Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  @@map("scan_runs")
 }

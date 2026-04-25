@@ -9,9 +9,9 @@ import { CheckItem } from "@/components/check-item";
 import { CheckGuideDrawer } from "@/components/check-guide-drawer";
 import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
-import { runPageScan } from "@/app/actions/scan";
+import { runPageScan, runSingleAICheck, runAllAIChecks } from "@/app/actions/scan";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
-import { ChevronDown, ChevronRight, Scan, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles } from "lucide-react";
 
 type CheckState = Record<string, { status: CheckStatus; notes: string }>;
 
@@ -28,6 +28,8 @@ export function ChecklistView({ siteUrl }: ChecklistViewProps) {
   const [guideOpen, setGuideOpen] = useState(false);
   const [scanUrl, setScanUrl] = useState(siteUrl || "");
   const [scanning, setScanning] = useState(false);
+  const [aiScanning, setAiScanning] = useState(false);
+  const [runningChecks, setRunningChecks] = useState<Set<string>>(new Set());
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [scanDrawerOpen, setScanDrawerOpen] = useState(false);
   const [scanDrawerCheckKey, setScanDrawerCheckKey] = useState<string | null>(null);
@@ -45,6 +47,42 @@ export function ChecklistView({ siteUrl }: ChecklistViewProps) {
       ...prev,
       [key]: { ...getCheckState(key), [field]: value },
     }));
+  };
+
+  const applyCheckResults = (results: CheckResult[]) => {
+    setCheckStates((prev) => {
+      const next = { ...prev };
+      for (const check of results) {
+        const findingSummary = check.findings
+          .map((f) => f.detail)
+          .join("; ");
+        next[check.checkKey] = {
+          status: check.status,
+          notes: findingSummary || check.summary,
+        };
+      }
+      return next;
+    });
+
+    setScanResult((prev) => {
+      if (!prev) {
+        return {
+          url: scanUrl,
+          scannedAt: new Date().toISOString(),
+          checks: results,
+        };
+      }
+      const existingKeys = new Set(prev.checks.map((c) => c.checkKey));
+      const newChecks = results.filter((r) => !existingKeys.has(r.checkKey));
+      const updatedChecks = prev.checks.map((c) => {
+        const updated = results.find((r) => r.checkKey === c.checkKey);
+        return updated || c;
+      });
+      return {
+        ...prev,
+        checks: [...updatedChecks, ...newChecks],
+      };
+    });
   };
 
   const toggleCategory = (id: string) => {
@@ -75,23 +113,40 @@ export function ChecklistView({ siteUrl }: ChecklistViewProps) {
     setScanning(true);
     try {
       const result = await runPageScan(scanUrl);
-      setScanResult(result);
-
       if (!result.error) {
-        const newStates = { ...checkStates };
-        for (const check of result.checks) {
-          const findingSummary = check.findings
-            .map((f) => f.detail)
-            .join("; ");
-          newStates[check.checkKey] = {
-            status: check.status,
-            notes: findingSummary || check.summary,
-          };
-        }
-        setCheckStates(newStates);
+        setScanResult(result);
+        applyCheckResults(result.checks);
+      } else {
+        setScanResult(result);
       }
     } finally {
       setScanning(false);
+    }
+  };
+
+  const handleAIScan = async () => {
+    if (!scanUrl.trim()) return;
+    setAiScanning(true);
+    try {
+      const results = await runAllAIChecks(scanUrl);
+      applyCheckResults(results);
+    } finally {
+      setAiScanning(false);
+    }
+  };
+
+  const handleRunCheck = async (checkKey: string) => {
+    if (!scanUrl.trim()) return;
+    setRunningChecks((prev) => new Set(prev).add(checkKey));
+    try {
+      const result = await runSingleAICheck(checkKey, scanUrl);
+      applyCheckResults([result]);
+    } finally {
+      setRunningChecks((prev) => {
+        const next = new Set(prev);
+        next.delete(checkKey);
+        return next;
+      });
     }
   };
 
@@ -139,6 +194,20 @@ export function ChecklistView({ siteUrl }: ChecklistViewProps) {
                 <Scan className="h-4 w-4" />
               )}
               {scanning ? "Scanning..." : "Scan site"}
+            </Button>
+            <Button
+              onClick={handleAIScan}
+              disabled={aiScanning || !scanUrl.trim()}
+              size="sm"
+              variant="secondary"
+              className="gap-2"
+            >
+              {aiScanning ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {aiScanning ? "Analyzing..." : "AI Analyze"}
             </Button>
           </div>
           {scanResult && !scanResult.error && (
@@ -210,10 +279,12 @@ export function ChecklistView({ siteUrl }: ChecklistViewProps) {
                       status={state.status}
                       notes={state.notes}
                       scanResult={scanCheck}
+                      isRunning={runningChecks.has(check.key)}
                       onStatusChange={(s) => updateCheck(check.key, "status", s)}
                       onNotesChange={(n) => updateCheck(check.key, "notes", n)}
                       onOpenGuide={openGuide}
                       onViewScanDetails={scanCheck ? openScanDetails : undefined}
+                      onRunCheck={check.automation === "ai-agent" ? handleRunCheck : undefined}
                     />
                   );
                 })}

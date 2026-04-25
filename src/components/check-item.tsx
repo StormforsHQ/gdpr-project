@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import type { Check, CheckStatus } from "@/lib/checklist";
 import type { CheckResult } from "@/lib/scanner";
 import { STATUS_CONFIG, AUTOMATION_CONFIG } from "@/lib/checklist";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, HelpCircle, FileSearch } from "lucide-react";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, HelpCircle, FileSearch, Play, Loader2 } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -28,10 +28,12 @@ interface CheckItemProps {
   status: CheckStatus;
   notes: string;
   scanResult?: CheckResult;
+  isRunning?: boolean;
   onStatusChange: (status: CheckStatus) => void;
   onNotesChange: (notes: string) => void;
   onOpenGuide: (key: string) => void;
   onViewScanDetails?: (key: string) => void;
+  onRunCheck?: (key: string) => void;
 }
 
 export function CheckItem({
@@ -39,10 +41,12 @@ export function CheckItem({
   status,
   notes,
   scanResult,
+  isRunning,
   onStatusChange,
   onNotesChange,
   onOpenGuide,
   onViewScanDetails,
+  onRunCheck,
 }: CheckItemProps) {
   const [expanded, setExpanded] = useState(false);
   const automationInfo = AUTOMATION_CONFIG[check.automation];
@@ -119,6 +123,25 @@ export function CheckItem({
             </div>
           )}
           <div className="flex items-center gap-3">
+            {onRunCheck && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRunCheck(check.key);
+                }}
+                disabled={isRunning}
+              >
+                {isRunning ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Play className="h-3 w-3" />
+                )}
+                {isRunning ? "Running..." : "Run check"}
+              </Button>
+            )}
             <Select
               value={status}
               onValueChange={(v) => onStatusChange(v as CheckStatus)}

@@ -1,13 +1,23 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TopNavbar } from "@/components/top-navbar";
 import { Sidebar } from "@/components/sidebar";
+import { getSites } from "@/app/actions/sites";
 
-export default function AppShellLayout({
+async function loadSidebarSites(): Promise<{ id: string; name: string }[]> {
+  try {
+    const sites = await getSites();
+    return sites.map((s) => ({ id: s.id, name: s.name }));
+  } catch {
+    return [];
+  }
+}
+
+export default async function AppShellLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const sites: { id: string; name: string }[] = [];
+  const sites = await loadSidebarSites();
 
   return (
     <div className="flex h-screen overflow-hidden">

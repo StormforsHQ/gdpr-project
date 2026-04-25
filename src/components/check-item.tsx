@@ -12,8 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Check, CheckStatus } from "@/lib/checklist";
-import { STATUS_CONFIG } from "@/lib/checklist";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, HelpCircle } from "lucide-react";
+import { STATUS_CONFIG, AUTOMATION_CONFIG } from "@/lib/checklist";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, HelpCircle, Play } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -40,11 +40,13 @@ export function CheckItem({
   onOpenGuide,
 }: CheckItemProps) {
   const [expanded, setExpanded] = useState(false);
+  const automationInfo = AUTOMATION_CONFIG[check.automation];
+  const canAutomate = check.automation !== "human";
 
   return (
     <div className="border-b last:border-b-0">
       <div
-        className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-accent/30 transition-colors"
+        className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-accent/30 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
         {STATUS_ICONS[status]}
@@ -52,6 +54,9 @@ export function CheckItem({
           {check.key}
         </span>
         <span className="text-sm flex-1">{check.label}</span>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 ${automationInfo.className}`}>
+          {automationInfo.label}
+        </span>
         <Button
           variant="ghost"
           size="icon"
@@ -76,6 +81,20 @@ export function CheckItem({
         <div className="px-4 pb-4 pl-14 space-y-3">
           <p className="text-xs text-muted-foreground">{check.description}</p>
           <div className="flex items-center gap-3">
+            {canAutomate && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+                disabled
+              >
+                <Play className="h-3 w-3" />
+                Run check
+              </Button>
+            )}
             <Select
               value={status}
               onValueChange={(v) => onStatusChange(v as CheckStatus)}

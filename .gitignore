@@ -4,6 +4,7 @@ CLAUDE.md
 
 # personal reference docs (not team-facing)
 docs/nextjs-standard.md
+docs/deploy-guide.md
 
 # dependencies
 node_modules/

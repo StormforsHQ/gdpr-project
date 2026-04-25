@@ -1,0 +1,38 @@
+# claude code (personal per-developer)
+CLAUDE.md
+.claude/
+
+# personal reference docs (not team-facing)
+docs/nextjs-standard.md
+
+# dependencies
+node_modules/
+/.pnpm-debug.log
+
+# next.js
+.next/
+/out/
+
+# production
+/build
+
+# env files
+.env
+.env*.local
+!.env.example
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# testing
+/test-results/
+/playwright-report/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/

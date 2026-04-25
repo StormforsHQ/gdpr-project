@@ -1,0 +1,148 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono);
+  --font-heading: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: #E8EAF0;
+  --foreground: #1C202C;
+  --card: #F4F5F8;
+  --card-foreground: #1C202C;
+  --popover: #F4F5F8;
+  --popover-foreground: #1C202C;
+  --primary: #E07800;
+  --primary-foreground: #FFFFFF;
+  --secondary: #DFE1E8;
+  --secondary-foreground: #1C202C;
+  --muted: #DFE1E8;
+  --muted-foreground: #6B6D7B;
+  --accent: #D8DAE2;
+  --accent-foreground: #1C202C;
+  --destructive: #DD3333;
+  --border: #C8CAD4;
+  --input: #C8CAD4;
+  --ring: #E07800;
+  --chart-1: #2E7AD6;
+  --chart-2: #E07800;
+  --chart-3: #339966;
+  --chart-4: #9944BB;
+  --chart-5: #DD4466;
+  --radius: 0.25rem;
+  --sidebar: #F4F5F8;
+  --sidebar-foreground: #1C202C;
+  --sidebar-primary: #E07800;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #E8EAF0;
+  --sidebar-accent-foreground: #1C202C;
+  --sidebar-border: #C8CAD4;
+  --sidebar-ring: #E07800;
+}
+
+.dark {
+  --background: #292D3E;
+  --foreground: #CCCCCC;
+  --card: #1C202C;
+  --card-foreground: #CCCCCC;
+  --popover: #323646;
+  --popover-foreground: #CCCCCC;
+  --primary: #FF8906;
+  --primary-foreground: #FFFFFF;
+  --secondary: #323646;
+  --secondary-foreground: #CCCCCC;
+  --muted: #323646;
+  --muted-foreground: #767788;
+  --accent: #3A3F52;
+  --accent-foreground: #CCCCCC;
+  --destructive: #FF4444;
+  --border: #3A3F52;
+  --input: #3A3F52;
+  --ring: #FF8906;
+  --chart-1: #378FF8;
+  --chart-2: #FF8906;
+  --chart-3: #44BB88;
+  --chart-4: #BB66DD;
+  --chart-5: #FF6688;
+  --sidebar: #1C202C;
+  --sidebar-foreground: #CCCCCC;
+  --sidebar-primary: #378FF8;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #292D3E;
+  --sidebar-accent-foreground: #CCCCCC;
+  --sidebar-border: #3A3F52;
+  --sidebar-ring: #378FF8;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html, body {
+    @apply font-sans overflow-hidden h-screen;
+  }
+}
+
+.scrollbar-subtle::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-subtle::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-subtle::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+.scrollbar-subtle::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+.scrollbar-subtle {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}

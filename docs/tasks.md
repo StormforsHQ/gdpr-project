@@ -33,28 +33,20 @@
 - [x] Fix markdown rendering with @tailwindcss/typography plugin
 - [x] Add automation type badges to all 55 checks (Auto, Browser, AI, GTM API, Cookiebot, Manual)
 - [x] Research Webflow, GTM, Cookiebot, HubSpot APIs for automation feasibility
+- [x] Build page scanner (15 checks) with cheerio HTML parsing and server actions
+- [x] Build AI agent checks (7 checks) via OpenRouter + Gemini Flash
+- [x] Add scan UI: URL input, "Scan site" button, "AI Analyze" button, scan results drawer
+- [x] Add individual "Run check" button for AI-type checks
+- [x] Build CRUD server actions: sites (create, edit, delete, bulk import) + audits (create, save results)
+- [x] Add site dialog (name, URL, platform, Cookiebot ID, GTM ID)
+- [x] Edit site dialog with inline delete confirmation
+- [x] Site audit page with auto-save to DB (500ms debounce)
+- [x] Graceful fallback to demo mode when DB unavailable
+- [x] Extend Prisma schema with ScanRun model and site fields (cookiebotId, gtmId)
+- [x] Update tasks.md with automation roadmap and API research findings
+- [x] Wire sidebar to show sites from DB
 
 ## To do now
-
-### Automation: Page scanner (14 checks)
-Server actions that fetch site HTML and analyze it. No browser needed.
-- [ ] Build page scanner core: fetch HTML, parse with cheerio or regex
-- [ ] A1: Detect scripts in <head> (only GTM allowed)
-- [ ] A2: Detect scripts in footer
-- [ ] B1: Detect tracking scripts outside GTM
-- [ ] D1: Detect ghost scripts (known discontinued services)
-- [ ] D3: Detect orphaned pixels in header
-- [ ] E1: Audit video embeds (YouTube nocookie, Vimeo)
-- [ ] E2: Check Google Fonts loading (CDN vs self-hosted)
-- [ ] E3: Check maps embeds
-- [ ] E4: Check chat widget scripts
-- [ ] E5: Check social embeds
-- [ ] F1: Find all forms on site
-- [ ] F3: Check privacy policy links near forms
-- [ ] F5: Verify SSL/TLS on form POST endpoints
-- [ ] I3: Check cookie policy page exists
-- [ ] I4: Check privacy policy link in footer
-- [ ] J3: Check US services against DPF (dataprivacyframework.gov)
 
 ### Automation: Browser tests (8 checks)
 Playwright-based tests that need a real browser.
@@ -65,16 +57,6 @@ Playwright-based tests that need a real browser.
 - [ ] G5: Consent remembered on return visit
 - [ ] H6: Cookie tab check (before/after consent)
 - [ ] K1/K2/K3: Geo-targeted banner behavior (EU/US/UK)
-
-### Automation: AI agent checks (7 checks)
-LLM-powered analysis via OpenRouter (Anthropic SDK). Judgment-based checks.
-- [ ] F2: Data minimization review (analyze form fields vs stated purpose)
-- [ ] F4: Separate consent per purpose (analyze checkbox structure)
-- [ ] G2: Accept/Reject equally prominent (visual analysis)
-- [ ] G6: Banner language matches site content
-- [ ] G7: Dark pattern detection (pre-ticked boxes, guilt language, hidden reject)
-- [ ] I1: Privacy policy completeness (Art. 13/14 requirements)
-- [ ] I2: Privacy policy available in all site languages
 
 ### Automation: GTM API checks (7 checks)
 Via GTM MCP server (paolobietolini/gtm-mcp-server or stape-io).
@@ -97,7 +79,7 @@ Limited API - parse cc.js endpoint for cookie categories, rest is dashboard-only
 - [ ] Get Coolify/Hetzner back online (server unreachable as of 2026-04-25, Cloudflare 522 timeout)
 - [ ] Create PostgreSQL database on Coolify
 - [ ] Set up Docker + Coolify deployment (Dockerfile, entrypoint.sh with prisma db push)
-- [ ] Import 72 Webflow sites from filtered list into app
+- [ ] Import 72 Webflow sites from filtered list into app (use bulkCreateSites action)
 - [ ] Set up Webflow MCP server (official: webflow/mcp-server, supports custom code read/write)
 
 ### Manual/Google Drive

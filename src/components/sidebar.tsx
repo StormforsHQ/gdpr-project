@@ -12,6 +12,7 @@ import {
   X,
   LayoutDashboard,
   Globe,
+  BookOpen,
 } from "lucide-react";
 
 interface SidebarSite {
@@ -28,6 +29,7 @@ export function Sidebar({ sites }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sitesOpen, setSitesOpen] = useState(true);
+  const [refsOpen, setRefsOpen] = useState(true);
 
   const isActive = (path: string) => pathname === path;
   const isSiteActive = (id: string) => pathname === `/sites/${id}`;
@@ -124,6 +126,57 @@ export function Sidebar({ sites }: SidebarProps) {
                   </Link>
                 ))
               )}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <button
+            onClick={() => setRefsOpen(!refsOpen)}
+            className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
+              pathname.startsWith("/reference")
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+            }`}
+          >
+            <BookOpen className="h-4 w-4" />
+            Reference
+          </button>
+          {refsOpen && (
+            <div className="ml-6 space-y-0.5">
+              <Link
+                href="/reference/technical-guide"
+                onClick={() => setMobileOpen(false)}
+                className={`flex w-full items-center rounded-md px-3 py-1.5 text-xs transition-colors truncate ${
+                  isActive("/reference/technical-guide")
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                }`}
+              >
+                Technical Guide
+              </Link>
+              <Link
+                href="/reference/audit-protocol"
+                onClick={() => setMobileOpen(false)}
+                className={`flex w-full items-center rounded-md px-3 py-1.5 text-xs transition-colors truncate ${
+                  isActive("/reference/audit-protocol")
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                }`}
+              >
+                Audit Protocol
+              </Link>
+              <Link
+                href="/reference/cheat-sheet"
+                onClick={() => setMobileOpen(false)}
+                className={`flex w-full items-center rounded-md px-3 py-1.5 text-xs transition-colors truncate ${
+                  isActive("/reference/cheat-sheet")
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                }`}
+              >
+                Cheat Sheet
+              </Link>
             </div>
           )}
         </div>

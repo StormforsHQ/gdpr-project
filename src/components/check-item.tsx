@@ -10,9 +10,10 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { Check, CheckStatus } from "@/lib/checklist";
 import { STATUS_CONFIG } from "@/lib/checklist";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle } from "lucide-react";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, HelpCircle } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -27,6 +28,7 @@ interface CheckItemProps {
   notes: string;
   onStatusChange: (status: CheckStatus) => void;
   onNotesChange: (notes: string) => void;
+  onOpenGuide: (key: string) => void;
 }
 
 export function CheckItem({
@@ -35,6 +37,7 @@ export function CheckItem({
   notes,
   onStatusChange,
   onNotesChange,
+  onOpenGuide,
 }: CheckItemProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -49,6 +52,18 @@ export function CheckItem({
           {check.key}
         </span>
         <span className="text-sm flex-1">{check.label}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenGuide(check.key);
+          }}
+          aria-label={`Guide for ${check.key}`}
+        >
+          <HelpCircle className="h-4 w-4 text-muted-foreground" />
+        </Button>
         <Badge
           variant={status === "issue" ? "destructive" : "secondary"}
           className="text-xs"

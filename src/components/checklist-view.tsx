@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckItem } from "@/components/check-item";
+import { CheckGuideDrawer } from "@/components/check-guide-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
@@ -14,6 +15,13 @@ export function ChecklistView() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(CHECKLIST.map((c) => c.id))
   );
+  const [guideKey, setGuideKey] = useState<string | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
+
+  const openGuide = (key: string) => {
+    setGuideKey(key);
+    setGuideOpen(true);
+  };
 
   const getCheckState = (key: string) =>
     checkStates[key] ?? { status: "not_checked" as CheckStatus, notes: "" };
@@ -110,6 +118,7 @@ export function ChecklistView() {
                       notes={state.notes}
                       onStatusChange={(s) => updateCheck(check.key, "status", s)}
                       onNotesChange={(n) => updateCheck(check.key, "notes", n)}
+                      onOpenGuide={openGuide}
                     />
                   );
                 })}
@@ -118,6 +127,12 @@ export function ChecklistView() {
           </Card>
         );
       })}
+
+      <CheckGuideDrawer
+        checkKey={guideKey}
+        open={guideOpen}
+        onOpenChange={setGuideOpen}
+      />
     </div>
   );
 }

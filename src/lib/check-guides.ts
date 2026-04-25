@@ -65,7 +65,7 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
   A5: {
     key: "A5",
     title: "AutoBlock is OFF",
-    why: "AutoBlock is Cookiebot's own script-blocking mechanism. When using Advanced Consent Mode inside GTM, consent-aware tags manage their own blocking. AutoBlock can interfere by blocking scripts that GTM is already handling. Turning it off is the simpler, recommended approach.",
+    why: "AutoBlock is Cookiebot's own script-blocking mechanism. When using Advanced Consent Mode inside GTM, AutoBlock can prevent Google tags from sending cookieless pings - defeating the purpose of Advanced Mode entirely (you lose conversion modeling data). Consent-aware tags manage their own blocking, so AutoBlock is redundant and potentially harmful. Turning it off is the simpler, recommended approach.",
     steps: [
       "Open GTM > Tags > click the Cookiebot CMP tag",
       "Look for the AutoBlock setting in the tag configuration",
@@ -150,6 +150,7 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
       "Click Accept All on the banner, then check again - all should show 'Granted'",
     ],
     tools: ["GTM Preview Mode (tagassistant.google.com)", "MeasureMinds Consent Mode Monitor (Chrome extension)"],
+    tips: ["The V2-specific parameters are ad_user_data and ad_personalization. If these two are missing but the other 5 are present, you have V1 only, which is non-compliant since March 2024."],
   },
 
   // C. Cookie categories
@@ -762,6 +763,9 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
       "Test with a VPN set to the UK",
     ],
     tools: ["Cookiebot admin > Geo-targeting", "VPN for location testing"],
-    tips: ["If the site has no UK-specific audience, EU rules (stricter) apply and this can be marked N/A"],
+    tips: [
+      "If the site has no UK-specific audience, EU rules (stricter) apply and this can be marked N/A",
+      "The DUAA analytics exemption depends on implementing regulations still being finalized. Until published, applying EU opt-in rules to UK visitors is the safer approach. Check ICO guidance for updates.",
+    ],
   },
 };

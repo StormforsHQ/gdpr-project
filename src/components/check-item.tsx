@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Check, CheckStatus } from "@/lib/checklist";
+import type { CheckResult } from "@/lib/scanner";
 import { STATUS_CONFIG, AUTOMATION_CONFIG } from "@/lib/checklist";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, HelpCircle, Play } from "lucide-react";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, HelpCircle, FileSearch } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -26,22 +27,25 @@ interface CheckItemProps {
   check: Check;
   status: CheckStatus;
   notes: string;
+  scanResult?: CheckResult;
   onStatusChange: (status: CheckStatus) => void;
   onNotesChange: (notes: string) => void;
   onOpenGuide: (key: string) => void;
+  onViewScanDetails?: (key: string) => void;
 }
 
 export function CheckItem({
   check,
   status,
   notes,
+  scanResult,
   onStatusChange,
   onNotesChange,
   onOpenGuide,
+  onViewScanDetails,
 }: CheckItemProps) {
   const [expanded, setExpanded] = useState(false);
   const automationInfo = AUTOMATION_CONFIG[check.automation];
-  const canAutomate = check.automation !== "human";
 
   return (
     <div className="border-b last:border-b-0">
@@ -57,6 +61,20 @@ export function CheckItem({
         <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 ${automationInfo.className}`}>
           {automationInfo.label}
         </span>
+        {scanResult && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewScanDetails?.(check.key);
+            }}
+            aria-label={`Scan details for ${check.key}`}
+          >
+            <FileSearch className="h-4 w-4 text-primary" />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon"
@@ -80,21 +98,27 @@ export function CheckItem({
       {expanded && (
         <div className="px-4 pb-4 pl-14 space-y-3">
           <p className="text-xs text-muted-foreground">{check.description}</p>
+          {scanResult && scanResult.findings.length > 0 && (
+            <div className="space-y-1">
+              {scanResult.findings.slice(0, 3).map((f, i) => (
+                <p key={i} className={`text-xs ${f.severity === "error" ? "text-destructive" : f.severity === "warning" ? "text-amber-500" : "text-muted-foreground"}`}>
+                  {f.detail}
+                </p>
+              ))}
+              {scanResult.findings.length > 3 && (
+                <button
+                  className="text-xs text-primary hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewScanDetails?.(check.key);
+                  }}
+                >
+                  +{scanResult.findings.length - 3} more findings
+                </button>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-3">
-            {canAutomate && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-xs gap-1.5"
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-                disabled
-              >
-                <Play className="h-3 w-3" />
-                Run check
-              </Button>
-            )}
             <Select
               value={status}
               onValueChange={(v) => onStatusChange(v as CheckStatus)}

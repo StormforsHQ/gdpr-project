@@ -3,20 +3,34 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { CheckItem } from "@/components/check-item";
 import { CheckGuideDrawer } from "@/components/check-guide-drawer";
+import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { runPageScan } from "@/app/actions/scan";
+import type { ScanResult, CheckResult } from "@/lib/scanner";
+import { ChevronDown, ChevronRight, Scan, Loader2 } from "lucide-react";
 
 type CheckState = Record<string, { status: CheckStatus; notes: string }>;
 
-export function ChecklistView() {
+interface ChecklistViewProps {
+  siteUrl?: string;
+}
+
+export function ChecklistView({ siteUrl }: ChecklistViewProps) {
   const [checkStates, setCheckStates] = useState<CheckState>({});
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(CHECKLIST.map((c) => c.id))
   );
   const [guideKey, setGuideKey] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [scanUrl, setScanUrl] = useState(siteUrl || "");
+  const [scanning, setScanning] = useState(false);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [scanDrawerOpen, setScanDrawerOpen] = useState(false);
+  const [scanDrawerCheckKey, setScanDrawerCheckKey] = useState<string | null>(null);
 
   const openGuide = (key: string) => {
     setGuideKey(key);
@@ -56,6 +70,40 @@ export function ChecklistView() {
     return { total, checked, issues };
   };
 
+  const handleScan = async () => {
+    if (!scanUrl.trim()) return;
+    setScanning(true);
+    try {
+      const result = await runPageScan(scanUrl);
+      setScanResult(result);
+
+      if (!result.error) {
+        const newStates = { ...checkStates };
+        for (const check of result.checks) {
+          const findingSummary = check.findings
+            .map((f) => f.detail)
+            .join("; ");
+          newStates[check.checkKey] = {
+            status: check.status,
+            notes: findingSummary || check.summary,
+          };
+        }
+        setCheckStates(newStates);
+      }
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const getScanCheckResult = (key: string): CheckResult | undefined => {
+    return scanResult?.checks.find((c) => c.checkKey === key);
+  };
+
+  const openScanDetails = (key: string) => {
+    setScanDrawerCheckKey(key);
+    setScanDrawerOpen(true);
+  };
+
   const totalChecks = CHECKLIST.reduce((sum, c) => sum + c.checks.length, 0);
   const totalChecked = Object.values(checkStates).filter(
     (s) => s.status !== "not_checked"
@@ -64,8 +112,52 @@ export function ChecklistView() {
     (s) => s.status === "issue"
   ).length;
 
+  const scannedCheckCount = scanResult?.checks.length ?? 0;
+  const scanIssueCount = scanResult?.checks.filter((c) => c.status === "issue").length ?? 0;
+
   return (
     <div className="space-y-4">
+      <Card>
+        <CardContent className="py-4">
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder="Enter site URL to scan (e.g. example.com)"
+              value={scanUrl}
+              onChange={(e) => setScanUrl(e.target.value)}
+              className="flex-1 h-9 text-sm"
+              onKeyDown={(e) => e.key === "Enter" && handleScan()}
+            />
+            <Button
+              onClick={handleScan}
+              disabled={scanning || !scanUrl.trim()}
+              size="sm"
+              className="gap-2"
+            >
+              {scanning ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Scan className="h-4 w-4" />
+              )}
+              {scanning ? "Scanning..." : "Scan site"}
+            </Button>
+          </div>
+          {scanResult && !scanResult.error && (
+            <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+              <span>Scanned: {scanResult.url}</span>
+              <span>{scannedCheckCount} checks run</span>
+              {scanIssueCount > 0 ? (
+                <Badge variant="destructive" className="text-xs">{scanIssueCount} issue{scanIssueCount !== 1 ? "s" : ""}</Badge>
+              ) : (
+                <Badge variant="secondary" className="text-xs bg-green-500/15 text-green-600 dark:text-green-400">All clear</Badge>
+              )}
+            </div>
+          )}
+          {scanResult?.error && (
+            <p className="mt-3 text-xs text-destructive">Scan failed: {scanResult.error}</p>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="flex items-center gap-4 text-sm">
         <span className="text-muted-foreground">
           Progress: {totalChecked}/{totalChecks} checked
@@ -110,15 +202,18 @@ export function ChecklistView() {
               <CardContent className="p-0">
                 {category.checks.map((check) => {
                   const state = getCheckState(check.key);
+                  const scanCheck = getScanCheckResult(check.key);
                   return (
                     <CheckItem
                       key={check.key}
                       check={check}
                       status={state.status}
                       notes={state.notes}
+                      scanResult={scanCheck}
                       onStatusChange={(s) => updateCheck(check.key, "status", s)}
                       onNotesChange={(n) => updateCheck(check.key, "notes", n)}
                       onOpenGuide={openGuide}
+                      onViewScanDetails={scanCheck ? openScanDetails : undefined}
                     />
                   );
                 })}
@@ -132,6 +227,13 @@ export function ChecklistView() {
         checkKey={guideKey}
         open={guideOpen}
         onOpenChange={setGuideOpen}
+      />
+
+      <ScanResultsDrawer
+        checkKey={scanDrawerCheckKey}
+        scanResult={scanResult}
+        open={scanDrawerOpen}
+        onOpenChange={setScanDrawerOpen}
       />
     </div>
   );

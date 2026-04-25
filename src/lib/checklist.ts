@@ -115,8 +115,8 @@ export const CHECKLIST: CheckCategory[] = [
     id: "H",
     label: "Verification",
     checks: [
-      { key: "H1", label: "Cookiebot compliance scan run", description: "Run scanner, document result, no unclassified cookies", automation: "cookiebot-api" },
-      { key: "H2", label: "Cookiebot GCM Check run", description: "Google Consent Mode Checker in Cookiebot admin", automation: "cookiebot-api" },
+      { key: "H1", label: "Cookiebot compliance scan run", description: "Run scanner, document result, no unclassified cookies", automation: "human" },
+      { key: "H2", label: "Cookiebot GCM Check run", description: "Google Consent Mode Checker in Cookiebot admin", automation: "human" },
       { key: "H3", label: "GTM Preview Mode test: decline all", description: 'Consent tab shows Denied, non-Google tags under "Not Fired"', automation: "human" },
       { key: "H4", label: "GTM Preview Mode test: accept all", description: "All tags fire, Consent tab shows Granted", automation: "human" },
       { key: "H5", label: "GTM Preview Mode test: selective", description: "Accept Statistics only, verify Marketing tags don't fire", automation: "human" },

@@ -210,11 +210,12 @@ communicate what's needed. No silent failures or misleading "All clear" results.
 ### 2.3 Platform deep links and setup tips
 - [x] For each platform (Webflow, HubSpot, Next.js), add direct links to relevant dashboards
   - Deep links to Cookiebot admin and GTM container when IDs are set
-- [ ] Add setup guidance for MCP servers per platform:
+  - Webflow ID shown in header when available
+- [ ] Add setup guidance for MCP servers per platform (docs/mcp-setup.md):
   - Webflow MCP (official: webflow/mcp-server) - what it can read/write
   - GTM MCP (paolobietolini/gtm-mcp-server) - what it can read/write
   - HubSpot MCP (baryhuang/mcp-hubspot) - CRM only, consent is dashboard-only
-- [ ] Document per-platform capabilities:
+- [ ] Document per-platform capabilities (docs/platform-capabilities.md):
   - Webflow: can read/inject header custom code via API, can read page list
   - GTM: can read/write tags, triggers, consent settings via API
   - Cookiebot: can read cc.js (cookie categories) via public endpoint, dashboard-only for admin
@@ -223,14 +224,23 @@ communicate what's needed. No silent failures or misleading "All clear" results.
 - [ ] Consider adding platform-specific fields to Site model (beyond current cookiebotId/gtmId)
 
 ### 2.4 Error handling and logging
-- [ ] In-app error log panel (sidebar drawer with timestamped errors, clickable for details, dismissable)
-- [ ] Capture scan failures, AI check errors, DB read/write issues into error log
+- [x] In-app error log panel (sidebar drawer with timestamped errors, clickable for details, dismissable)
+  - ErrorLogProvider context with ErrorLogDrawer component
+  - Error count button in progress bar opens the drawer
+  - Clear all and dismiss individual errors
+- [x] Capture scan failures, AI check errors, DB read/write issues into error log
+  - Page scan failures and crashed logged as "scan" source
+  - AI check failures and crashes logged as "ai" source
+  - Save failures logged as "save" source
 - [x] Graceful error messages in UI when scans/AI checks fail (instead of silent "All clear")
   - Failed AI checks now show as "na" with error detail instead of being silently dropped
   - URL validation with inline error message before scan
   - Separate "X failed" badge in scan summary bar
   - "All clear" only shows when zero issues AND zero failures
-- [ ] OpenRouter credit/balance check (API endpoint exists) - show warning banner when credits low
+- [x] OpenRouter credit/balance check (API endpoint exists) - show warning banner when credits low
+  - checkOpenRouterCredits server action calls /api/v1/auth/key
+  - Checked before AI Analyze and individual AI check runs
+  - Warning shown when credits below $1, blocked when unavailable
 
 ## Layer 3: UX and usability
 

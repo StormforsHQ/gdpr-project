@@ -9,7 +9,7 @@ import { CheckItem } from "@/components/check-item";
 import { CheckGuideDrawer } from "@/components/check-guide-drawer";
 import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
-import { runPageScan, runSingleAICheck, runAllAIChecks } from "@/app/actions/scan";
+import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits } from "@/app/actions/scan";
 import { saveCheckResult } from "@/app/actions/audits";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
 import {
@@ -59,6 +59,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
   const [scanDrawerCheckKey, setScanDrawerCheckKey] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<"scan" | "ai" | null>(null);
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [creditWarning, setCreditWarning] = useState<string | null>(null);
 
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -206,8 +207,19 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
     }
   };
 
-  const handleAIScan = () => {
+  const handleAIScan = async () => {
     if (!validateUrl(scanUrl)) return;
+    setCreditWarning(null);
+
+    const credits = await checkOpenRouterCredits();
+    if (!credits.available) {
+      setCreditWarning(credits.error || "No OpenRouter credits remaining");
+      return;
+    }
+    if (credits.credits < 1) {
+      setCreditWarning(`Low OpenRouter credits: $${credits.credits} remaining`);
+    }
+
     if (hasExistingResults) {
       setConfirmAction("ai");
     } else {
@@ -223,6 +235,13 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
 
   const handleRunCheck = async (checkKey: string) => {
     if (!scanUrl.trim()) return;
+
+    const credits = await checkOpenRouterCredits();
+    if (!credits.available) {
+      setCreditWarning(credits.error || "No OpenRouter credits remaining");
+      return;
+    }
+
     setRunningChecks((prev) => new Set(prev).add(checkKey));
     try {
       const result = await runSingleAICheck(checkKey, scanUrl);
@@ -316,6 +335,12 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
             <div className="flex items-center gap-1.5 mt-3">
               <AlertCircle className="h-3.5 w-3.5 text-destructive" />
               <p className="text-xs text-destructive">{urlError}</p>
+            </div>
+          )}
+          {creditWarning && (
+            <div className="flex items-center gap-1.5 mt-3">
+              <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+              <p className="text-xs text-amber-600 dark:text-amber-400">{creditWarning}</p>
             </div>
           )}
           {scanResult?.error && (

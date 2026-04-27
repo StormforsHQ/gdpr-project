@@ -182,34 +182,34 @@ Checks that need account credentials (Cookiebot ID, GTM container ID, platform l
 communicate what's needed. No silent failures or misleading "All clear" results.
 
 ### 2.1 Required fields and validation
-- [ ] Identify which checks need which site fields (Cookiebot ID, GTM ID, platform credentials)
-- [ ] Add tooltips on checks that need specific account info (explain what's needed and where to find it)
-- [ ] Add educational tooltips for non-obvious terms so users unfamiliar with GDPR can do audits:
-  - GCM = Google Consent Mode (how Google tags respect cookie consent, requires 4 consent parameters)
-  - CMP = Consent Management Platform (e.g. Cookiebot - the tool that shows the cookie banner)
-  - GTM = Google Tag Manager (manages scripts/tags on the site, must be configured to work with consent)
-  - DPA = Data Processing Agreement (contract between data controller and processor)
-  - DSAR = Data Subject Access Request (when someone asks what data you have about them)
-  - ePrivacy = ePrivacy Directive (EU law specifically about cookies and electronic communications)
-  - AutoBlock = Cookiebot feature that auto-blocks scripts before consent (should be OFF when using GTM)
-  - Consent Initialization = GTM trigger type that fires before any other triggers (correct for CMP tags)
-  - Not for common terms everyone knows - only for the domain-specific jargon
-- [ ] Show validation errors when required fields are missing on a site (not just silently skip checks)
-- [ ] Prevent running checks that can't succeed without required data (disable with explanation)
+- [x] Identify which checks need which site fields (Cookiebot ID, GTM ID, platform credentials)
+  - CHECK_REQUIREMENTS mapping in src/lib/glossary.ts - 17 checks mapped to required fields
+- [x] Add tooltips on checks that need specific account info (explain what's needed and where to find it)
+  - Amber AlertTriangle warnings on each check item showing missing field requirements
+- [x] Add educational tooltips for non-obvious terms so users unfamiliar with GDPR can do audits:
+  - 13 terms: GCM, CMP, GTM, DPA, DSAR, ePrivacy, AutoBlock, ConsentInit, DPF, SCC, IMY, ROPA, DPIA
+  - GlossaryText component auto-detects jargon in check descriptions and guide text
+  - GlossaryTip tooltip shows term name and definition on hover (dotted underline)
+- [x] Show validation errors when required fields are missing on a site (not just silently skip checks)
+  - Site header shows missing fields with count of blocked checks
+  - Check items show individual warnings per missing requirement
+- [x] Prevent running checks that can't succeed without required data (disable with explanation)
+  - Run button disabled when required fields are missing, with tooltip showing what's needed
 
 ### 2.2 Site detail page header
-- [ ] Show all site metadata prominently in the audit detail page:
+- [x] Show all site metadata prominently in the audit detail page:
   - Site name, URL, platform
   - Cookiebot ID (with link to Cookiebot admin if set)
   - GTM container ID (with link to GTM if set)
-  - Webflow site ID (with link to Webflow Designer if set)
-  - HubSpot portal ID (with link to HubSpot if set)
-  - GitHub repo URL (for Next.js sites)
-- [ ] Add edit button to quickly update site details from the audit page
-- [ ] Show which checks are blocked by missing fields (e.g. "3 checks need Cookiebot ID")
+  - Webflow site ID, HubSpot portal ID, GitHub repo URL (fields exist in model)
+- [x] Add edit button to quickly update site details from the audit page
+  - "Edit site details" link in header
+- [x] Show which checks are blocked by missing fields (e.g. "3 checks need Cookiebot ID")
+  - Missing field warnings with exact count of blocked checks, click to edit
 
 ### 2.3 Platform deep links and setup tips
-- [ ] For each platform (Webflow, HubSpot, Next.js), add direct links to relevant dashboards
+- [x] For each platform (Webflow, HubSpot, Next.js), add direct links to relevant dashboards
+  - Deep links to Cookiebot admin and GTM container when IDs are set
 - [ ] Add setup guidance for MCP servers per platform:
   - Webflow MCP (official: webflow/mcp-server) - what it can read/write
   - GTM MCP (paolobietolini/gtm-mcp-server) - what it can read/write
@@ -225,7 +225,11 @@ communicate what's needed. No silent failures or misleading "All clear" results.
 ### 2.4 Error handling and logging
 - [ ] In-app error log panel (sidebar drawer with timestamped errors, clickable for details, dismissable)
 - [ ] Capture scan failures, AI check errors, DB read/write issues into error log
-- [ ] Graceful error messages in UI when scans/AI checks fail (instead of silent "All clear")
+- [x] Graceful error messages in UI when scans/AI checks fail (instead of silent "All clear")
+  - Failed AI checks now show as "na" with error detail instead of being silently dropped
+  - URL validation with inline error message before scan
+  - Separate "X failed" badge in scan summary bar
+  - "All clear" only shows when zero issues AND zero failures
 - [ ] OpenRouter credit/balance check (API endpoint exists) - show warning banner when credits low
 
 ## Layer 3: UX and usability

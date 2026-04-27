@@ -4,6 +4,35 @@ import { scanSite, type ScanResult } from "@/lib/scanner";
 import { runAICheck, AI_CHECK_KEYS } from "@/lib/ai-agent";
 import type { CheckResult } from "@/lib/scanner";
 
+export async function checkOpenRouterCredits(): Promise<{ available: boolean; credits: number; error?: string }> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    return { available: false, credits: 0, error: "OPENROUTER_API_KEY not configured" };
+  }
+
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/auth/key", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+
+    if (!res.ok) {
+      return { available: false, credits: 0, error: `API returned ${res.status}` };
+    }
+
+    const data = await res.json();
+    const credits = data.data?.limit_remaining ?? data.data?.usage ?? 0;
+    const hasLimit = data.data?.limit != null;
+    const remaining = hasLimit ? (data.data.limit - (data.data.usage ?? 0)) : Infinity;
+
+    return {
+      available: remaining > 0.01,
+      credits: Math.round(remaining * 100) / 100,
+    };
+  } catch {
+    return { available: false, credits: 0, error: "Failed to check credits" };
+  }
+}
+
 export async function runPageScan(url: string): Promise<ScanResult> {
   if (!url || url.trim().length === 0) {
     return {

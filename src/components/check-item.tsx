@@ -202,7 +202,8 @@ export function CheckItem({
                   e.stopPropagation();
                   onRunCheck(check.key);
                 }}
-                disabled={isRunning}
+                disabled={isRunning || missingRequirements.length > 0}
+                title={missingRequirements.length > 0 ? `Missing: ${missingRequirements.map((r) => r.label).join(", ")}` : undefined}
               >
                 {isRunning ? (
                   <Loader2 className="h-3 w-3 animate-spin" />

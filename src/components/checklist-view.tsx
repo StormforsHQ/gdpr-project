@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useErrorLog, ErrorLogDrawer } from "@/components/error-log";
 import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle } from "lucide-react";
 
 type CheckState = Record<string, { status: CheckStatus; notes: string }>;
@@ -34,6 +35,8 @@ interface ChecklistViewProps {
 }
 
 export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: ChecklistViewProps) {
+  const { errors, addError } = useErrorLog();
+  const [errorLogOpen, setErrorLogOpen] = useState(false);
   const [checkStates, setCheckStates] = useState<CheckState>(() => {
     if (!initialStates) return {};
     const states: CheckState = {};
@@ -80,10 +83,12 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
       }
 
       saveTimers.current[key] = setTimeout(() => {
-        saveCheckResult(auditId, key, status, notes).catch(() => {});
+        saveCheckResult(auditId, key, status, notes).catch((err) => {
+          addError("save", `Failed to save check ${key}`, err instanceof Error ? err.message : "Unknown error");
+        });
       }, 500);
     },
-    [auditId]
+    [auditId, addError]
   );
 
   const updateCheck = (key: string, field: "status" | "notes", value: string) => {
@@ -165,9 +170,16 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
       if (!result.error) {
         setScanResult(result);
         applyCheckResults(result.checks);
+        const failedChecks = result.checks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
+        for (const check of failedChecks) {
+          addError("scan", `Check ${check.checkKey} failed`, check.summary);
+        }
       } else {
         setScanResult(result);
+        addError("scan", `Page scan failed: ${result.error}`, scanUrl);
       }
+    } catch (err) {
+      addError("scan", "Page scan crashed", err instanceof Error ? err.message : "Unknown error");
     } finally {
       setScanning(false);
     }
@@ -178,6 +190,12 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
     try {
       const results = await runAllAIChecks(scanUrl);
       applyCheckResults(results);
+      const failedChecks = results.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
+      for (const check of failedChecks) {
+        addError("ai", `AI check ${check.checkKey} failed`, check.summary);
+      }
+    } catch (err) {
+      addError("ai", "AI analysis crashed", err instanceof Error ? err.message : "Unknown error");
     } finally {
       setAiScanning(false);
     }
@@ -246,6 +264,11 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
     try {
       const result = await runSingleAICheck(checkKey, scanUrl);
       applyCheckResults([result]);
+      if (result.status === "na" && result.findings.some((f) => f.severity === "warning")) {
+        addError("ai", `AI check ${checkKey} failed`, result.summary);
+      }
+    } catch (err) {
+      addError("ai", `AI check ${checkKey} crashed`, err instanceof Error ? err.message : "Unknown error");
     } finally {
       setRunningChecks((prev) => {
         const next = new Set(prev);
@@ -356,6 +379,15 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
         {totalIssues > 0 && (
           <Badge variant="destructive">{totalIssues} issue{totalIssues !== 1 ? "s" : ""}</Badge>
         )}
+        {errors.length > 0 && (
+          <button
+            className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 hover:underline"
+            onClick={() => setErrorLogOpen(true)}
+          >
+            <AlertCircle className="h-3.5 w-3.5" />
+            {errors.length} error{errors.length !== 1 ? "s" : ""}
+          </button>
+        )}
       </div>
 
       {CHECKLIST.map((category) => {
@@ -447,6 +479,11 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ErrorLogDrawer
+        open={errorLogOpen}
+        onOpenChange={setErrorLogOpen}
+      />
     </div>
   );
 }

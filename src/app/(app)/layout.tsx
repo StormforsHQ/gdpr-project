@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TopNavbar } from "@/components/top-navbar";
 import { Sidebar } from "@/components/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ErrorLogProvider } from "@/components/error-log";
 import { getSites } from "@/app/actions/sites";
 
 async function loadSidebarSites(): Promise<{ id: string; name: string }[]> {
@@ -22,16 +23,18 @@ export default async function AppShellLayout({
 
   return (
     <TooltipProvider>
-      <div className="flex h-screen overflow-hidden">
-        <Sidebar sites={sites} />
-        <div className="flex flex-1 flex-col">
-          <TopNavbar />
-          <main className="flex-1 overflow-y-auto scrollbar-subtle">
-            {children}
-          </main>
+      <ErrorLogProvider>
+        <div className="flex h-screen overflow-hidden">
+          <Sidebar sites={sites} />
+          <div className="flex flex-1 flex-col">
+            <TopNavbar />
+            <main className="flex-1 overflow-y-auto scrollbar-subtle">
+              {children}
+            </main>
+          </div>
+          <Toaster />
         </div>
-        <Toaster />
-      </div>
+      </ErrorLogProvider>
     </TooltipProvider>
   );
 }

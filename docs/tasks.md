@@ -222,7 +222,7 @@ communicate what's needed. No silent failures or misleading "All clear" results.
   - Cookiebot: can read cc.js (cookie categories) via public endpoint, dashboard-only for admin
   - HubSpot: CRM API only, cookie consent banner is dashboard-only
   - Next.js: code-based, needs repo access (GitHub)
-- [ ] Consider adding platform-specific fields to Site model (beyond current cookiebotId/gtmId)
+- [ ] Consider adding platform-specific fields to Site model (hubspotPortalId, githubRepoUrl) - not blocking until HubSpot/Next.js audit checks are added
 
 ### 2.4 Error handling and logging
 - [x] In-app error log panel (sidebar drawer with timestamped errors, clickable for details, dismissable)

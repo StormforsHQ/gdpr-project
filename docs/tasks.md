@@ -127,7 +127,7 @@ These need clear step-by-step instructions in the guide drawer (already have the
 The audit guarantees compliance to clients. If checks are wrong, incomplete, or poorly implemented,
 clients could get fined. This layer ensures every check is legally grounded and produces correct results.
 
-### 1.1 Legal references for all 68 checks
+### 1.1 Legal references for all 69 checks
 - [x] Deep research: map each check to its exact legal basis
   - EU: GDPR articles, ePrivacy Directive articles, EDPB guidelines
   - US: CCPA/CPRA, 20+ state privacy laws, COPPA, CAN-SPAM, DPF
@@ -141,18 +141,31 @@ clients could get fined. This layer ensures every check is legally grounded and 
 - [x] Updated C2/C4 descriptions (added UK DUAA exemption note)
 - [x] Cross-check: 13 missing checks added (C6, G8, G9, H7, H8, I6, I7, I8, J6, J7, J8, J9, K4)
 - [x] Cross-check: 4 existing checks corrected (K2, K3, C2, C4)
-- [ ] IMY (Swedish DPA) guidance and enforcement decisions - add Sweden-specific notes where relevant
+- [x] IMY (Swedish DPA) guidance and enforcement decisions:
+  - Added `imyNote` and `imyReferences` fields to Check interface
+  - 19 checks now have Sweden-specific IMY annotations with verified decision references
+  - Key IMY decisions referenced: Apoteket/Apohem (SEK 45M, Meta Pixel), Tele2/CDON (SEK 12.3M, Google Analytics), Klarna (SEK 7.5M, transparency), Spotify (SEK 58M, right of access), Aller Media/ATG/Warner Music (cookie banners), Equality Ombudsman (web form security), Sportadmin (breach)
+  - Added new check F6 (personnummer collection) - Sweden-specific dataskyddslagen requirement
+  - Swedish children's consent age (13) noted on relevant checks
+  - IMY notes visible in check-item expanded view (blue Landmark icon) and guide drawer
+  - Total checks now 69 (was 68)
 
 ### 1.2 Verify check implementations are correct
 - [x] Review all 15 scanner checks - 2 issues fixed:
   - E3: added Google Maps JavaScript API detection (was only checking iframes)
   - I4: improved footer detection (added role="contentinfo", .footer, #footer selectors)
-- [x] Review all 8 AI agent checks (was 7, added I8) - 3 issues fixed:
+- [x] Review all 9 AI agent checks (was 7, added I8 + F6) - 3 issues fixed:
   - I8: implemented missing handler for privacy info accessibility check
   - G2/G7: added CSS limitation notes to prompts (HTML-only can't see styling)
   - F2: fixed overly aggressive phone+email data minimization prompt
 - [x] Review AI agent system prompts against legal references - added CJEU Planet49, EDPB references to G7
-- [x] Review guide drawer instructions for all 68 checks - verified correct and complete
+- [x] Review guide drawer instructions for all 69 checks - verified correct and complete
+- [x] Scanner accuracy review and fixes:
+  - Added isFrameworkScript() to exclude Next.js, Webflow, Squarespace, Shopify framework scripts from A1/A2 (reduces false positives)
+  - Expanded Swedish privacy term patterns in F3, I3, I4, AI agent (sekretesspolicy, privatlivspolicy, kakpolicy)
+  - Fixed J3 automation type from page-scan to human (had no scanner implementation, misleading Auto badge)
+  - Verified all 15 page-scan checks match scanner implementations
+  - Verified all 9 ai-agent checks match AI handler implementations
 - [ ] Test scanner against known-compliant and known-non-compliant sites to verify accuracy
 
 ### 1.3 Remediation steps ("how to fix")

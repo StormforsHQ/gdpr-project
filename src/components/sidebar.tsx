@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   Globe,
   BookOpen,
+  Server,
 } from "lucide-react";
 
 interface SidebarSite {
@@ -176,6 +177,17 @@ export function Sidebar({ sites }: SidebarProps) {
                 }`}
               >
                 Cheat Sheet
+              </Link>
+              <Link
+                href="/reference/mcp-servers"
+                onClick={() => setMobileOpen(false)}
+                className={`flex w-full items-center rounded-md px-3 py-1.5 text-xs transition-colors truncate ${
+                  isActive("/reference/mcp-servers")
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                }`}
+              >
+                MCP Servers
               </Link>
             </div>
           )}

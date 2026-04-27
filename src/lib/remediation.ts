@@ -151,6 +151,19 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
     ],
   },
 
+  F6: {
+    steps: [
+      { instruction: "Search all forms on the site for fields collecting personnummer, samordningsnummer, or similar national ID numbers", platform: "all" },
+      { instruction: "For each field found: document the business justification for why personnummer is needed", platform: "all", needsDevOrLegal: true },
+      { instruction: "If the form's purpose can be achieved without personnummer, remove the field", platform: "all" },
+      { instruction: "If personnummer is genuinely needed: make the field optional if possible, and add clear text explaining why it is needed", platform: "all" },
+      { instruction: "Ensure the privacy policy specifically mentions personnummer processing and the legal basis", platform: "all", needsDevOrLegal: true },
+    ],
+    docLinks: [
+      { label: "Dataskyddslagen (2018:218) - English", url: "https://www.government.se/government-policy/the-constitution-of-sweden-and-personal-privacy/act-containing-supplementary-provisions-to-the-eu-sfs-2018218-general-data-protection-regulation/" },
+    ],
+  },
+
   G2: {
     steps: [
       { instruction: "Ensure Accept and Reject/Decline buttons have the same visual weight", platform: "all" },

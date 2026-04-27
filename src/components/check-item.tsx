@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import type { Check, CheckStatus, LegalReference } from "@/lib/checklist";
 import type { CheckResult } from "@/lib/scanner";
 import { STATUS_CONFIG, AUTOMATION_CONFIG } from "@/lib/checklist";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, FileSearch, Play, Loader2, Scale } from "lucide-react";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, FileSearch, Play, Loader2, Scale, Landmark } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -117,6 +117,33 @@ export function CheckItem({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[11px] text-primary hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {ref.label}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {check.imyNote && (
+            <div className="space-y-1.5">
+              <div className="flex items-start gap-1.5">
+                <Landmark className="h-3 w-3 text-blue-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  <span className="font-semibold">SE/IMY: </span>
+                  {check.imyNote}
+                </p>
+              </div>
+              {check.imyReferences && check.imyReferences.length > 0 && (
+                <div className="flex flex-wrap gap-x-3 gap-y-1 pl-[18px]">
+                  {check.imyReferences.map((ref, i) => (
+                    <a
+                      key={i}
+                      href={ref.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-blue-500 hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {ref.label}

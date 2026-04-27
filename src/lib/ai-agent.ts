@@ -397,6 +397,30 @@ ${text.slice(0, 12000)}`
     return parseAIResponse(raw);
   },
 
+  F6: async (_html, text) => {
+    const raw = await callOpenRouter(
+      `You are a GDPR compliance auditor checking Swedish web forms for personnummer (Swedish personal identity number) collection. This check is specific to Swedish law (dataskyddslagen 2018:218).
+${RESPONSE_FORMAT_INSTRUCTION}`,
+      `Analyze this page for forms that collect personnummer (Swedish personal identity numbers, also called samordningsnummer/coordination numbers).
+
+Look for:
+- Form fields labeled "personnummer", "personal number", "SSN", "social security number", "ID-nummer", "identitetsnummer"
+- Input fields with patterns matching YYMMDD-XXXX or YYYYMMDD-XXXX format
+- Any field asking for a Swedish national ID number
+
+If found, evaluate:
+- Is the collection clearly justified by the service's purpose? (banking, insurance, tax = justified; contact form, newsletter = not justified)
+- Is the field mandatory or optional?
+- Is there a stated reason for why personnummer is needed?
+
+If no personnummer fields are found, return status "ok" with summary "No personnummer collection detected".
+
+Page content:
+${text.slice(0, 8000)}`
+    );
+    return parseAIResponse(raw);
+  },
+
   I2: async (_html, text, url) => {
     const raw = await callOpenRouter(
       `You are a GDPR compliance auditor checking if a privacy policy is available in all languages the website uses.

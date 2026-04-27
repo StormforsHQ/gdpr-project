@@ -406,6 +406,25 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
     tips: ["Almost all modern sites use HTTPS. This check is mainly relevant for older sites or custom form handlers."],
   },
 
+  F6: {
+    key: "F6",
+    title: "Personnummer collection justified (SE)",
+    why: "Swedish law (dataskyddslagen 2018:218) adds extra protection for personnummer beyond standard GDPR. They can only be processed with consent or when 'clearly justified' by the purpose. Unnecessary collection is a violation even if the data is otherwise handled correctly.",
+    steps: [
+      "Search all forms on the site for fields that collect personnummer or samordningsnummer",
+      "For each field found: verify the business justification is documented and 'clearly justified'",
+      "If the form's purpose can be achieved without personnummer, it should not be collected",
+      "Check if the field is mandatory or optional - making it mandatory increases the justification bar",
+      "Verify the privacy policy mentions personnummer processing if it is collected",
+    ],
+    tools: ["Browser DevTools > search for personnummer, SSN, personal number in form labels and placeholders"],
+    tips: [
+      "Common justified cases: insurance, banking, tax-related services, age verification for regulated products",
+      "Not justified: newsletter signup, contact forms, event registration (unless legally required)",
+      "Personnummer are NOT classified as sensitive data under GDPR Art. 9, but Sweden restricts them separately",
+    ],
+  },
+
   // G. Consent banner
   G1: {
     key: "G1",

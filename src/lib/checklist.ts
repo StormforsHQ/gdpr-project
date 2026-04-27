@@ -21,6 +21,8 @@ export interface Check {
   automation: AutomationType;
   legalBasis?: string;
   references?: LegalReference[];
+  imyNote?: string;
+  imyReferences?: LegalReference[];
 }
 
 export interface CheckCategory {
@@ -52,6 +54,10 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "GDPR Art. 25 - Data protection by design", url: "https://gdpr-info.eu/art-25-gdpr/" },
           { label: "EDPB Guidelines 05/2020 on consent", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en" },
           { label: "CJEU C-673/17 Planet49 (prior consent)", url: "https://gdprhub.eu/index.php?title=CJEU_-_C-673/17_-_Planet49" },
+        ],
+        imyNote: "IMY fined Apoteket SEK 37M and Apohem SEK 8M (Jan 2025) for Meta Pixel loading outside consent management - scripts in header transferred health data to Meta without valid consent. Hardcoded scripts bypass consent controls entirely.",
+        imyReferences: [
+          { label: "IMY - Apoteket/Apohem Meta Pixel decision (Jan 2025)", url: "https://www.imy.se/en/news/administrative-fines-against-apoteket-and-apohem-for-transferring-personal-data-to-meta/" },
         ],
       },
       {
@@ -99,6 +105,10 @@ export const CHECKLIST: CheckCategory[] = [
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
+        ],
+        imyNote: "IMY's Apoteket/Apohem case (Jan 2025, SEK 45M total) showed that tracking scripts running outside GTM bypass consent controls entirely. The pharmacy sites had Meta Pixel loading directly, transferring health-related purchase data to Meta without consent.",
+        imyReferences: [
+          { label: "IMY - Apoteket/Apohem decision (Jan 2025)", url: "https://www.imy.se/en/news/administrative-fines-against-apoteket-and-apohem-for-transferring-personal-data-to-meta/" },
         ],
       },
       {
@@ -216,6 +226,10 @@ export const CHECKLIST: CheckCategory[] = [
         references: [
           { label: "GDPR Art. 5 - Principles", url: "https://gdpr-info.eu/art-5-gdpr/" },
         ],
+        imyNote: "Orphaned Meta/Facebook pixels were the direct cause of the Apoteket/Apohem fines (SEK 45M total, Jan 2025). Pixels placed directly in the header bypass consent management and transfer personal data (including potentially sensitive data) to third parties without legal basis.",
+        imyReferences: [
+          { label: "IMY - Apoteket/Apohem decision (Jan 2025)", url: "https://www.imy.se/en/news/administrative-fines-against-apoteket-and-apohem-for-transferring-personal-data-to-meta/" },
+        ],
       },
     ],
   },
@@ -239,6 +253,10 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "GDPR Art. 44-46 - International transfers", url: "https://gdpr-info.eu/art-44-gdpr/" },
           { label: "EDPB Guidelines 4/2019 on Art. 25 (self-hosting as design measure)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-42019-article-25-data-protection-design-and_en" },
         ],
+        imyNote: "IMY ordered Tele2, CDON, Coop, and Dagens Industri to stop using Google Analytics (Jun 2023) specifically for US data transfers. The same principle applies to Google Fonts - visitor IP addresses are transferred to Google (US) on every page load without consent or legal basis.",
+        imyReferences: [
+          { label: "IMY - Google Analytics decisions (Jun 2023)", url: "https://www.imy.se/en/news/four-companies-must-stop-using-google-analytics/" },
+        ],
       },
       {
         key: "E3", label: "Maps blocked until consent", description: "Google Maps, Mapbox, etc. Or use static image with link.", automation: "page-scan",
@@ -246,6 +264,10 @@ export const CHECKLIST: CheckCategory[] = [
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "LG Munchen - Google Fonts ruling (same transfer principle)", url: "https://gdprhub.eu/index.php?title=LG_M%C3%BCnchen_-_3_O_17493/20" },
+        ],
+        imyNote: "Same transfer principle as Google Analytics/Fonts. IMY's 2023 Google Analytics decisions established that transferring visitor IP to US services (Google) requires valid legal basis. Google Maps embeds transfer IP on load.",
+        imyReferences: [
+          { label: "IMY - Google Analytics decisions (Jun 2023)", url: "https://www.imy.se/en/news/four-companies-must-stop-using-google-analytics/" },
         ],
       },
       {
@@ -296,6 +318,7 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "GDPR Art. 25(2) - Data protection by default", url: "https://gdpr-info.eu/art-25-gdpr/" },
           { label: "EDPB Guidelines 4/2019 on Art. 25", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-42019-article-25-data-protection-design-and_en" },
         ],
+        imyNote: "For Swedish sites: personnummer (personal identity numbers) have extra protection under dataskyddslagen (2018:218). They may only be collected with consent or when 'clearly justified'. See check F6 for details. Also: Sweden sets children's consent age at 13 (not 16) - if forms may be used by minors, this affects data collection requirements.",
       },
       {
         key: "F3", label: "Privacy policy linked at/near form", description: "User informed at point of collection", automation: "page-scan",
@@ -323,6 +346,22 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "GDPR Art. 32 - Security of processing", url: "https://gdpr-info.eu/art-32-gdpr/" },
           { label: "GDPR Art. 5(1)(f) - Integrity and confidentiality", url: "https://gdpr-info.eu/art-5-gdpr/" },
         ],
+        imyNote: "IMY fined the Equality Ombudsman (Diskrimineringsombudsmannen) SEK 100K (May 2025) for collecting personal data via a web form without adequate security measures. Even public authorities are fined for web form security failures.",
+        imyReferences: [
+          { label: "IMY - Equality Ombudsman web form decision (May 2025)", url: "https://www.imy.se/en/news/administrative-fine-against-the-discrimination-ombudsman-when-personal-data-was-collection-via-a-web-form/" },
+        ],
+      },
+      {
+        key: "F6", label: "Personnummer collection justified (SE)", description: "Swedish personal identity numbers (personnummer/samordningsnummer) may only be processed with consent or when 'clearly justified' by the purpose. Do not collect in web forms unless strictly necessary.", automation: "ai-agent",
+        legalBasis: "Dataskyddslagen (SFS 2018:218) - supplementary Swedish GDPR provisions; GDPR Art. 5(1)(c) - data minimization",
+        references: [
+          { label: "Dataskyddslagen (2018:218) - English translation", url: "https://www.government.se/government-policy/the-constitution-of-sweden-and-personal-privacy/act-containing-supplementary-provisions-to-the-eu-sfs-2018218-general-data-protection-regulation/" },
+          { label: "GDPR Art. 5(1)(c) - Data minimization", url: "https://gdpr-info.eu/art-5-gdpr/" },
+        ],
+        imyNote: "This is a Sweden-specific requirement with no EU equivalent. The dataskyddslagen restricts personnummer processing beyond standard GDPR data minimization. Personnummer are not 'sensitive data' under Art. 9, but Sweden adds extra protection. Collection must be 'clearly justified' (klart motiverat) - a higher bar than general data minimization.",
+        imyReferences: [
+          { label: "White & Case - GDPR Sweden implementation guide", url: "https://www.whitecase.com/insight-our-thinking/gdpr-guide-national-implementation-sweden" },
+        ],
       },
     ],
   },
@@ -338,6 +377,10 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "CJEU C-673/17 Planet49 (consent must precede processing)", url: "https://gdprhub.eu/index.php?title=CJEU_-_C-673/17_-_Planet49" },
           { label: "EDPB Cookie Banner Taskforce Report 2023", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/other/report-work-undertaken-cookie-banner-taskforce_en" },
         ],
+        imyNote: "In all three April 2025 cookie banner cases (Aller Media, ATG, Warner Music), IMY found cookies were placed before valid consent was obtained. Swedish implementation via LEK (2022:482) requires consent before any non-essential cookies/tracking.",
+        imyReferences: [
+          { label: "IMY - Cookie banner decisions (Apr 2025)", url: "https://www.imy.se/nyheter/imy-riktar-kritik-mot-foretags-kakbanners/" },
+        ],
       },
       {
         key: "G2", label: "Accept and Reject equally prominent", description: "Same size, same visual weight, same number of clicks", automation: "ai-agent",
@@ -346,6 +389,11 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "GDPR Art. 7 - Conditions for consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
           { label: "EDPB Cookie Banner Taskforce Report 2023 (reject must be on same layer)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/other/report-work-undertaken-cookie-banner-taskforce_en" },
           { label: "CJEU C-673/17 Planet49", url: "https://gdprhub.eu/index.php?title=CJEU_-_C-673/17_-_Planet49" },
+        ],
+        imyNote: "IMY reprimanded Aller Media, ATG, and Warner Music Sweden (Apr 2025) specifically for this violation. ATG had no reject option on the first layer - users had to click into settings to decline. IMY requires accept and reject to be equally visible on the first layer with the same number of clicks.",
+        imyReferences: [
+          { label: "IMY - Cookie banner decisions (Apr 2025)", url: "https://www.imy.se/nyheter/imy-riktar-kritik-mot-foretags-kakbanners/" },
+          { label: "IMY - ATG decision PDF", url: "https://www.imy.se/globalassets/dokument/beslut/2025/tillsynsbeslut-aktiebolaget-trav-och-galopp.pdf" },
         ],
       },
       {
@@ -380,6 +428,7 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "GDPR Art. 12 - Transparent communication", url: "https://gdpr-info.eu/art-12-gdpr/" },
           { label: "WP260 rev.01 - Transparency guidelines (language of audience)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/article-29-working-party-guidelines-transparency-under-regulation_en" },
         ],
+        imyNote: "For Swedish-language sites: the consent banner must be in Swedish. An English-only banner on a Swedish site fails the 'clear and plain language' requirement. Cookiebot supports Swedish (sv) - ensure it is configured.",
       },
       {
         key: "G7", label: "No dark patterns", description: "No pre-ticked boxes, no cookie walls, no guilt language, no hidden reject, no pay-or-consent without free alternative (EDPB Opinion 08/2024)", automation: "ai-agent",
@@ -388,6 +437,12 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "EDPB Cookie Banner Taskforce Report 2023 (8 dark pattern violations)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/other/report-work-undertaken-cookie-banner-taskforce_en" },
           { label: "CJEU C-673/17 Planet49 (pre-ticked boxes invalid)", url: "https://gdprhub.eu/index.php?title=CJEU_-_C-673/17_-_Planet49" },
           { label: "GDPR Art. 7 - Conditions for consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
+        ],
+        imyNote: "IMY's April 2025 cookie banner enforcement (Aller Media, ATG, Warner Music) specifically targeted dark patterns: pre-ticked checkboxes, hidden reject options, misleading banner designs, and cookies placed before valid consent. These were IMY's first-ever cookie banner decisions, signaling this is now an active enforcement area.",
+        imyReferences: [
+          { label: "IMY - Cookie banner decisions (Apr 2025)", url: "https://www.imy.se/nyheter/imy-riktar-kritik-mot-foretags-kakbanners/" },
+          { label: "IMY - Aller Media decision PDF", url: "https://www.imy.se/globalassets/dokument/beslut/2025/tillsynsbeslut-aller-media-ab.pdf" },
+          { label: "IMY - Warner Music decision PDF", url: "https://www.imy.se/globalassets/dokument/beslut/2025/tillsynsbeslut-warner-music-sweden-ab.pdf" },
         ],
       },
       {
@@ -462,6 +517,10 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "GDPR Art. 7(1) - Demonstrating consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
         ],
+        imyNote: "IMY's cookie banner enforcement (Apr 2025) underscores the need for demonstrable consent. If IMY investigates, you must be able to show that consent was validly obtained for each user. Cookiebot's consent log should be enabled and retention set appropriately.",
+        imyReferences: [
+          { label: "IMY - Cookie banner decisions (Apr 2025)", url: "https://www.imy.se/nyheter/imy-riktar-kritik-mot-foretags-kakbanners/" },
+        ],
       },
       {
         key: "H8", label: "Non-cookie tracking checked", description: "Check localStorage, sessionStorage, IndexedDB, fingerprinting scripts. Same consent rules apply as for cookies.", automation: "browser-test",
@@ -485,6 +544,11 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "GDPR Art. 14 - Information not obtained from data subject", url: "https://gdpr-info.eu/art-14-gdpr/" },
           { label: "WP260 rev.01 - Transparency guidelines (13 mandatory items)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/article-29-working-party-guidelines-transparency-under-regulation_en" },
           { label: "CCPA 1798.100 - Privacy policy requirements (US)", url: "https://oag.ca.gov/privacy/ccpa" },
+        ],
+        imyNote: "IMY fined Klarna SEK 7.5M (Mar 2022) and Spotify SEK 58M (Jun 2023) for insufficient transparency in privacy notices. Both failed to provide clear enough information about how personal data was processed. For Swedish clients: the privacy policy should mention IMY as the supervisory authority (not just a generic 'DPA') and include IMY's contact details.",
+        imyReferences: [
+          { label: "IMY - Klarna privacy notice fine (Mar 2022)", url: "https://www.imy.se/en/about-us/arkiv/nyhetsarkiv/administrative-fine-against-klarna-after-investigation/" },
+          { label: "IMY - Spotify transparency fine (Jun 2023)", url: "https://www.edpb.europa.eu/news/national-news/2023/imy-issues-administrative-fine-against-spotify-shortcomings-regarding_en" },
         ],
       },
       {
@@ -542,6 +606,11 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "GDPR Art. 12 - Transparent communication", url: "https://gdpr-info.eu/art-12-gdpr/" },
           { label: "WP260 rev.01 - Transparency guidelines (layered approach)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/article-29-working-party-guidelines-transparency-under-regulation_en" },
         ],
+        imyNote: "Both the Klarna (SEK 7.5M) and Spotify (SEK 58M) IMY decisions cited readability and accessibility failures. For Swedish sites: privacy policy must be available in Swedish if the site targets Swedish visitors. Dense legal text without plain-language summaries is a documented IMY concern.",
+        imyReferences: [
+          { label: "IMY - Klarna decision (Mar 2022)", url: "https://www.imy.se/en/about-us/arkiv/nyhetsarkiv/administrative-fine-against-klarna-after-investigation/" },
+          { label: "IMY - Spotify decision (Jun 2023)", url: "https://www.edpb.europa.eu/news/national-news/2023/imy-issues-administrative-fine-against-spotify-shortcomings-regarding_en" },
+        ],
       },
     ],
   },
@@ -574,6 +643,11 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "CJEU C-311/18 Schrems II (transfer mechanisms)", url: "https://gdprhub.eu/index.php?title=CJEU_-_C-311/18_-_Schrems_II" },
           { label: "EU adequacy decisions overview", url: "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en" },
         ],
+        imyNote: "IMY fined Tele2 SEK 12M and CDON SEK 300K (Jun 2023) for Google Analytics data transfers to the US - this was pre-DPF. Post-DPF (Jul 2023), DPF-certified services have a valid transfer mechanism. But IMY's precedent shows they actively investigate transfer complaints. Verify each US vendor's DPF certification status.",
+        imyReferences: [
+          { label: "IMY - Google Analytics decisions (Jun 2023)", url: "https://www.imy.se/en/news/four-companies-must-stop-using-google-analytics/" },
+          { label: "noyb - First major fine for Google Analytics (Tele2)", url: "https://noyb.eu/en/noyb-win-first-major-fine-eu-1-million-using-google-analytics" },
+        ],
       },
       {
         key: "J4", label: "Data subject rights process exists", description: "DSAR handling procedure documented, 30-day response capability", automation: "human",
@@ -584,6 +658,10 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "GDPR Art. 12 - Response timeline (1 month)", url: "https://gdpr-info.eu/art-12-gdpr/" },
           { label: "CCPA 1798.100-1798.125 - Consumer rights (US)", url: "https://oag.ca.gov/privacy/ccpa" },
         ],
+        imyNote: "IMY fined Spotify SEK 58M (Jun 2023) partly for deficiencies in handling right of access requests (Art. 15). The information provided to users was not clear enough. IMY participates in coordinated EDPB enforcement on right of access - this is actively monitored.",
+        imyReferences: [
+          { label: "IMY - Spotify right of access decision (Jun 2023)", url: "https://www.edpb.europa.eu/news/national-news/2023/imy-issues-administrative-fine-against-spotify-shortcomings-regarding_en" },
+        ],
       },
       {
         key: "J5", label: "Data breach response plan exists", description: "72-hour notification procedure, breach register maintained", automation: "human",
@@ -592,6 +670,12 @@ export const CHECKLIST: CheckCategory[] = [
           { label: "GDPR Art. 33 - Notification to supervisory authority", url: "https://gdpr-info.eu/art-33-gdpr/" },
           { label: "GDPR Art. 34 - Communication to data subject", url: "https://gdpr-info.eu/art-34-gdpr/" },
           { label: "EDPB Guidelines 9/2022 on breach notification", url: "https://www.edpb.europa.eu/our-work-tools/documents/public-consultations/2022/guidelines-92022-personal-data-breach_en" },
+        ],
+        imyNote: "IMY received 12,276 breach reports in 2025 - an 89% increase from 2024. IMY fined Sportadmin SEK 6M (Jan 2026) for inadequate security measures leading to a breach affecting 2.1M individuals. Breach notification is filed via IMY's online form. For Swedish clients: the 72-hour clock runs to IMY specifically.",
+        imyReferences: [
+          { label: "IMY - Breach notification form", url: "https://www.imy.se/en/organisations/forms-and-e-services/notification-of-a-personal-data-breach/" },
+          { label: "IMY - Sportadmin security breach fine (Jan 2026)", url: "https://www.imy.se/en/news/administrative-fine-against-sportadmin/" },
+          { label: "IMY 2025 annual report - 89% breach increase", url: "https://www.dataguidance.com/news/sweden-imy-publishes-2025-annual-report" },
         ],
       },
       {
@@ -623,6 +707,11 @@ export const CHECKLIST: CheckCategory[] = [
         references: [
           { label: "GDPR Art. 35 - DPIA", url: "https://gdpr-info.eu/art-35-gdpr/" },
           { label: "EDPB Guidelines on DPIA", url: "https://commission.europa.eu/law/law-topic/data-protection/rules-business-and-organisations/obligations/when-data-protection-impact-assessment-dpia-required_en" },
+        ],
+        imyNote: "IMY's 2026 priorities include AI in the public sector and children's data protection. If the site uses AI features or targets children (note: Sweden sets consent age at 13, not the GDPR default of 16), a DPIA may be required. IMY actively monitors these areas.",
+        imyReferences: [
+          { label: "IMY 2026 priorities (AI, children, law enforcement)", url: "https://www.imy.se/en/news/imys-prioriteringar-2026--ai-barn-och-brottsbekampning/" },
+          { label: "IMY - Children's rights on digital platforms report", url: "https://www.imy.se/globalassets/dokument/rapporter/the-rights-of-children-and-young-people-on-digital-platforms_accessible.pdf" },
         ],
       },
     ],

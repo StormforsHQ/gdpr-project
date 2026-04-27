@@ -2,7 +2,18 @@ import * as cheerio from "cheerio";
 import type { CheckResult } from "@/lib/scanner";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "google/gemini-2.0-flash-001";
+const PRIMARY_MODEL = "google/gemini-2.0-flash-001";
+const FALLBACK_MODEL = "google/gemini-2.0-flash-lite-001";
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1500;
+
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryable(status: number): boolean {
+  return status >= 500 || status === 429;
+}
 
 async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -10,30 +21,65 @@ async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise
     throw new Error("OPENROUTER_API_KEY not configured");
   }
 
-  const response = await fetch(OPENROUTER_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-    }),
-  });
+  const models = [PRIMARY_MODEL, FALLBACK_MODEL];
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`OpenRouter API error ${response.status}: ${text.slice(0, 200)}`);
+  for (const model of models) {
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      if (attempt > 0) {
+        await sleep(RETRY_DELAY_MS * attempt);
+      }
+
+      try {
+        const response = await fetch(OPENROUTER_URL, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            temperature: 0.1,
+            response_format: { type: "json_object" },
+          }),
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          if (isRetryable(response.status) && attempt < MAX_RETRIES) {
+            console.warn(`OpenRouter ${model} attempt ${attempt + 1} failed (${response.status}), retrying...`);
+            continue;
+          }
+          if (isRetryable(response.status) && model === PRIMARY_MODEL) {
+            console.warn(`OpenRouter ${model} failed after ${attempt + 1} attempts, trying fallback model`);
+            break;
+          }
+          throw new Error(`OpenRouter API error ${response.status}: ${text.slice(0, 200)}`);
+        }
+
+        const data = await response.json();
+        if (model !== PRIMARY_MODEL) {
+          console.info(`OpenRouter: used fallback model ${model}`);
+        }
+        return data.choices?.[0]?.message?.content || "";
+      } catch (err) {
+        if (err instanceof TypeError && attempt < MAX_RETRIES) {
+          console.warn(`OpenRouter ${model} attempt ${attempt + 1} network error, retrying...`);
+          continue;
+        }
+        if (err instanceof TypeError && model === PRIMARY_MODEL) {
+          console.warn(`OpenRouter ${model} network error after ${attempt + 1} attempts, trying fallback model`);
+          break;
+        }
+        throw err;
+      }
+    }
   }
 
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || "";
+  throw new Error("OpenRouter: all models and retries exhausted");
 }
 
 interface AICheckResult {

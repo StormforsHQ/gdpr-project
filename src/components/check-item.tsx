@@ -14,7 +14,9 @@ import { Button } from "@/components/ui/button";
 import type { Check, CheckStatus, LegalReference } from "@/lib/checklist";
 import type { CheckResult } from "@/lib/scanner";
 import { STATUS_CONFIG, AUTOMATION_CONFIG } from "@/lib/checklist";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, FileSearch, Play, Loader2, Scale, Landmark } from "lucide-react";
+import { CHECK_REQUIREMENTS } from "@/lib/glossary";
+import { GlossaryText } from "@/components/glossary-text";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, FileSearch, Play, Loader2, Scale, Landmark, AlertTriangle } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -29,6 +31,7 @@ interface CheckItemProps {
   notes: string;
   scanResult?: CheckResult;
   isRunning?: boolean;
+  siteFields?: { cookiebotId?: string | null; gtmId?: string | null };
   onStatusChange: (status: CheckStatus) => void;
   onNotesChange: (notes: string) => void;
   onOpenGuide: (key: string) => void;
@@ -42,6 +45,7 @@ export function CheckItem({
   notes,
   scanResult,
   isRunning,
+  siteFields,
   onStatusChange,
   onNotesChange,
   onOpenGuide,
@@ -50,6 +54,11 @@ export function CheckItem({
 }: CheckItemProps) {
   const [expanded, setExpanded] = useState(false);
   const automationInfo = AUTOMATION_CONFIG[check.automation];
+
+  const requirements = CHECK_REQUIREMENTS[check.key] || [];
+  const missingRequirements = siteFields
+    ? requirements.filter((r) => !siteFields[r.field])
+    : [];
 
   return (
     <div className="border-b last:border-b-0">
@@ -101,7 +110,17 @@ export function CheckItem({
 
       {expanded && (
         <div className="px-4 pb-4 pl-14 space-y-3">
-          <p className="text-xs text-muted-foreground">{check.description}</p>
+          <p className="text-xs text-muted-foreground">
+            <GlossaryText text={check.description} />
+          </p>
+          {missingRequirements.length > 0 && (
+            <div className="flex items-start gap-1.5">
+              <AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                {missingRequirements.map((r) => r.reason).join(". ")}
+              </p>
+            </div>
+          )}
           {check.legalBasis && (
             <div className="space-y-1.5">
               <div className="flex items-start gap-1.5">

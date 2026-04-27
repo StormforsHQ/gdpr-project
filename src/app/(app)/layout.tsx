@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TopNavbar } from "@/components/top-navbar";
 import { Sidebar } from "@/components/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { getSites } from "@/app/actions/sites";
 
 async function loadSidebarSites(): Promise<{ id: string; name: string }[]> {
@@ -20,15 +21,17 @@ export default async function AppShellLayout({
   const sites = await loadSidebarSites();
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar sites={sites} />
-      <div className="flex flex-1 flex-col">
-        <TopNavbar />
-        <main className="flex-1 overflow-y-auto scrollbar-subtle">
-          {children}
-        </main>
+    <TooltipProvider>
+      <div className="flex h-screen overflow-hidden">
+        <Sidebar sites={sites} />
+        <div className="flex flex-1 flex-col">
+          <TopNavbar />
+          <main className="flex-1 overflow-y-auto scrollbar-subtle">
+            {children}
+          </main>
+        </div>
+        <Toaster />
       </div>
-      <Toaster />
-    </div>
+    </TooltipProvider>
   );
 }

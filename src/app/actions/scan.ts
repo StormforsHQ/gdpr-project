@@ -14,7 +14,17 @@ export async function runPageScan(url: string): Promise<ScanResult> {
     };
   }
 
-  return scanSite(url);
+  try {
+    return await scanSite(url);
+  } catch (error) {
+    console.error("Page scan failed:", error);
+    return {
+      url,
+      scannedAt: new Date().toISOString(),
+      checks: [],
+      error: error instanceof Error ? error.message : "Scan failed",
+    };
+  }
 }
 
 export async function runSingleAICheck(checkKey: string, url: string): Promise<CheckResult> {

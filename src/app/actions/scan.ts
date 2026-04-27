@@ -47,7 +47,13 @@ export async function runAllAIChecks(url: string): Promise<CheckResult[]> {
     AI_CHECK_KEYS.map((key) => runAICheck(key, url))
   );
 
-  return results
-    .filter((r): r is PromiseFulfilledResult<CheckResult> => r.status === "fulfilled")
-    .map((r) => r.value);
+  return results.map((r, i) => {
+    if (r.status === "fulfilled") return r.value;
+    return {
+      checkKey: AI_CHECK_KEYS[i],
+      status: "na" as const,
+      findings: [{ element: "", detail: `AI check failed: ${r.reason instanceof Error ? r.reason.message : "Unknown error"}`, severity: "warning" as const }],
+      summary: "AI check failed",
+    };
+  });
 }

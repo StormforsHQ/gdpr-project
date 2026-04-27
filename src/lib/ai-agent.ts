@@ -44,13 +44,15 @@ interface AICheckResult {
 
 function parseAIResponse(raw: string): AICheckResult {
   try {
-    const parsed = JSON.parse(raw);
+    const cleaned = raw.replace(/^```json\s*/, "").replace(/```\s*$/, "").trim();
+    const parsed = JSON.parse(cleaned);
     return {
       status: parsed.status || "na",
       findings: Array.isArray(parsed.findings) ? parsed.findings : [],
       summary: parsed.summary || "AI analysis complete",
     };
   } catch {
+    console.error("Failed to parse AI response:", raw.slice(0, 500));
     return {
       status: "na",
       findings: [{ detail: "Could not parse AI response", severity: "warning" }],

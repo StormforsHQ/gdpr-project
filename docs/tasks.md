@@ -127,8 +127,8 @@ These need clear step-by-step instructions in the guide drawer (already have the
 The audit guarantees compliance to clients. If checks are wrong, incomplete, or poorly implemented,
 clients could get fined. This layer ensures every check is legally grounded and produces correct results.
 
-### 1.1 Legal references for all 55 checks
-- [x] Deep research: map each of the 55 checks to its exact legal basis
+### 1.1 Legal references for all 68 checks
+- [x] Deep research: map each check to its exact legal basis
   - EU: GDPR articles, ePrivacy Directive articles, EDPB guidelines
   - US: CCPA/CPRA, 20+ state privacy laws, COPPA, CAN-SPAM, DPF
   - UK: UK GDPR + PECR + DUAA 2025 (in force Feb 2026)
@@ -139,15 +139,20 @@ clients could get fined. This layer ensures every check is legally grounded and 
 - [x] Updated K2 description (added GPC signal requirement)
 - [x] Updated K3 description (corrected: analytics exempt only if 4 conditions met, not blanket exemption)
 - [x] Updated C2/C4 descriptions (added UK DUAA exemption note)
-- [ ] Cross-check: are there legal requirements we're NOT checking? Add missing checks if found
-- [ ] Cross-check: are any of our 55 checks incorrect or checking the wrong thing?
+- [x] Cross-check: 13 missing checks added (C6, G8, G9, H7, H8, I6, I7, I8, J6, J7, J8, J9, K4)
+- [x] Cross-check: 4 existing checks corrected (K2, K3, C2, C4)
 - [ ] IMY (Swedish DPA) guidance and enforcement decisions - add Sweden-specific notes where relevant
 
 ### 1.2 Verify check implementations are correct
-- [ ] Review all 15 scanner checks (cheerio HTML parsing) - are they testing what the law actually requires?
-- [ ] Review all 7 AI agent checks - are the prompts accurate? Could they produce false positives/negatives?
-- [ ] Review AI agent system prompts against the legal references - update prompts to cite exact regulations
-- [ ] Review guide drawer instructions for all 55 checks - are the steps correct and complete?
+- [x] Review all 15 scanner checks - 2 issues fixed:
+  - E3: added Google Maps JavaScript API detection (was only checking iframes)
+  - I4: improved footer detection (added role="contentinfo", .footer, #footer selectors)
+- [x] Review all 8 AI agent checks (was 7, added I8) - 3 issues fixed:
+  - I8: implemented missing handler for privacy info accessibility check
+  - G2/G7: added CSS limitation notes to prompts (HTML-only can't see styling)
+  - F2: fixed overly aggressive phone+email data minimization prompt
+- [x] Review AI agent system prompts against legal references - added CJEU Planet49, EDPB references to G7
+- [x] Review guide drawer instructions for all 68 checks - verified correct and complete
 - [ ] Test scanner against known-compliant and known-non-compliant sites to verify accuracy
 
 ### 1.3 Remediation steps ("how to fix")

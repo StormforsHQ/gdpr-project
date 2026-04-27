@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import type { Check, CheckStatus } from "@/lib/checklist";
 import type { CheckResult } from "@/lib/scanner";
 import { STATUS_CONFIG, AUTOMATION_CONFIG } from "@/lib/checklist";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, HelpCircle, FileSearch, Play, Loader2 } from "lucide-react";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, FileSearch, Play, Loader2 } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -89,7 +89,7 @@ export function CheckItem({
           }}
           aria-label={`Guide for ${check.key}`}
         >
-          <HelpCircle className="h-4 w-4 text-muted-foreground" />
+          <Info className="h-4 w-4 text-muted-foreground" />
         </Button>
         <Badge
           variant={status === "issue" ? "destructive" : "secondary"}

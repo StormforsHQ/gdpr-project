@@ -186,10 +186,11 @@ ${RESPONSE_FORMAT_INSTRUCTION}`,
       `Analyze this page text for forms that collect personal data. Check if each form collects only what's necessary for its stated purpose.
 
 Flag issues like:
-- Contact forms asking for phone number AND email (usually only one needed)
-- Newsletter signup asking for more than email
-- Forms collecting date of birth, gender, or other sensitive data without clear necessity
+- Newsletter signup asking for more than email (name is borderline, anything beyond that is excessive)
+- Forms collecting date of birth, gender, or other sensitive data without clear justification
 - Hidden fields that collect tracking data
+- Multiple optional fields that seem unrelated to the form's purpose
+- Note: contact forms asking for both phone and email may be justified if the business offers multiple contact channels - only flag if the form purpose clearly doesn't need both
 
 Page content:
 ${text.slice(0, 8000)}`
@@ -251,11 +252,13 @@ ${RESPONSE_FORMAT_INSTRUCTION}`,
       `Analyze this consent banner HTML for equal prominence of Accept and Reject options (EU ePrivacy Directive, EDPB guidelines):
 
 Check for:
-- Accept button is larger, more colorful, or more prominent than Reject/Decline
+- Accept button is larger, more colorful, or more prominent than Reject/Decline (check class names for clues like "primary", "secondary", "outline", "ghost")
 - Reject requires more clicks than Accept (e.g., hidden in "settings")
 - Accept is a button but Reject is just a text link
-- Color contrast making Accept stand out more
+- Different element types (button vs. anchor vs. span)
 - Different positioning (Accept prominent, Reject tucked away)
+
+IMPORTANT: This is HTML-only analysis. CSS styling (colors, exact sizes) is not visible. Note this limitation in your response if you cannot determine visual prominence from the HTML/class names alone. Check class names like "btn-primary" vs "btn-secondary" or "text-sm" vs "text-lg" for clues.
 
 Banner HTML:
 ${bannerHtml.slice(0, 6000)}`
@@ -299,14 +302,17 @@ ${RESPONSE_FORMAT_INSTRUCTION}`,
       `Analyze for dark patterns in this consent mechanism:
 
 Check for:
-- Pre-ticked checkboxes (must be unticked by default)
+- Pre-ticked checkboxes (must be unticked by default - CJEU Planet49)
 - Cookie walls (blocking content until acceptance)
 - Guilt language ("We value your experience" / "You might miss out")
-- Hidden reject/decline option
+- Hidden reject/decline option (EDPB: reject must be on same layer as accept)
 - Confusing double negatives ("Don't not send me emails")
 - "Accept all" prominent but no simple "Reject all"
 - Forced re-consent (nagging users who declined)
 - Misleading category names
+- Pay-or-consent without genuine free alternative (EDPB Opinion 08/2024)
+
+IMPORTANT: This is HTML-only analysis. CSS styling (colors, sizes, visual weight) is not visible. If you cannot determine visual prominence from HTML/class names alone, note this limitation. Focus on structural dark patterns (missing reject button, pre-ticked inputs, cookie walls) which ARE detectable from HTML.
 
 Banner HTML:
 ${bannerHtml.slice(0, 4000)}
@@ -347,6 +353,46 @@ Required elements under GDPR Art. 13:
 
 Page content:
 ${contentToAnalyze.slice(0, 10000)}`
+    );
+    return parseAIResponse(raw);
+  },
+
+  I8: async (_html, text, url) => {
+    const privacyPatterns = /privacy|dataskydd|integritet|personuppgift/i;
+    const isPrivacyPage = privacyPatterns.test(url) || privacyPatterns.test(text.slice(0, 500));
+
+    if (!isPrivacyPage) {
+      return {
+        status: "na" as const,
+        findings: [{ detail: "This is not the privacy policy page. Navigate to the privacy policy URL and run this check there.", severity: "info" as const }],
+        summary: "Run this check on the privacy policy page",
+      };
+    }
+
+    const raw = await callOpenRouter(
+      `You are a GDPR compliance auditor assessing the accessibility and readability of a privacy policy (GDPR Art. 12).
+${RESPONSE_FORMAT_INSTRUCTION}`,
+      `Evaluate this privacy policy for accessibility and readability under GDPR Art. 12 requirements:
+
+Check for:
+1. Clear, plain language (no dense legal jargon without explanation)
+2. Layered approach (summary/overview section before full details, or clear table of contents)
+3. Easy navigation (headings, sections, anchor links for long policies)
+4. Concise - not unnecessarily long or repetitive
+5. Intelligible to the average person (not just lawyers)
+6. Last updated date visible
+
+This is a 2026 DPA coordinated enforcement priority (right of access and transparency). Be thorough.
+
+Flag issues like:
+- Wall of text with no headings or sections
+- Legal jargon without plain-language explanation
+- Missing table of contents on long policies (>1000 words)
+- No "last updated" date
+- Overly vague language ("we may share your data with partners" without specifics)
+
+Privacy policy content:
+${text.slice(0, 12000)}`
     );
     return parseAIResponse(raw);
   },

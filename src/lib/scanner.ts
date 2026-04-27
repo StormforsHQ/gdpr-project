@@ -408,6 +408,17 @@ function checkE3($: cheerio.CheerioAPI): CheckResult {
     }
   });
 
+  const allScripts = getScriptSources($);
+  for (const script of allScripts) {
+    if (/maps\.googleapis\.com\/maps\/api\/js/i.test(script.src)) {
+      findings.push({
+        element: script.outerHtml.slice(0, 200),
+        detail: "Google Maps JavaScript API loaded via script. Must be consent-gated (transfers IP to Google).",
+        severity: "error",
+      });
+    }
+  }
+
   return {
     checkKey: "E3",
     status: findings.length === 0 ? "ok" : "issue",
@@ -617,7 +628,14 @@ function checkI4($: cheerio.CheerioAPI): CheckResult {
   const findings: ScanFinding[] = [];
   const privacyPatterns = /privacy|dataskydd|integritet|personuppgift/i;
 
-  const footerEl = $("footer").first();
+  let footerEl = $("footer").first();
+  if (footerEl.length === 0) {
+    footerEl = $("[role='contentinfo']").first();
+  }
+  if (footerEl.length === 0) {
+    footerEl = $(".footer, #footer, .site-footer, #site-footer").first();
+  }
+
   if (footerEl.length === 0) {
     const allLinks = $("a").toArray();
     const hasPrivacy = allLinks.some((a) => {
@@ -629,7 +647,7 @@ function checkI4($: cheerio.CheerioAPI): CheckResult {
     if (!hasPrivacy) {
       findings.push({
         element: "page",
-        detail: "No privacy policy link found anywhere on page (no <footer> detected either)",
+        detail: "No privacy policy link found anywhere on page (no footer element detected either)",
         severity: "error",
       });
     }

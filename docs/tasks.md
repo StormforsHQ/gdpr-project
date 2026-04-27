@@ -211,11 +211,12 @@ communicate what's needed. No silent failures or misleading "All clear" results.
 - [x] For each platform (Webflow, HubSpot, Next.js), add direct links to relevant dashboards
   - Deep links to Cookiebot admin and GTM container when IDs are set
   - Webflow ID shown in header when available
-- [ ] Add setup guidance for MCP servers per platform (docs/mcp-setup.md):
-  - Webflow MCP (official: webflow/mcp-server) - what it can read/write
-  - GTM MCP (paolobietolini/gtm-mcp-server) - what it can read/write
-  - HubSpot MCP (baryhuang/mcp-hubspot) - CRM only, consent is dashboard-only
-- [ ] Document per-platform capabilities (docs/platform-capabilities.md):
+- [x] Add setup guidance for MCP servers per platform (docs/mcp-setup.md):
+  - Webflow MCP (official: webflow/mcp-server) - read/write header custom code, list pages
+  - GTM MCP (paolobietolini + stape-io) - read/write tags, triggers, consent settings
+  - HubSpot MCP (official, GA) - CRM only, cookie consent is dashboard-only
+  - Cookiebot - no MCP, cc.js public endpoint + stats API only
+- [x] Document per-platform capabilities (included in docs/mcp-setup.md):
   - Webflow: can read/inject header custom code via API, can read page list
   - GTM: can read/write tags, triggers, consent settings via API
   - Cookiebot: can read cc.js (cookie categories) via public endpoint, dashboard-only for admin

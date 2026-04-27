@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle } from "lucide-react";
 
 type CheckState = Record<string, { status: CheckStatus; notes: string }>;
 
@@ -58,6 +58,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
   const [scanDrawerOpen, setScanDrawerOpen] = useState(false);
   const [scanDrawerCheckKey, setScanDrawerCheckKey] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<"scan" | "ai" | null>(null);
+  const [urlError, setUrlError] = useState<string | null>(null);
 
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -181,8 +182,23 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
     }
   };
 
+  const validateUrl = (url: string): boolean => {
+    const trimmed = url.trim();
+    if (!trimmed) {
+      setUrlError("URL is required");
+      return false;
+    }
+    const domainPattern = /^(https?:\/\/)?[\w.-]+\.\w{2,}/;
+    if (!domainPattern.test(trimmed)) {
+      setUrlError("Enter a valid domain (e.g. example.com)");
+      return false;
+    }
+    setUrlError(null);
+    return true;
+  };
+
   const handleScan = () => {
-    if (!scanUrl.trim()) return;
+    if (!validateUrl(scanUrl)) return;
     if (hasExistingResults) {
       setConfirmAction("scan");
     } else {
@@ -191,7 +207,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
   };
 
   const handleAIScan = () => {
-    if (!scanUrl.trim()) return;
+    if (!validateUrl(scanUrl)) return;
     if (hasExistingResults) {
       setConfirmAction("ai");
     } else {
@@ -239,6 +255,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
 
   const scannedCheckCount = scanResult?.checks.length ?? 0;
   const scanIssueCount = scanResult?.checks.filter((c) => c.status === "issue").length ?? 0;
+  const scanFailedCount = scanResult?.checks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning")).length ?? 0;
 
   return (
     <div className="space-y-4">
@@ -248,7 +265,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
             <Input
               placeholder="Enter site URL to scan (e.g. example.com)"
               value={scanUrl}
-              onChange={(e) => setScanUrl(e.target.value)}
+              onChange={(e) => { setScanUrl(e.target.value); setUrlError(null); }}
               className="flex-1 h-9 text-sm"
               onKeyDown={(e) => e.key === "Enter" && handleScan()}
             />
@@ -284,11 +301,21 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
             <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
               <span>Scanned: {scanResult.url}</span>
               <span>{scannedCheckCount} checks run</span>
-              {scanIssueCount > 0 ? (
+              {scanIssueCount > 0 && (
                 <Badge variant="destructive" className="text-xs">{scanIssueCount} issue{scanIssueCount !== 1 ? "s" : ""}</Badge>
-              ) : (
+              )}
+              {scanFailedCount > 0 && (
+                <Badge variant="secondary" className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400">{scanFailedCount} failed</Badge>
+              )}
+              {scanIssueCount === 0 && scanFailedCount === 0 && (
                 <Badge variant="secondary" className="text-xs bg-green-500/15 text-green-600 dark:text-green-400">All clear</Badge>
               )}
+            </div>
+          )}
+          {urlError && (
+            <div className="flex items-center gap-1.5 mt-3">
+              <AlertCircle className="h-3.5 w-3.5 text-destructive" />
+              <p className="text-xs text-destructive">{urlError}</p>
             </div>
           )}
           {scanResult?.error && (

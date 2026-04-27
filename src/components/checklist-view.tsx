@@ -12,6 +12,16 @@ import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
 import { runPageScan, runSingleAICheck, runAllAIChecks } from "@/app/actions/scan";
 import { saveCheckResult } from "@/app/actions/audits";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles } from "lucide-react";
 
 type CheckState = Record<string, { status: CheckStatus; notes: string }>;
@@ -46,6 +56,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates }: ChecklistView
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [scanDrawerOpen, setScanDrawerOpen] = useState(false);
   const [scanDrawerCheckKey, setScanDrawerCheckKey] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<"scan" | "ai" | null>(null);
 
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -144,14 +155,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates }: ChecklistView
     (s) => s.status !== "not_checked"
   );
 
-  const handleScan = async () => {
-    if (!scanUrl.trim()) return;
-    if (hasExistingResults) {
-      const confirmed = window.confirm(
-        "This will overwrite existing scan results. To re-run individual checks instead, use the Run/Re-run button on each check.\n\nContinue with full scan?"
-      );
-      if (!confirmed) return;
-    }
+  const executeScan = async () => {
     setScanning(true);
     try {
       const result = await runPageScan(scanUrl);
@@ -166,14 +170,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates }: ChecklistView
     }
   };
 
-  const handleAIScan = async () => {
-    if (!scanUrl.trim()) return;
-    if (hasExistingResults) {
-      const confirmed = window.confirm(
-        "This will overwrite existing AI analysis results. To re-run individual checks instead, use the Run/Re-run button on each check.\n\nContinue with full AI analysis?"
-      );
-      if (!confirmed) return;
-    }
+  const executeAIScan = async () => {
     setAiScanning(true);
     try {
       const results = await runAllAIChecks(scanUrl);
@@ -181,6 +178,30 @@ export function ChecklistView({ siteUrl, auditId, initialStates }: ChecklistView
     } finally {
       setAiScanning(false);
     }
+  };
+
+  const handleScan = () => {
+    if (!scanUrl.trim()) return;
+    if (hasExistingResults) {
+      setConfirmAction("scan");
+    } else {
+      executeScan();
+    }
+  };
+
+  const handleAIScan = () => {
+    if (!scanUrl.trim()) return;
+    if (hasExistingResults) {
+      setConfirmAction("ai");
+    } else {
+      executeAIScan();
+    }
+  };
+
+  const handleConfirm = () => {
+    if (confirmAction === "scan") executeScan();
+    if (confirmAction === "ai") executeAIScan();
+    setConfirmAction(null);
   };
 
   const handleRunCheck = async (checkKey: string) => {
@@ -354,6 +375,24 @@ export function ChecklistView({ siteUrl, auditId, initialStates }: ChecklistView
         open={scanDrawerOpen}
         onOpenChange={setScanDrawerOpen}
       />
+
+      <AlertDialog open={confirmAction !== null} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction === "scan" ? "Re-run full scan?" : "Re-run AI analysis?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will overwrite existing {confirmAction === "scan" ? "scan" : "AI analysis"} results.
+              To re-run individual checks instead, use the Re-run button on each check.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirm}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

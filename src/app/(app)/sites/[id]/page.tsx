@@ -21,7 +21,8 @@ async function loadSiteData(id: string) {
     const newAudit = await createAudit(site.id);
     return { site, audit: { ...newAudit, results: [] as { id: string; auditId: string; checkKey: string; status: string; notes: string; createdAt: Date; updatedAt: Date }[] } };
 
-  } catch {
+  } catch (error) {
+    console.error("loadSiteData failed:", error);
     return null;
   }
 }

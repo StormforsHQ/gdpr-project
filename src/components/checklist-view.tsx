@@ -140,8 +140,18 @@ export function ChecklistView({ siteUrl, auditId, initialStates }: ChecklistView
     return { total, checked, issues };
   };
 
+  const hasExistingResults = Object.values(checkStates).some(
+    (s) => s.status !== "not_checked"
+  );
+
   const handleScan = async () => {
     if (!scanUrl.trim()) return;
+    if (hasExistingResults) {
+      const confirmed = window.confirm(
+        "This will overwrite existing scan results. To re-run individual checks instead, use the Run/Re-run button on each check.\n\nContinue with full scan?"
+      );
+      if (!confirmed) return;
+    }
     setScanning(true);
     try {
       const result = await runPageScan(scanUrl);
@@ -158,6 +168,12 @@ export function ChecklistView({ siteUrl, auditId, initialStates }: ChecklistView
 
   const handleAIScan = async () => {
     if (!scanUrl.trim()) return;
+    if (hasExistingResults) {
+      const confirmed = window.confirm(
+        "This will overwrite existing AI analysis results. To re-run individual checks instead, use the Run/Re-run button on each check.\n\nContinue with full AI analysis?"
+      );
+      if (!confirmed) return;
+    }
     setAiScanning(true);
     try {
       const results = await runAllAIChecks(scanUrl);

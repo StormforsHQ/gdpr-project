@@ -175,13 +175,25 @@ function isJsonLd($el: ReturnType<cheerio.CheerioAPI>): boolean {
   return $el.attr("type") === "application/ld+json";
 }
 
+function isFrameworkScript($el: ReturnType<cheerio.CheerioAPI>, src: string): boolean {
+  const type = $el.attr("type") || "";
+  if (type === "application/json") return true;
+  if ($el.attr("id") === "__NEXT_DATA__") return true;
+  if (/\/_next\/static/i.test(src)) return true;
+  if (/webflow\.js|webflow-.*\.js/i.test(src)) return true;
+  if (/Webflow\.push/i.test(src)) return true;
+  if (/assets\.squarespace/i.test(src)) return true;
+  if (/cdn\.shopify\.com\/s\/files/i.test(src)) return true;
+  return false;
+}
+
 function checkA1($: cheerio.CheerioAPI, html: string): CheckResult {
   const findings: ScanFinding[] = [];
   const headScripts = $("head script").toArray();
 
   const nonAllowed = headScripts.filter((el) => {
     const src = $(el).attr("src") || $(el).html() || "";
-    return !isGtmScript(src) && !isCookiebotScript(src) && !isJsonLd($(el)) && src.trim().length > 0;
+    return !isGtmScript(src) && !isCookiebotScript(src) && !isJsonLd($(el)) && !isFrameworkScript($(el), src) && src.trim().length > 0;
   });
 
   for (const el of nonAllowed) {
@@ -209,7 +221,7 @@ function checkA2($: cheerio.CheerioAPI, html: string): CheckResult {
 
   const nonAllowed = bodyScripts.filter((el) => {
     const src = $(el).attr("src") || $(el).html() || "";
-    return !isGtmScript(src) && !isJsonLd($(el)) && src.trim().length > 0;
+    return !isGtmScript(src) && !isJsonLd($(el)) && !isFrameworkScript($(el), src) && src.trim().length > 0;
   });
 
   for (const el of nonAllowed) {
@@ -523,7 +535,7 @@ function checkF1($: cheerio.CheerioAPI): CheckResult {
 
 function checkF3($: cheerio.CheerioAPI): CheckResult {
   const findings: ScanFinding[] = [];
-  const privacyPatterns = /privacy|dataskydd|integritet|personuppgift|gdpr|cookie/i;
+  const privacyPatterns = /privacy|dataskydd|integritet|personuppgift|sekretesspolicy|privatlivspolicy|gdpr|cookie/i;
 
   $("form").each((i, el) => {
     const formId = $(el).attr("id") || $(el).attr("name") || `form-${i + 1}`;
@@ -594,7 +606,7 @@ function checkF5($: cheerio.CheerioAPI): CheckResult {
 
 function checkI3($: cheerio.CheerioAPI): CheckResult {
   const findings: ScanFinding[] = [];
-  const cookiePolicyPatterns = /cookie.*(policy|declaration|notice)|kakor|cookiepolicy/i;
+  const cookiePolicyPatterns = /cookie.*(policy|declaration|notice)|kakor|kakpolicy|cookiepolicy|cookie-?policy/i;
 
   const links = $("a").toArray();
   const hasCookiePolicy = links.some((a) => {
@@ -626,7 +638,7 @@ function checkI3($: cheerio.CheerioAPI): CheckResult {
 
 function checkI4($: cheerio.CheerioAPI): CheckResult {
   const findings: ScanFinding[] = [];
-  const privacyPatterns = /privacy|dataskydd|integritet|personuppgift/i;
+  const privacyPatterns = /privacy|dataskydd|integritet|personuppgift|sekretesspolicy|privatlivspolicy/i;
 
   let footerEl = $("footer").first();
   if (footerEl.length === 0) {

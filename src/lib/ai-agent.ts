@@ -324,7 +324,7 @@ ${text.slice(0, 3000)}`
   },
 
   I1: async (_html, text, url) => {
-    const privacyPatterns = /privacy|dataskydd|integritet|personuppgift/i;
+    const privacyPatterns = /privacy|dataskydd|integritet|personuppgift|sekretesspolicy|privatlivspolicy/i;
     const isPrivacyPage = privacyPatterns.test(url) || privacyPatterns.test(text.slice(0, 500));
 
     const contentToAnalyze = isPrivacyPage ? text : text.slice(0, 2000);
@@ -358,7 +358,7 @@ ${contentToAnalyze.slice(0, 10000)}`
   },
 
   I8: async (_html, text, url) => {
-    const privacyPatterns = /privacy|dataskydd|integritet|personuppgift/i;
+    const privacyPatterns = /privacy|dataskydd|integritet|personuppgift|sekretesspolicy|privatlivspolicy/i;
     const isPrivacyPage = privacyPatterns.test(url) || privacyPatterns.test(text.slice(0, 500));
 
     if (!isPrivacyPage) {

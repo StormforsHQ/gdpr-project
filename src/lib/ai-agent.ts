@@ -59,8 +59,14 @@ function parseAIResponse(raw: string): AICheckResult {
   }
 }
 
+function normalizeUrl(url: string): string {
+  if (!url.startsWith("http")) url = "https://" + url;
+  return url.replace(/\/$/, "");
+}
+
 async function fetchPageContent(url: string): Promise<{ html: string; text: string }> {
-  const response = await fetch(url, {
+  const normalizedUrl = normalizeUrl(url);
+  const response = await fetch(normalizedUrl, {
     headers: { "User-Agent": "StormforsGDPRAudit/1.0" },
     redirect: "follow",
     signal: AbortSignal.timeout(15000),

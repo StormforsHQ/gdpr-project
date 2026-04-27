@@ -139,7 +139,7 @@ export function CheckItem({
                 ) : (
                   <Play className="h-3 w-3" />
                 )}
-                {isRunning ? "Running..." : "Run check"}
+                {isRunning ? "Running..." : status !== "not_checked" ? "Re-run" : "Run check"}
               </Button>
             )}
             <Select

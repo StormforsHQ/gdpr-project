@@ -635,7 +635,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "J3", label: "US services DPF-certified", description: "Check dataprivacyframework.gov for each US-based vendor. If certified: transfer is lawful. If NOT certified: verify SCCs + Transfer Impact Assessment are in place (see J8).", automation: "page-scan",
+        key: "J3", label: "US services DPF-certified", description: "Check dataprivacyframework.gov for each US-based vendor. If certified: transfer is lawful. If NOT certified: verify SCCs + Transfer Impact Assessment are in place (see J8).", automation: "human",
         legalBasis: "GDPR Art. 44-46 - international transfers; EU-US DPF adequacy decision (Art. 45, Jul 2023)",
         references: [
           { label: "GDPR Art. 44-46 - International transfers", url: "https://gdpr-info.eu/art-44-gdpr/" },

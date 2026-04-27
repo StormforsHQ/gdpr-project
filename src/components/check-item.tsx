@@ -11,10 +11,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Check, CheckStatus } from "@/lib/checklist";
+import type { Check, CheckStatus, LegalReference } from "@/lib/checklist";
 import type { CheckResult } from "@/lib/scanner";
 import { STATUS_CONFIG, AUTOMATION_CONFIG } from "@/lib/checklist";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, FileSearch, Play, Loader2 } from "lucide-react";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, FileSearch, Play, Loader2, Scale } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -102,6 +102,30 @@ export function CheckItem({
       {expanded && (
         <div className="px-4 pb-4 pl-14 space-y-3">
           <p className="text-xs text-muted-foreground">{check.description}</p>
+          {check.legalBasis && (
+            <div className="space-y-1.5">
+              <div className="flex items-start gap-1.5">
+                <Scale className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-600 dark:text-amber-400">{check.legalBasis}</p>
+              </div>
+              {check.references && check.references.length > 0 && (
+                <div className="flex flex-wrap gap-x-3 gap-y-1 pl-[18px]">
+                  {check.references.map((ref, i) => (
+                    <a
+                      key={i}
+                      href={ref.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-primary hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {ref.label}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {scanResult && scanResult.findings.length > 0 && (
             <div className="space-y-1">
               {scanResult.findings.slice(0, 3).map((f, i) => (

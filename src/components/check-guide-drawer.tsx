@@ -10,7 +10,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CHECK_GUIDES } from "@/lib/check-guides";
-import { Wrench, Lightbulb } from "lucide-react";
+import { CHECKLIST } from "@/lib/checklist";
+import { Wrench, Lightbulb, Scale } from "lucide-react";
 
 interface CheckGuideDrawerProps {
   checkKey: string | null;
@@ -24,6 +25,9 @@ export function CheckGuideDrawer({
   onOpenChange,
 }: CheckGuideDrawerProps) {
   const guide = checkKey ? CHECK_GUIDES[checkKey] : null;
+  const check = checkKey
+    ? CHECKLIST.flatMap((c) => c.checks).find((c) => c.key === checkKey)
+    : null;
 
   if (!guide) return null;
 
@@ -47,6 +51,37 @@ export function CheckGuideDrawer({
               </h3>
               <p className="text-sm leading-relaxed">{guide.why}</p>
             </div>
+
+            {check?.legalBasis && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <Scale className="h-3 w-3" />
+                    Legal basis
+                  </h3>
+                  <p className="text-sm leading-relaxed text-amber-600 dark:text-amber-400">
+                    {check.legalBasis}
+                  </p>
+                  {check.references && check.references.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {check.references.map((ref, i) => (
+                        <li key={i}>
+                          <a
+                            href={ref.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary hover:underline"
+                          >
+                            {ref.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </>
+            )}
 
             <Separator />
 

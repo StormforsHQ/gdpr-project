@@ -76,9 +76,12 @@ Limited API - parse cc.js endpoint for cookie categories, rest is dashboard-only
 - [ ] H2: GCM check (dashboard only - flag as manual with link)
 
 ### Infrastructure
-- [ ] Get Coolify/Hetzner back online (server unreachable as of 2026-04-25, Cloudflare 522 timeout)
-- [ ] Create PostgreSQL database on Coolify
-- [ ] Set up Docker + Coolify deployment (Dockerfile, entrypoint.sh with prisma db push)
+- [x] Deploy to personal Coolify/Hetzner (temporary, until company server is back)
+- [x] Create PostgreSQL database on Coolify
+- [x] Set up Docker + Coolify deployment (Dockerfile, entrypoint.sh with prisma db push)
+- [ ] Get company Coolify/Hetzner back online (server unreachable as of 2026-04-25, Cloudflare 522)
+- [ ] Move both apps (GDPR + JSON-LD) to company server once available
+- [ ] Set repo back to private after company deploy key or GitHub App is configured
 - [ ] Import 72 Webflow sites from filtered list into app (use bulkCreateSites action)
 - [ ] Set up Webflow MCP server (official: webflow/mcp-server, supports custom code read/write)
 
@@ -119,6 +122,140 @@ These need clear step-by-step instructions in the guide drawer (already have the
 - DPA agreements - legal docs
 - Data breach response plans - process docs
 
+## Layer 1: Trust the audit (CRITICAL - do first)
+
+The audit guarantees compliance to clients. If checks are wrong, incomplete, or poorly implemented,
+clients could get fined. This layer ensures every check is legally grounded and produces correct results.
+
+### 1.1 Legal references for all 55 checks
+- [x] Deep research: map each of the 55 checks to its exact legal basis
+  - EU: GDPR articles, ePrivacy Directive articles, EDPB guidelines
+  - US: CCPA/CPRA, 20+ state privacy laws, COPPA, CAN-SPAM, DPF
+  - UK: UK GDPR + PECR + DUAA 2025 (in force Feb 2026)
+- [x] Add `legalBasis` field to Check interface
+- [x] Add `references` array with URLs to official regulation text (EUR-Lex, EDPB, ICO, GDPRhub)
+- [x] Show legal references in guide drawer (per check)
+- [x] Show legal references in expanded check item info
+- [x] Updated K2 description (added GPC signal requirement)
+- [x] Updated K3 description (corrected: analytics exempt only if 4 conditions met, not blanket exemption)
+- [x] Updated C2/C4 descriptions (added UK DUAA exemption note)
+- [ ] Cross-check: are there legal requirements we're NOT checking? Add missing checks if found
+- [ ] Cross-check: are any of our 55 checks incorrect or checking the wrong thing?
+- [ ] IMY (Swedish DPA) guidance and enforcement decisions - add Sweden-specific notes where relevant
+
+### 1.2 Verify check implementations are correct
+- [ ] Review all 15 scanner checks (cheerio HTML parsing) - are they testing what the law actually requires?
+- [ ] Review all 7 AI agent checks - are the prompts accurate? Could they produce false positives/negatives?
+- [ ] Review AI agent system prompts against the legal references - update prompts to cite exact regulations
+- [ ] Review guide drawer instructions for all 55 checks - are the steps correct and complete?
+- [ ] Test scanner against known-compliant and known-non-compliant sites to verify accuracy
+
+### 1.3 Remediation steps ("how to fix")
+- [ ] Add `remediation` field to CheckResult or scan results data model
+- [ ] For each check that can produce "issue" status: write step-by-step fix instructions
+- [ ] Show remediation steps in the scan results drawer (orange FileSearch icon)
+- [ ] Remediation must be platform-specific where relevant (Webflow vs HubSpot vs Next.js)
+- [ ] Include links to relevant platform documentation (e.g. Cookiebot docs, GTM help pages)
+- [ ] Distinguish between "fix it yourself" steps and "needs developer/legal review"
+
+## Layer 2: Make missing info visible
+
+Checks that need account credentials (Cookiebot ID, GTM container ID, platform logins) must clearly
+communicate what's needed. No silent failures or misleading "All clear" results.
+
+### 2.1 Required fields and validation
+- [ ] Identify which checks need which site fields (Cookiebot ID, GTM ID, platform credentials)
+- [ ] Add tooltips on checks that need specific account info (explain what's needed and where to find it)
+- [ ] Add educational tooltips for non-obvious terms so users unfamiliar with GDPR can do audits:
+  - GCM = Google Consent Mode (how Google tags respect cookie consent, requires 4 consent parameters)
+  - CMP = Consent Management Platform (e.g. Cookiebot - the tool that shows the cookie banner)
+  - GTM = Google Tag Manager (manages scripts/tags on the site, must be configured to work with consent)
+  - DPA = Data Processing Agreement (contract between data controller and processor)
+  - DSAR = Data Subject Access Request (when someone asks what data you have about them)
+  - ePrivacy = ePrivacy Directive (EU law specifically about cookies and electronic communications)
+  - AutoBlock = Cookiebot feature that auto-blocks scripts before consent (should be OFF when using GTM)
+  - Consent Initialization = GTM trigger type that fires before any other triggers (correct for CMP tags)
+  - Not for common terms everyone knows - only for the domain-specific jargon
+- [ ] Show validation errors when required fields are missing on a site (not just silently skip checks)
+- [ ] Prevent running checks that can't succeed without required data (disable with explanation)
+
+### 2.2 Site detail page header
+- [ ] Show all site metadata prominently in the audit detail page:
+  - Site name, URL, platform
+  - Cookiebot ID (with link to Cookiebot admin if set)
+  - GTM container ID (with link to GTM if set)
+  - Webflow site ID (with link to Webflow Designer if set)
+  - HubSpot portal ID (with link to HubSpot if set)
+  - GitHub repo URL (for Next.js sites)
+- [ ] Add edit button to quickly update site details from the audit page
+- [ ] Show which checks are blocked by missing fields (e.g. "3 checks need Cookiebot ID")
+
+### 2.3 Platform deep links and setup tips
+- [ ] For each platform (Webflow, HubSpot, Next.js), add direct links to relevant dashboards
+- [ ] Add setup guidance for MCP servers per platform:
+  - Webflow MCP (official: webflow/mcp-server) - what it can read/write
+  - GTM MCP (paolobietolini/gtm-mcp-server) - what it can read/write
+  - HubSpot MCP (baryhuang/mcp-hubspot) - CRM only, consent is dashboard-only
+- [ ] Document per-platform capabilities:
+  - Webflow: can read/inject header custom code via API, can read page list
+  - GTM: can read/write tags, triggers, consent settings via API
+  - Cookiebot: can read cc.js (cookie categories) via public endpoint, dashboard-only for admin
+  - HubSpot: CRM API only, cookie consent banner is dashboard-only
+  - Next.js: code-based, needs repo access (GitHub)
+- [ ] Consider adding platform-specific fields to Site model (beyond current cookiebotId/gtmId)
+
+### 2.4 Error handling and logging
+- [ ] In-app error log panel (sidebar drawer with timestamped errors, clickable for details, dismissable)
+- [ ] Capture scan failures, AI check errors, DB read/write issues into error log
+- [ ] Graceful error messages in UI when scans/AI checks fail (instead of silent "All clear")
+- [ ] OpenRouter credit/balance check (API endpoint exists) - show warning banner when credits low
+
+## Layer 3: UX and usability
+
+### 3.1 Help system
+- [ ] Add help icon (?) next to sun/moon toggle in top right
+- [ ] Quick start guide: what the app does, how to add a site, how to run an audit, what the statuses mean
+- [ ] Explain automation types (Auto, Browser, AI, GTM API, Cookiebot, Manual) and what each needs
+- [ ] Link to reference docs (Technical Guide, Audit Protocol, Cheat Sheet) from help
+
+### 3.2 Sidebar improvements
+- [ ] Fix sidebar alignment (Sites parent item and sub-items background not aligned)
+- [ ] Group sites by platform (Webflow, HubSpot, Next.js) with platform headers
+- [ ] Sort sites alphabetically within each platform group
+- [ ] Add status dots next to site names (green = audit complete, orange = partial, grey = not started)
+- [ ] Add legend/explanation for the status dots
+- [ ] Add tech stack summary section at bottom of sidebar (like json-ld app)
+
+### 3.3 Filtering and navigation
+- [ ] Make issue count badge clickable to filter checklist to issues only (across all categories)
+
+### 3.4 Data quality and validation
+- [ ] Centralize URL normalization (shared utility used by scanner, AI agent, scan action, site creation)
+- [ ] Validate URL format on site creation and before scanning (reject obviously invalid URLs)
+- [ ] Add deduplication check on site import (match by URL or name, warn before creating duplicates)
+- [ ] Add auditorName field to Audit model (optional, tracks who performed the audit)
+- [ ] Ensure bad/fake URLs don't produce misleading data in DB
+
+### 3.5 Scan history and re-running checks
+- [ ] Design approach: scan history, individual re-runs, and overwrite protection
+- [ ] Keep scan run snapshots (ScanRun model already exists) for comparing progress over time
+- [ ] Allow re-running individual scanner checks (not just AI checks)
+- [ ] Consider lock/confirm flow so manual review isn't overwritten by re-scans
+
+### 3.6 Report generation
+- [ ] Generate audit report per site (PDF or HTML download)
+- [ ] Include: site info, all check results with status/notes, scan findings, overall score/summary
+- [ ] Follow Stormfors branding/design system (once available)
+
+### 3.7 Testing
+- [ ] Run Playwright E2E tests on all pages (console errors, navigation, responsive)
+- [ ] Test scan + AI analyze edge cases (invalid URLs, timeouts, sites that block scrapers, empty pages)
+- [ ] Test CRUD flows (add/edit/delete sites, audit state persistence across sessions)
+- [ ] Test auto-save reliability (rapid toggling, network interruptions)
+
+### 3.8 Notifications (later)
+- [ ] Email alerts for critical failures (via Resend or similar)
+
 ## To do later
 - [ ] Extend checklist and protocols for HubSpot (consent is dashboard-only, manual checks)
 - [ ] Extend checklist and protocols for Next.js apps
@@ -127,6 +264,7 @@ These need clear step-by-step instructions in the guide drawer (already have the
 - [ ] Agency DPA template (standard DPA between Stormfors and each client)
 - [ ] DSAR handling procedure template
 - [ ] Data breach response plan template
+- [ ] Add incident report template (based on anonymized client report from boss)
 
 ## API research findings (2026-04-25)
 

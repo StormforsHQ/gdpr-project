@@ -99,6 +99,7 @@ export async function runAICheck(checkKey: string, url: string): Promise<CheckRe
       summary: result.summary,
     };
   } catch (err) {
+    console.error(`AI check ${checkKey} failed:`, err);
     return {
       checkKey,
       status: "na",

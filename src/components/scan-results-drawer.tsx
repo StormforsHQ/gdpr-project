@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CHECKLIST } from "@/lib/checklist";
 import type { ScanResult } from "@/lib/scanner";
-import { AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { REMEDIATION } from "@/lib/remediation";
+import { AlertCircle, CheckCircle2, ExternalLink, Info, Wrench } from "lucide-react";
 
 interface ScanResultsDrawerProps {
   checkKey: string | null;
@@ -114,6 +115,54 @@ export function ScanResultsDrawer({
                 <CheckCircle2 className="h-5 w-5" />
                 <p className="text-sm font-medium">No issues found</p>
               </div>
+            )}
+
+            {checkResult.status === "issue" && REMEDIATION[checkResult.checkKey] && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5">
+                    <Wrench className="h-3 w-3" />
+                    How to fix
+                  </h3>
+                  <ol className="space-y-2">
+                    {REMEDIATION[checkResult.checkKey].steps.map((step, i) => (
+                      <li key={i} className="text-sm leading-relaxed flex gap-3">
+                        <span className="text-xs font-mono text-muted-foreground mt-0.5 shrink-0 w-5 text-right">
+                          {i + 1}.
+                        </span>
+                        <span>
+                          {step.instruction}
+                          {step.platform && step.platform !== "all" && (
+                            <Badge variant="outline" className="ml-1.5 text-[10px] py-0 px-1 align-middle capitalize">
+                              {step.platform}
+                            </Badge>
+                          )}
+                          {step.needsDevOrLegal && (
+                            <span className="text-[10px] text-amber-500 ml-1">(needs dev/legal)</span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                  {REMEDIATION[checkResult.checkKey].docLinks && (
+                    <div className="mt-3 space-y-1">
+                      {REMEDIATION[checkResult.checkKey].docLinks!.map((link, i) => (
+                        <a
+                          key={i}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          {link.label}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
 
             <Separator />

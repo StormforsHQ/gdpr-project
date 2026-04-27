@@ -30,9 +30,10 @@ interface ChecklistViewProps {
   siteUrl?: string;
   auditId?: string;
   initialStates?: Record<string, { status: string; notes: string }>;
+  siteFields?: { cookiebotId?: string | null; gtmId?: string | null };
 }
 
-export function ChecklistView({ siteUrl, auditId, initialStates }: ChecklistViewProps) {
+export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: ChecklistViewProps) {
   const [checkStates, setCheckStates] = useState<CheckState>(() => {
     if (!initialStates) return {};
     const states: CheckState = {};
@@ -349,6 +350,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates }: ChecklistView
                       notes={state.notes}
                       scanResult={scanCheck}
                       isRunning={runningChecks.has(check.key)}
+                      siteFields={siteFields}
                       onStatusChange={(s) => updateCheck(check.key, "status", s)}
                       onNotesChange={(n) => updateCheck(check.key, "notes", n)}
                       onOpenGuide={openGuide}

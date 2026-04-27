@@ -63,6 +63,7 @@ export default async function SitePage({ params }: SitePageProps) {
         siteUrl={site.url}
         auditId={audit.id}
         initialStates={initialStates}
+        siteFields={{ cookiebotId: site.cookiebotId, gtmId: site.gtmId }}
       />
     </div>
   );

@@ -156,12 +156,12 @@ clients could get fined. This layer ensures every check is legally grounded and 
 - [ ] Test scanner against known-compliant and known-non-compliant sites to verify accuracy
 
 ### 1.3 Remediation steps ("how to fix")
-- [ ] Add `remediation` field to CheckResult or scan results data model
-- [ ] For each check that can produce "issue" status: write step-by-step fix instructions
-- [ ] Show remediation steps in the scan results drawer (orange FileSearch icon)
-- [ ] Remediation must be platform-specific where relevant (Webflow vs HubSpot vs Next.js)
-- [ ] Include links to relevant platform documentation (e.g. Cookiebot docs, GTM help pages)
-- [ ] Distinguish between "fix it yourself" steps and "needs developer/legal review"
+- [x] Add RemediationInfo/RemediationStep types in src/lib/remediation.ts
+- [x] Write fix instructions for all 22 automated checks that can produce "issue" status
+- [x] Show "How to fix" section in scan results drawer (numbered steps, wrench icon)
+- [x] Platform-specific badges (Webflow, HubSpot, Next.js) on relevant steps
+- [x] Doc links to official platform documentation (Cookiebot, GTM, Fontsource, etc.)
+- [x] "needs dev/legal" flag on steps requiring developer or legal review
 
 ## Layer 2: Make missing info visible
 

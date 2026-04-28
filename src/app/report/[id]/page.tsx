@@ -1,6 +1,6 @@
 import { getSite } from "@/app/actions/sites";
 import { getLatestAudit } from "@/app/actions/audits";
-import { getOrCreateReport, getReportById, listReports } from "@/app/actions/report";
+import { getOrCreateReport, getReportById } from "@/app/actions/report";
 import { ReportView } from "@/components/report-view";
 
 export const dynamic = "force-dynamic";
@@ -23,8 +23,7 @@ export default async function ReportPage({ params, searchParams }: ReportPagePro
   if (version) {
     const report = await getReportById(version);
     if (!report) return <div style={{ padding: "48px", textAlign: "center", color: "#888" }}>Report version not found.</div>;
-    const versions = await listReports(audit.id);
-    return <ReportView report={report} siteId={site.id} versions={versions} />;
+    return <ReportView report={report} siteId={site.id} />;
   }
 
   const reportId = await getOrCreateReport(audit.id);
@@ -33,7 +32,5 @@ export default async function ReportPage({ params, searchParams }: ReportPagePro
   const report = await getReportById(reportId);
   if (!report) return <div style={{ padding: "48px", textAlign: "center", color: "#888" }}>Report not found.</div>;
 
-  const versions = await listReports(audit.id);
-
-  return <ReportView report={report} siteId={site.id} versions={versions} />;
+  return <ReportView report={report} siteId={site.id} />;
 }

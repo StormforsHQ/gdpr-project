@@ -29,7 +29,7 @@ const PLATFORM_ORDER = ["webflow", "hubspot", "nextjs", "wordpress", "other"];
 const STATUS_COLORS: Record<SidebarSite["auditProgress"], string> = {
   complete: "bg-green-500",
   partial: "bg-amber-500",
-  none: "bg-muted-foreground/30",
+  none: "bg-blue-400/60 dark:bg-blue-400/50",
 };
 
 const STATUS_LABELS: Record<SidebarSite["auditProgress"], string> = {
@@ -215,26 +215,26 @@ export function Sidebar({ sites }: SidebarProps) {
 
         <div className="pt-3 mt-3 border-t">
           <div className="px-3 space-y-1">
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
               Complete
             </div>
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
               In progress
             </div>
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
-              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-400/60 dark:bg-blue-400/50" />
               Not started
             </div>
           </div>
         </div>
 
         <div className="pt-3 mt-3 border-t px-3 pb-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40 mb-1.5">Stack</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1.5">Stack</p>
           <div className="flex flex-wrap gap-1">
             {["Next.js 16", "Prisma", "PostgreSQL", "shadcn/ui", "OpenRouter", "Cheerio"].map((t) => (
-              <span key={t} className="text-[10px] text-muted-foreground/50 bg-muted/50 rounded px-1.5 py-0.5">{t}</span>
+              <span key={t} className="text-[10px] text-muted-foreground/80 bg-muted/70 rounded px-1.5 py-0.5">{t}</span>
             ))}
           </div>
         </div>

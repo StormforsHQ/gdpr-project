@@ -42,6 +42,21 @@ export async function createSite(data: {
   gtmId?: string;
 }) {
   const cleanUrl = normalizeUrl(data.url).replace(/^https?:\/\//, "");
+
+  const existing = await prisma.site.findFirst({
+    where: {
+      OR: [
+        { url: cleanUrl },
+        { name: data.name },
+      ],
+    },
+  });
+
+  if (existing) {
+    const match = existing.url === cleanUrl ? "URL" : "name";
+    throw new Error(`A site with this ${match} already exists: "${existing.name}" (${existing.url})`);
+  }
+
   const site = await prisma.site.create({
     data: {
       name: data.name,
@@ -99,7 +114,7 @@ export async function bulkCreateSites(
   const created = await prisma.site.createMany({
     data: sites.map((s) => ({
       name: s.name,
-      url: s.url,
+      url: normalizeUrl(s.url).replace(/^https?:\/\//, ""),
       platform: s.platform || "webflow",
       webflowId: s.webflowId || null,
     })),

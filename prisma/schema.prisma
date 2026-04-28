@@ -44,6 +44,7 @@ model CheckResult {
   checkKey    String   @map("check_key")
   status      String   @default("not_checked")
   notes       String   @default("")
+  source      String   @default("manual") @map("source")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

@@ -23,12 +23,13 @@ model Site {
 }
 
 model Audit {
-  id          String   @id @default(cuid())
-  siteId      String   @map("site_id")
-  status      String   @default("in_progress")
-  notes       String   @default("")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(cuid())
+  siteId       String   @map("site_id")
+  status       String   @default("in_progress")
+  notes        String   @default("")
+  auditorName  String?  @map("auditor_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   site    Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
   results CheckResult[]

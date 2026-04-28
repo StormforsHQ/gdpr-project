@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GDPR Audit App - Manual Test Sheet</title>
+<style>
+  body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; font-size: 13px; line-height: 1.6; }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  h2 { font-size: 14px; margin: 16px 0 6px 0; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { padding: 2px 0; }
+  input[type="checkbox"] { margin-right: 6px; }
+  .sub { padding-left: 20px; font-size: 12px; color: #555; }
+  @media print { body { font-size: 11px; } }
+</style>
+</head>
+<body>
+<h1>GDPR Audit App - Manual Test Sheet</h1>
+<p>Date: __________ Tester: __________</p>
+
+<h2>Navigation and Layout</h2>
+<ul>
+  <li><input type="checkbox">App loads without errors</li>
+  <li><input type="checkbox">Sidebar shows site list</li>
+  <li><input type="checkbox">Sidebar collapses and expands</li>
+  <li><input type="checkbox">Dark/light theme toggle works</li>
+  <li><input type="checkbox">Help drawer opens from ? icon</li>
+  <li><input type="checkbox">Reference docs pages load (Technical Guide, Audit Protocol, Cheat Sheet)</li>
+</ul>
+
+<h2>Sites CRUD</h2>
+<ul>
+  <li><input type="checkbox">Add site dialog opens</li>
+  <li><input type="checkbox">All fields present: name, URL, platform, Cookiebot ID, GTM ID</li>
+  <li><input type="checkbox">Submit disabled until required fields filled</li>
+  <li><input type="checkbox">Site created successfully, appears in list and sidebar</li>
+  <li><input type="checkbox">Duplicate URL shows warning</li>
+  <li><input type="checkbox">Cancel clears form</li>
+  <li><input type="checkbox">Click site row navigates to audit page</li>
+  <li><input type="checkbox">Edit site dialog works (change name, save)</li>
+  <li><input type="checkbox">Delete site from edit dialog works</li>
+  <li><input type="checkbox">Delete site from list (trash icon) works with confirmation</li>
+</ul>
+
+<h2>Audit Page and Checklist</h2>
+<ul>
+  <li><input type="checkbox">Site header shows name, URL, platform, IDs</li>
+  <li><input type="checkbox">Missing Cookiebot/GTM ID warnings show with check count</li>
+  <li><input type="checkbox">All 11 categories visible</li>
+  <li><input type="checkbox">Categories expand/collapse</li>
+  <li><input type="checkbox">Each check has status dropdown (Not checked, OK, Issue, N/A)</li>
+  <li><input type="checkbox">Changing status auto-saves (no save button needed)</li>
+  <li><input type="checkbox">Notes field accepts multi-line text</li>
+  <li><input type="checkbox">Progress bar updates as checks are completed</li>
+  <li><input type="checkbox">Issue count badge shows and is clickable (filters to issues)</li>
+  <li><input type="checkbox">Legal references show in expanded check info</li>
+  <li><input type="checkbox">IMY notes show (blue icon) where applicable</li>
+  <li><input type="checkbox">Glossary terms have dotted underline tooltips</li>
+  <li><input type="checkbox">Automation badges visible (Auto, AI, Manual, etc.)</li>
+</ul>
+
+<h2>Page Scanner</h2>
+<ul>
+  <li><input type="checkbox">URL input bar visible with site URL pre-filled</li>
+  <li><input type="checkbox">Empty URL shows validation error</li>
+  <li><input type="checkbox">Invalid URL shows validation error</li>
+  <li><input type="checkbox">"Scan site" button runs page scan</li>
+  <li><input type="checkbox">Scan results appear in drawer</li>
+  <li><input type="checkbox">Check statuses update from scan results</li>
+  <li><input type="checkbox">Manually-set checks are NOT overwritten by re-scan</li>
+  <li><input type="checkbox">Re-run button works on individual page-scan checks</li>
+</ul>
+
+<h2>AI Agent</h2>
+<ul>
+  <li><input type="checkbox">"AI Analyze" button visible</li>
+  <li><input type="checkbox">Low credit warning shows if OpenRouter credits low</li>
+  <li><input type="checkbox">AI analysis runs and updates check statuses</li>
+  <li><input type="checkbox">Individual AI check "Run" button works</li>
+  <li><input type="checkbox">Failed AI checks show as N/A with error, not false "OK"</li>
+</ul>
+
+<h2>Scan History</h2>
+<ul>
+  <li><input type="checkbox">Scan history section visible after running scans</li>
+  <li><input type="checkbox">Shows scan type, date, finding count</li>
+  <li><input type="checkbox">Multiple scan runs listed chronologically</li>
+</ul>
+
+<h2>Report Generation</h2>
+<ul>
+  <li><input type="checkbox">"Report" button visible in site header</li>
+  <li><input type="checkbox">Report opens in new tab as HTML</li>
+  <li><input type="checkbox">Site details section correct</li>
+  <li><input type="checkbox">Summary stats (OK/Issues/N/A/Not checked) correct</li>
+  <li><input type="checkbox">All categories and checks listed with correct statuses</li>
+  <li><input type="checkbox">Notes appear in report</li>
+  <li><input type="checkbox">"Print / Save PDF" button works</li>
+</ul>
+
+<h2>Error Handling</h2>
+<ul>
+  <li><input type="checkbox">Error log button visible in progress bar area</li>
+  <li><input type="checkbox">Error drawer opens and shows logged errors</li>
+  <li><input type="checkbox">No unexpected console errors on any page</li>
+</ul>
+
+<h2>Demo Mode</h2>
+<ul>
+  <li><input type="checkbox">If DB disconnected: checklist shows in demo mode</li>
+  <li><input type="checkbox">Demo mode badge visible</li>
+  <li><input type="checkbox">Checklist still functional (dropdowns, notes) without saving</li>
+</ul>
+
+<h2>Notes</h2>
+<p style="border:1px solid #ccc;min-height:80px;padding:8px;"></p>
+
+</body>
+</html>

@@ -133,7 +133,7 @@ export function AddSiteDialog() {
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+            <Button type="button" variant="ghost" onClick={() => { setOpen(false); resetForm(); }}>
               Cancel
             </Button>
             <Button type="submit" disabled={saving || !name.trim() || !url.trim()}>

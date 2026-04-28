@@ -26,7 +26,7 @@ async function loadSiteData(id: string) {
       return { site, audit: existingAudit, scanRuns };
     }
 
-    const newAudit = await createAudit(site.id);
+    const newAudit = await createAudit(site.id, false);
     return {
       site,
       audit: {

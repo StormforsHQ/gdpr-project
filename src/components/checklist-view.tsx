@@ -10,6 +10,7 @@ import { CheckGuideDrawer } from "@/components/check-guide-drawer";
 import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits } from "@/app/actions/scan";
+import { isValidUrl } from "@/lib/url";
 import { saveCheckResult } from "@/app/actions/audits";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
 import {
@@ -203,13 +204,11 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
   };
 
   const validateUrl = (url: string): boolean => {
-    const trimmed = url.trim();
-    if (!trimmed) {
+    if (!url.trim()) {
       setUrlError("URL is required");
       return false;
     }
-    const domainPattern = /^(https?:\/\/)?[\w.-]+\.\w{2,}/;
-    if (!domainPattern.test(trimmed)) {
+    if (!isValidUrl(url)) {
       setUrlError("Enter a valid domain (e.g. example.com)");
       return false;
     }

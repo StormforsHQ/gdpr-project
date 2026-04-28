@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import type { CheckResult } from "@/lib/scanner";
+import { normalizeUrl } from "@/lib/url";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const PRIMARY_MODEL = "google/gemini-2.0-flash-001";
@@ -107,10 +108,6 @@ function parseAIResponse(raw: string): AICheckResult {
   }
 }
 
-function normalizeUrl(url: string): string {
-  if (!url.startsWith("http")) url = "https://" + url;
-  return url.replace(/\/$/, "");
-}
 
 async function fetchPageContent(url: string): Promise<{ html: string; text: string }> {
   const normalizedUrl = normalizeUrl(url);

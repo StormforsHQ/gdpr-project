@@ -46,6 +46,16 @@ export interface CheckData {
   notes: string;
 }
 
+export interface ReportListItem {
+  id: string;
+  version: number;
+  statsOk: number;
+  statsIssues: number;
+  statsNa: number;
+  statsNotChecked: number;
+  createdAt: Date;
+}
+
 const DEFAULT_EXECUTIVE_SUMMARY = `Following a comprehensive internal audit of the site's digital privacy infrastructure, Stormfors has conducted a rigorous review of cookie consent mechanisms, script management, and third-party integrations. This report documents the current compliance status and identifies areas requiring attention to ensure full alignment with EU GDPR and ePrivacy Directive standards.`;
 
 const DEFAULT_CONCLUSION = `Based on the findings of this audit, the recommendations outlined above should be implemented to ensure continued compliance with GDPR and ePrivacy regulations. Stormfors recommends scheduling a follow-up review after remediation to verify all identified issues have been resolved.`;
@@ -95,7 +105,19 @@ async function loadAuditData(auditId: string) {
   };
 }
 
-export async function generateReport(auditId: string, executiveSummary?: string, conclusion?: string): Promise<string | null> {
+function statsChanged(
+  current: { ok: number; issues: number; na: number; notChecked: number },
+  saved: { statsOk: number; statsIssues: number; statsNa: number; statsNotChecked: number },
+): boolean {
+  return (
+    current.ok !== saved.statsOk ||
+    current.issues !== saved.statsIssues ||
+    current.na !== saved.statsNa ||
+    current.notChecked !== saved.statsNotChecked
+  );
+}
+
+export async function getOrCreateReport(auditId: string): Promise<string | null> {
   const data = await loadAuditData(auditId);
   if (!data) return null;
 
@@ -103,10 +125,17 @@ export async function generateReport(auditId: string, executiveSummary?: string,
     where: { auditId },
     orderBy: { version: "desc" },
   });
-  const version = (lastReport?.version ?? 0) + 1;
 
-  const summary = executiveSummary ?? lastReport?.executiveSummary ?? DEFAULT_EXECUTIVE_SUMMARY;
-  const concl = conclusion ?? lastReport?.conclusion ?? DEFAULT_CONCLUSION;
+  if (lastReport && !statsChanged(
+    { ok: data.statsOk, issues: data.statsIssues, na: data.statsNa, notChecked: data.statsNotChecked },
+    lastReport,
+  )) {
+    return lastReport.id;
+  }
+
+  const version = (lastReport?.version ?? 0) + 1;
+  const summary = lastReport?.executiveSummary || DEFAULT_EXECUTIVE_SUMMARY;
+  const concl = lastReport?.conclusion || DEFAULT_CONCLUSION;
 
   const report = await prisma.report.create({
     data: {
@@ -122,21 +151,14 @@ export async function generateReport(auditId: string, executiveSummary?: string,
     },
   });
 
-  revalidatePath(`/sites/${data.site.id}/report`);
   return report.id;
 }
 
-export async function getLatestReport(auditId: string): Promise<ReportData | null> {
-  const report = await prisma.report.findFirst({
-    where: { auditId },
-    orderBy: { version: "desc" },
-    include: { audit: { include: { site: true } } },
-  });
-  if (!report) return null;
-
-  const data = await loadAuditData(auditId);
-  if (!data) return null;
-
+function buildReportData(
+  report: { id: string; version: number; executiveSummary: string; conclusion: string; createdAt: Date; statsOk: number; statsIssues: number; statsNa: number; statsNotChecked: number },
+  audit: { auditorName: string | null; site: { name: string; url: string; platform: string; cookiebotId: string | null; gtmId: string | null } },
+  categories: CategoryData[],
+): ReportData {
   return {
     id: report.id,
     version: report.version,
@@ -148,14 +170,14 @@ export async function getLatestReport(auditId: string): Promise<ReportData | nul
     statsNa: report.statsNa,
     statsNotChecked: report.statsNotChecked,
     site: {
-      name: report.audit.site.name,
-      url: report.audit.site.url,
-      platform: report.audit.site.platform,
-      cookiebotId: report.audit.site.cookiebotId,
-      gtmId: report.audit.site.gtmId,
+      name: audit.site.name,
+      url: audit.site.url,
+      platform: audit.site.platform,
+      cookiebotId: audit.site.cookiebotId,
+      gtmId: audit.site.gtmId,
     },
-    auditorName: report.audit.auditorName,
-    categories: data.categories,
+    auditorName: audit.auditorName,
+    categories,
   };
 }
 
@@ -169,29 +191,10 @@ export async function getReportById(reportId: string): Promise<ReportData | null
   const data = await loadAuditData(report.auditId);
   if (!data) return null;
 
-  return {
-    id: report.id,
-    version: report.version,
-    executiveSummary: report.executiveSummary || DEFAULT_EXECUTIVE_SUMMARY,
-    conclusion: report.conclusion || DEFAULT_CONCLUSION,
-    createdAt: report.createdAt,
-    statsOk: report.statsOk,
-    statsIssues: report.statsIssues,
-    statsNa: report.statsNa,
-    statsNotChecked: report.statsNotChecked,
-    site: {
-      name: report.audit.site.name,
-      url: report.audit.site.url,
-      platform: report.audit.site.platform,
-      cookiebotId: report.audit.site.cookiebotId,
-      gtmId: report.audit.site.gtmId,
-    },
-    auditorName: report.audit.auditorName,
-    categories: data.categories,
-  };
+  return buildReportData(report, report.audit, data.categories);
 }
 
-export async function listReports(auditId: string) {
+export async function listReports(auditId: string): Promise<ReportListItem[]> {
   return prisma.report.findMany({
     where: { auditId },
     orderBy: { version: "desc" },
@@ -213,5 +216,5 @@ export async function updateReportText(reportId: string, executiveSummary: strin
     data: { executiveSummary, conclusion },
     include: { audit: { include: { site: true } } },
   });
-  revalidatePath(`/sites/${report.audit.site.id}/report`);
+  revalidatePath(`/report/${report.audit.site.id}`);
 }

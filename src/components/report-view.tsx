@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { generateReport, updateReportText, type ReportData } from "@/app/actions/report";
+import { updateReportText, type ReportData, type ReportListItem } from "@/app/actions/report";
 
-export function ReportView({ report, siteId, auditId }: { report: ReportData; siteId: string; auditId: string }) {
+interface ReportViewProps {
+  report: ReportData;
+  siteId: string;
+  versions: ReportListItem[];
+}
+
+export function ReportView({ report, siteId, versions }: ReportViewProps) {
   const router = useRouter();
-  const [regenerating, setRegenerating] = useState(false);
   const [editingSection, setEditingSection] = useState<"summary" | "conclusion" | null>(null);
   const [summaryDraft, setSummaryDraft] = useState(report.executiveSummary);
   const [conclusionDraft, setConclusionDraft] = useState(report.conclusion);
@@ -29,6 +34,8 @@ export function ReportView({ report, siteId, auditId }: { report: ReportData; si
       ? `${report.statsIssues} ISSUE${report.statsIssues !== 1 ? "S" : ""} IDENTIFIED`
       : "AUDIT IN PROGRESS";
 
+  const isLatest = versions.length === 0 || versions[0]?.id === report.id;
+
   async function handleSaveText() {
     setSaving(true);
     await updateReportText(report.id, summaryDraft, conclusionDraft);
@@ -37,36 +44,44 @@ export function ReportView({ report, siteId, auditId }: { report: ReportData; si
     router.refresh();
   }
 
-  async function handleRegenerate() {
-    setRegenerating(true);
-    await generateReport(auditId);
-    router.refresh();
-    setRegenerating(false);
+  function handleVersionChange(reportId: string) {
+    if (reportId === report.id) return;
+    router.push(`/report/${siteId}?version=${reportId}`);
   }
 
   return (
     <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", color: "#1a1a1a", lineHeight: 1.6, fontSize: "14px" }}>
 
-      {/* Toolbar - hidden in print */}
+      {/* Toolbar */}
       <div className="print:hidden" style={{ position: "sticky", top: 0, zIndex: 10, background: "#f8f8f8", borderBottom: "1px solid #e0e0e0", padding: "10px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: "13px", color: "#666" }}>
-          Version {report.version} - {date}
-        </span>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button
-            onClick={handleRegenerate}
-            disabled={regenerating}
-            style={{ padding: "6px 14px", fontSize: "12px", border: "1px solid #ccc", borderRadius: "4px", background: "white", cursor: "pointer" }}
-          >
-            {regenerating ? "Generating..." : "New snapshot"}
-          </button>
-          <button
-            onClick={() => window.print()}
-            style={{ padding: "6px 14px", fontSize: "12px", border: "1px solid #ccc", borderRadius: "4px", background: "white", cursor: "pointer" }}
-          >
-            Print / Save PDF
-          </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {versions.length > 1 ? (
+            <select
+              value={report.id}
+              onChange={(e) => handleVersionChange(e.target.value)}
+              style={{ padding: "4px 8px", fontSize: "13px", border: "1px solid #ccc", borderRadius: "4px", background: "white", color: "#333" }}
+            >
+              {versions.map((v) => (
+                <option key={v.id} value={v.id}>
+                  Version {v.version}.0 - {v.createdAt.toISOString().split("T")[0]}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span style={{ fontSize: "13px", color: "#666" }}>
+              Version {report.version}.0 - {date}
+            </span>
+          )}
+          {!isLatest && (
+            <span style={{ fontSize: "11px", color: "#888", fontStyle: "italic" }}>Viewing older version</span>
+          )}
         </div>
+        <button
+          onClick={() => window.print()}
+          style={{ padding: "6px 14px", fontSize: "12px", border: "1px solid #ccc", borderRadius: "4px", background: "white", cursor: "pointer" }}
+        >
+          Print / Save PDF
+        </button>
       </div>
 
       {/* Report document */}

@@ -341,9 +341,13 @@ export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns
   const totalChecked = Object.values(checkStates).filter(
     (s) => s.status !== "not_checked"
   ).length;
-  const totalIssues = Object.values(checkStates).filter(
-    (s) => s.status === "issue"
-  ).length;
+  const issueEntries = Object.values(checkStates).filter((s) => s.status === "issue");
+  const totalIssues = issueEntries.length;
+  const issuesBySource = {
+    scan: issueEntries.filter((s) => s.source === "scan").length,
+    ai: issueEntries.filter((s) => s.source === "ai").length,
+    manual: issueEntries.filter((s) => s.source === "manual").length,
+  };
 
   const scannedCheckCount = scanResult?.checks.length ?? 0;
   const scanIssueCount = scanResult?.checks.filter((c) => c.status === "issue").length ?? 0;
@@ -471,7 +475,18 @@ export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns
               variant={filterIssues ? "default" : "destructive"}
               className={`cursor-pointer ${filterIssues ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
             >
-              {filterIssues ? "Showing issues only" : `${totalIssues} issue${totalIssues !== 1 ? "s" : ""} total`}
+              {filterIssues ? "Showing issues only" : (
+                <>
+                  {totalIssues} issue{totalIssues !== 1 ? "s" : ""} total
+                  {totalIssues > 0 && (() => {
+                    const parts: string[] = [];
+                    if (issuesBySource.scan > 0) parts.push(`${issuesBySource.scan} auto`);
+                    if (issuesBySource.ai > 0) parts.push(`${issuesBySource.ai} AI`);
+                    if (issuesBySource.manual > 0) parts.push(`${issuesBySource.manual} manual`);
+                    return parts.length > 0 ? ` (${parts.join(", ")})` : "";
+                  })()}
+                </>
+              )}
             </Badge>
           </button>
         )}

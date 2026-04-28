@@ -13,7 +13,7 @@ export function TopNavbar() {
   };
 
   return (
-    <header className="flex h-14 items-center justify-end border-b px-4 pl-14 md:pl-4 gap-1">
+    <header className="flex h-14 items-center justify-end border-b px-4 pl-14 md:pl-4 gap-1 print:hidden">
       <HelpButton />
       <Button
         variant="ghost"

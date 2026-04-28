@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import type { SidebarSite } from "@/app/(app)/layout";
 import {
   ChevronRight,
   ChevronLeft,
@@ -13,16 +14,44 @@ import {
   LayoutDashboard,
   Globe,
   BookOpen,
-  Server,
 } from "lucide-react";
 
-interface SidebarSite {
-  id: string;
-  name: string;
-}
+const PLATFORM_LABELS: Record<string, string> = {
+  webflow: "Webflow",
+  hubspot: "HubSpot",
+  nextjs: "Next.js",
+  wordpress: "WordPress",
+  other: "Other",
+};
+
+const PLATFORM_ORDER = ["webflow", "hubspot", "nextjs", "wordpress", "other"];
+
+const STATUS_COLORS: Record<SidebarSite["auditProgress"], string> = {
+  complete: "bg-green-500",
+  partial: "bg-amber-500",
+  none: "bg-muted-foreground/30",
+};
+
+const STATUS_LABELS: Record<SidebarSite["auditProgress"], string> = {
+  complete: "Audit complete",
+  partial: "Audit in progress",
+  none: "Not started",
+};
 
 interface SidebarProps {
   sites: SidebarSite[];
+}
+
+function groupByPlatform(sites: SidebarSite[]) {
+  const groups: Record<string, SidebarSite[]> = {};
+  for (const site of sites) {
+    const key = PLATFORM_LABELS[site.platform] ? site.platform : "other";
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(site);
+  }
+  return PLATFORM_ORDER
+    .filter((p) => groups[p]?.length)
+    .map((p) => ({ platform: p, label: PLATFORM_LABELS[p] || p, sites: groups[p] }));
 }
 
 export function Sidebar({ sites }: SidebarProps) {
@@ -34,6 +63,23 @@ export function Sidebar({ sites }: SidebarProps) {
 
   const isActive = (path: string) => pathname === path;
   const isSiteActive = (id: string) => pathname === `/sites/${id}`;
+
+  const groups = groupByPlatform(sites);
+  const hasMultiplePlatforms = groups.length > 1;
+
+  const navLinkClass = (active: boolean) =>
+    `flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
+      active
+        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+        : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+    }`;
+
+  const subLinkClass = (active: boolean) =>
+    `flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-colors truncate ${
+      active
+        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+        : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+    }`;
 
   const sidebarContent = (
     <>
@@ -67,11 +113,7 @@ export function Sidebar({ sites }: SidebarProps) {
         <Link
           href="/"
           onClick={() => setMobileOpen(false)}
-          className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
-            isActive("/")
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-          }`}
+          className={navLinkClass(isActive("/"))}
         >
           <LayoutDashboard className="h-4 w-4" />
           Dashboard
@@ -82,11 +124,7 @@ export function Sidebar({ sites }: SidebarProps) {
             <Link
               href="/sites"
               onClick={() => setMobileOpen(false)}
-              className={`flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
-                pathname.startsWith("/sites")
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-              }`}
+              className={navLinkClass(pathname.startsWith("/sites"))}
             >
               <Globe className="h-4 w-4" />
               Sites ({sites.length})
@@ -106,25 +144,34 @@ export function Sidebar({ sites }: SidebarProps) {
             )}
           </div>
           {sitesOpen && (
-            <div className="ml-6 space-y-0.5">
+            <div className="ml-4 space-y-0.5">
               {sites.length === 0 ? (
                 <p className="px-3 py-1.5 text-xs text-muted-foreground">
                   No sites yet
                 </p>
               ) : (
-                sites.map((site) => (
-                  <Link
-                    key={site.id}
-                    href={`/sites/${site.id}`}
-                    onClick={() => setMobileOpen(false)}
-                    className={`flex w-full items-center rounded-md px-3 py-1.5 text-xs transition-colors truncate ${
-                      isSiteActive(site.id)
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                    }`}
-                  >
-                    {site.name}
-                  </Link>
+                groups.map((group) => (
+                  <div key={group.platform}>
+                    {hasMultiplePlatforms && (
+                      <p className="px-3 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                        {group.label}
+                      </p>
+                    )}
+                    {group.sites.map((site) => (
+                      <Link
+                        key={site.id}
+                        href={`/sites/${site.id}`}
+                        onClick={() => setMobileOpen(false)}
+                        className={subLinkClass(isSiteActive(site.id))}
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUS_COLORS[site.auditProgress]}`}
+                          title={STATUS_LABELS[site.auditProgress]}
+                        />
+                        <span className="truncate">{site.name}</span>
+                      </Link>
+                    ))}
+                  </div>
                 ))
               )}
             </div>
@@ -134,63 +181,60 @@ export function Sidebar({ sites }: SidebarProps) {
         <div>
           <button
             onClick={() => setRefsOpen(!refsOpen)}
-            className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
-              pathname.startsWith("/reference")
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-            }`}
+            className={navLinkClass(pathname.startsWith("/reference"))}
           >
             <BookOpen className="h-4 w-4" />
             Reference
           </button>
           {refsOpen && (
-            <div className="ml-6 space-y-0.5">
+            <div className="ml-4 space-y-0.5">
               <Link
                 href="/reference/technical-guide"
                 onClick={() => setMobileOpen(false)}
-                className={`flex w-full items-center rounded-md px-3 py-1.5 text-xs transition-colors truncate ${
-                  isActive("/reference/technical-guide")
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                }`}
+                className={subLinkClass(isActive("/reference/technical-guide"))}
               >
                 Technical Guide
               </Link>
               <Link
                 href="/reference/audit-protocol"
                 onClick={() => setMobileOpen(false)}
-                className={`flex w-full items-center rounded-md px-3 py-1.5 text-xs transition-colors truncate ${
-                  isActive("/reference/audit-protocol")
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                }`}
+                className={subLinkClass(isActive("/reference/audit-protocol"))}
               >
                 Audit Protocol
               </Link>
               <Link
                 href="/reference/cheat-sheet"
                 onClick={() => setMobileOpen(false)}
-                className={`flex w-full items-center rounded-md px-3 py-1.5 text-xs transition-colors truncate ${
-                  isActive("/reference/cheat-sheet")
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                }`}
+                className={subLinkClass(isActive("/reference/cheat-sheet"))}
               >
                 Cheat Sheet
               </Link>
               <Link
                 href="/reference/mcp-servers"
                 onClick={() => setMobileOpen(false)}
-                className={`flex w-full items-center rounded-md px-3 py-1.5 text-xs transition-colors truncate ${
-                  isActive("/reference/mcp-servers")
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                }`}
+                className={subLinkClass(isActive("/reference/mcp-servers"))}
               >
                 MCP Servers
               </Link>
             </div>
           )}
+        </div>
+
+        <div className="pt-3 mt-3 border-t">
+          <div className="px-3 space-y-1">
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              Complete
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              In progress
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
+              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
+              Not started
+            </div>
+          </div>
         </div>
       </nav>
     </>

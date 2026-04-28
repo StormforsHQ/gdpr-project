@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EditSiteDialog } from "@/components/edit-site-dialog";
 import { CHECK_REQUIREMENTS, type CheckRequirement } from "@/lib/glossary";
-import { Settings, ExternalLink, AlertTriangle } from "lucide-react";
+import { generateAuditReport } from "@/app/actions/report";
+import { Settings, ExternalLink, AlertTriangle, Download } from "lucide-react";
 
 interface SiteHeaderProps {
   site: {
@@ -63,15 +64,32 @@ export function SiteHeader({ site, auditId }: SiteHeaderProps) {
               {PLATFORM_LABELS[site.platform] || site.platform}
             </Badge>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={() => setEditOpen(true)}
-          >
-            <Settings className="h-4 w-4" />
-            Edit site
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={async () => {
+                const html = await generateAuditReport(auditId);
+                if (!html) return;
+                const blob = new Blob([html], { type: "text/html" });
+                const url = URL.createObjectURL(blob);
+                window.open(url, "_blank");
+              }}
+            >
+              <Download className="h-4 w-4" />
+              Report
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => setEditOpen(true)}
+            >
+              <Settings className="h-4 w-4" />
+              Edit site
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-xs">

@@ -63,6 +63,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
   const [confirmAction, setConfirmAction] = useState<"scan" | "ai" | null>(null);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [creditWarning, setCreditWarning] = useState<string | null>(null);
+  const [filterIssues, setFilterIssues] = useState(false);
 
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -377,7 +378,21 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
           Progress: {totalChecked}/{totalChecks} checked
         </span>
         {totalIssues > 0 && (
-          <Badge variant="destructive">{totalIssues} issue{totalIssues !== 1 ? "s" : ""}</Badge>
+          <button onClick={() => setFilterIssues((f) => !f)}>
+            <Badge
+              variant={filterIssues ? "default" : "destructive"}
+              className={`cursor-pointer ${filterIssues ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+            >
+              {filterIssues ? "Showing issues only" : `${totalIssues} issue${totalIssues !== 1 ? "s" : ""}`}
+            </Badge>
+          </button>
+        )}
+        {filterIssues && totalIssues === 0 && (
+          <button onClick={() => setFilterIssues(false)}>
+            <Badge variant="secondary" className="cursor-pointer">
+              No issues - click to clear filter
+            </Badge>
+          </button>
         )}
         {errors.length > 0 && (
           <button
@@ -393,6 +408,12 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
       {CHECKLIST.map((category) => {
         const isExpanded = expandedCategories.has(category.id);
         const stats = getCategoryStats(category.id);
+
+        if (filterIssues && stats.issues === 0) return null;
+
+        const visibleChecks = filterIssues
+          ? category.checks.filter((c) => getCheckState(c.key).status === "issue")
+          : category.checks;
 
         return (
           <Card key={category.id}>
@@ -423,7 +444,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
             </CardHeader>
             {isExpanded && (
               <CardContent className="p-0">
-                {category.checks.map((check) => {
+                {visibleChecks.map((check) => {
                   const state = getCheckState(check.key);
                   const scanCheck = getScanCheckResult(check.key);
                   return (

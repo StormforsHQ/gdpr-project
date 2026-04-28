@@ -54,7 +54,7 @@ export async function createSite(data: {
 
   if (existing) {
     const match = existing.url === cleanUrl ? "URL" : "name";
-    throw new Error(`A site with this ${match} already exists: "${existing.name}" (${existing.url})`);
+    return { error: `A site with this ${match} already exists: "${existing.name}" (${existing.url})` };
   }
 
   const site = await prisma.site.create({

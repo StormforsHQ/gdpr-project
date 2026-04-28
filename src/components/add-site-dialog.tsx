@@ -38,7 +38,7 @@ export function AddSiteDialog() {
 
     setSaving(true);
     try {
-      const site = await createSite({
+      const result = await createSite({
         name: name.trim(),
         url: url.trim().replace(/^https?:\/\//, "").replace(/\/$/, ""),
         platform,
@@ -46,7 +46,12 @@ export function AddSiteDialog() {
         gtmId: gtmId.trim() || undefined,
       });
 
-      toast.success(`${site.name} added`);
+      if ("error" in result) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(`${result.name} added`);
       setOpen(false);
       resetForm();
       router.refresh();

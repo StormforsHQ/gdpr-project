@@ -15,7 +15,7 @@ test.describe("Check state management (demo mode)", () => {
       .first();
     await checkRow.click();
     await expect(
-      page.locator("input[placeholder='Notes...']").first()
+      page.locator("textarea[placeholder='Notes...']").first()
     ).toBeVisible();
     const statusSelect = page.getByRole("combobox").first();
     await expect(statusSelect).toBeVisible();
@@ -63,7 +63,7 @@ test.describe("Check state management (demo mode)", () => {
       .first();
     await checkRow.click();
 
-    const notesInput = page.locator("input[placeholder='Notes...']").first();
+    const notesInput = page.locator("textarea[placeholder='Notes...']").first();
     await notesInput.fill("Test note for A1 check");
     await expect(notesInput).toHaveValue("Test note for A1 check");
   });

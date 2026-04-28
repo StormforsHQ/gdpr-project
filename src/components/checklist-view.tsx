@@ -73,6 +73,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns
   const [aiScanning, setAiScanning] = useState(false);
   const [runningChecks, setRunningChecks] = useState<Set<string>>(new Set());
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [lastScanType, setLastScanType] = useState<"page-scan" | "ai-agent" | null>(null);
   const [scanDrawerOpen, setScanDrawerOpen] = useState(false);
   const [scanDrawerCheckKey, setScanDrawerCheckKey] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<"scan" | "ai" | null>(null);
@@ -189,6 +190,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns
     try {
       const result = await runPageScan(scanUrl);
       if (!result.error) {
+        setLastScanType("page-scan");
         setScanResult(result);
         applyCheckResults(result.checks, "scan");
         const failedChecks = result.checks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
@@ -219,6 +221,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns
     setAiScanning(true);
     try {
       const results = await runAllAIChecks(scanUrl);
+      setLastScanType("ai-agent");
       applyCheckResults(results, "ai");
       const failedChecks = results.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
       for (const check of failedChecks) {
@@ -388,7 +391,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns
           </div>
           {scanResult && !scanResult.error && (
             <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-              <span>Scanned: {scanResult.url}</span>
+              <span>{lastScanType === "ai-agent" ? "AI scan" : lastScanType === "page-scan" ? "Page scan" : "Scanned"}: {scanResult.url}</span>
               <span>{scannedCheckCount} checks run</span>
               {scanIssueCount > 0 && (
                 <Badge variant="destructive" className="text-xs">{scanIssueCount} issue{scanIssueCount !== 1 ? "s" : ""}</Badge>
@@ -468,7 +471,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns
               variant={filterIssues ? "default" : "destructive"}
               className={`cursor-pointer ${filterIssues ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
             >
-              {filterIssues ? "Showing issues only" : `${totalIssues} issue${totalIssues !== 1 ? "s" : ""}`}
+              {filterIssues ? "Showing issues only" : `${totalIssues} issue${totalIssues !== 1 ? "s" : ""} total`}
             </Badge>
           </button>
         )}

@@ -146,42 +146,45 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
               />
             </div>
           </div>
-          <div className="flex items-center justify-between pt-2">
-            <div>
-              {confirmDelete ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-destructive">Delete this site and all its audits?</span>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleDelete}
-                    disabled={deleting}
-                  >
-                    {deleting && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-                    Yes, delete
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setConfirmDelete(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
+          {confirmDelete && (
+            <div className="flex items-center gap-3 pt-2 border-t border-destructive/20">
+              <span className="text-xs text-destructive">Delete this site and all its audits?</span>
+              <div className="flex gap-2 ml-auto">
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => setConfirmDelete(true)}
+                  onClick={() => setConfirmDelete(false)}
                 >
-                  Delete site
+                  No
                 </Button>
-              )}
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                >
+                  {deleting && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                  Yes, delete
+                </Button>
+              </div>
             </div>
+          )}
+          <div className="flex items-center justify-between pt-2">
+            {!confirmDelete ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => setConfirmDelete(true)}
+              >
+                Delete site
+              </Button>
+            ) : (
+              <div />
+            )}
             <div className="flex gap-3">
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
                 Cancel

@@ -173,4 +173,7 @@
   .prose th {
     background: #f3f4f6 !important;
   }
+  @page {
+    margin: 15mm;
+  }
 }

@@ -3,6 +3,17 @@
 import { prisma } from "@/lib/db";
 import { CHECKLIST, STATUS_CONFIG } from "@/lib/checklist";
 
+function deduplicateNotes(notes: string): string {
+  if (!notes) return "";
+  const parts = notes.split(";").map((s) => s.trim()).filter(Boolean);
+  const unique = [...new Set(parts)];
+  return unique.join("; ");
+}
+
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 export async function generateAuditReport(auditId: string) {
   const audit = await prisma.audit.findUnique({
     where: { id: auditId },
@@ -29,13 +40,15 @@ export async function generateAuditReport(auditId: string) {
   const issues = audit.results.filter((r) => r.status === "issue").length;
   const ok = audit.results.filter((r) => r.status === "ok").length;
   const na = audit.results.filter((r) => r.status === "na").length;
+  const notChecked = totalChecks - checked;
+  const progressPct = totalChecks > 0 ? Math.round((checked / totalChecks) * 100) : 0;
 
   const statusIcon = (status: string) => {
     switch (status) {
       case "ok": return "&#10004;";
       case "issue": return "&#10008;";
-      case "na": return "&#8212;";
-      default: return "&#9744;";
+      case "na": return "&mdash;";
+      default: return "";
     }
   };
 
@@ -43,48 +56,61 @@ export async function generateAuditReport(auditId: string) {
     switch (status) {
       case "ok": return "#16a34a";
       case "issue": return "#dc2626";
-      case "na": return "#9ca3af";
-      default: return "#9ca3af";
+      case "na": return "#6b7280";
+      default: return "#d1d5db";
+    }
+  };
+
+  const statusBg = (status: string) => {
+    switch (status) {
+      case "ok": return "#f0fdf4";
+      case "issue": return "#fef2f2";
+      default: return "transparent";
     }
   };
 
   const categorySections = CHECKLIST.map((cat) => {
-    const rows = cat.checks.map((check) => {
+    const catResults = cat.checks.map((check) => {
       const result = resultMap[check.key];
-      const status = result?.status || "not_checked";
-      const notes = result?.notes || "";
-      const source = result?.source || "";
-      const statusLabel = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG]?.label || "Not checked";
+      return { check, status: result?.status || "not_checked", notes: result?.notes || "", source: result?.source || "" };
+    });
 
-      return `<tr>
-        <td style="padding:6px 10px;border:1px solid #e5e7eb;font-weight:500;white-space:nowrap;">${check.key}</td>
-        <td style="padding:6px 10px;border:1px solid #e5e7eb;">${check.label}</td>
-        <td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;color:${statusColor(status)};font-weight:600;">
-          <span style="margin-right:4px;">${statusIcon(status)}</span>${statusLabel}
+    const catIssues = catResults.filter((r) => r.status === "issue").length;
+    const catOk = catResults.filter((r) => r.status === "ok").length;
+    const catChecked = catResults.filter((r) => r.status !== "not_checked").length;
+
+    const rows = catResults.map((r) => {
+      const statusLabel = STATUS_CONFIG[r.status as keyof typeof STATUS_CONFIG]?.label || "Not checked";
+      const cleanNotes = escapeHtml(deduplicateNotes(r.notes));
+
+      return `<tr style="background:${statusBg(r.status)};">
+        <td class="cell id-cell">${r.check.key}</td>
+        <td class="cell check-cell">${escapeHtml(r.check.label)}</td>
+        <td class="cell status-cell" style="color:${statusColor(r.status)};">
+          ${statusIcon(r.status)} ${statusLabel}
         </td>
-        <td style="padding:6px 10px;border:1px solid #e5e7eb;font-size:12px;color:#6b7280;">${source}</td>
-        <td style="padding:6px 10px;border:1px solid #e5e7eb;font-size:12px;">${notes}</td>
+        <td class="cell notes-cell">${cleanNotes || '<span style="color:#d1d5db;">&mdash;</span>'}</td>
       </tr>`;
     }).join("\n");
 
-    const catIssues = cat.checks.filter((c) => resultMap[c.key]?.status === "issue").length;
-    const catOk = cat.checks.filter((c) => resultMap[c.key]?.status === "ok").length;
+    const catStatusColor = catIssues > 0 ? "#dc2626" : catChecked === cat.checks.length ? "#16a34a" : "#6b7280";
 
-    return `<div style="margin-bottom:24px;">
-      <h3 style="font-size:16px;margin:0 0 8px 0;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">
-        ${cat.id}. ${cat.label}
-        <span style="font-size:12px;font-weight:normal;color:#6b7280;margin-left:8px;">
-          ${catOk} OK / ${catIssues} Issues / ${cat.checks.length} total
+    return `<div class="category">
+      <div class="cat-header">
+        <span class="cat-title">${cat.id}. ${cat.label}</span>
+        <span class="cat-stats">
+          <span style="color:#16a34a;">${catOk} OK</span>
+          ${catIssues > 0 ? `<span style="color:#dc2626;font-weight:600;">${catIssues} Issues</span>` : ""}
+          <span style="color:#6b7280;">${cat.checks.length} total</span>
         </span>
-      </h3>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      </div>
+      <table class="results-table">
         <thead>
-          <tr style="background:#f9fafb;">
-            <th style="padding:6px 10px;border:1px solid #e5e7eb;text-align:left;width:50px;">ID</th>
-            <th style="padding:6px 10px;border:1px solid #e5e7eb;text-align:left;">Check</th>
-            <th style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;width:100px;">Status</th>
-            <th style="padding:6px 10px;border:1px solid #e5e7eb;text-align:left;width:60px;">Source</th>
-            <th style="padding:6px 10px;border:1px solid #e5e7eb;text-align:left;width:200px;">Notes</th>
+          <tr>
+            <th class="cell id-cell">ID</th>
+            <th class="cell check-cell">Check</th>
+            <th class="cell status-cell">Status</th>
+            <th class="cell notes-cell">Notes</th>
           </tr>
         </thead>
         <tbody>
@@ -95,16 +121,16 @@ export async function generateAuditReport(auditId: string) {
   }).join("\n");
 
   const scanSection = scanRuns.length > 0
-    ? `<div style="margin-bottom:24px;">
-        <h2 style="font-size:18px;margin:0 0 12px 0;">Scan history</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    ? `<div class="category">
+        <div class="cat-header"><span class="cat-title">Scan history</span></div>
+        <table class="results-table">
           <thead>
-            <tr style="background:#f9fafb;">
-              <th style="padding:6px 10px;border:1px solid #e5e7eb;text-align:left;">Type</th>
-              <th style="padding:6px 10px;border:1px solid #e5e7eb;text-align:left;">URL</th>
-              <th style="padding:6px 10px;border:1px solid #e5e7eb;text-align:left;">Status</th>
-              <th style="padding:6px 10px;border:1px solid #e5e7eb;text-align:left;">Findings</th>
-              <th style="padding:6px 10px;border:1px solid #e5e7eb;text-align:left;">Date</th>
+            <tr>
+              <th class="cell">Type</th>
+              <th class="cell">URL</th>
+              <th class="cell">Status</th>
+              <th class="cell">Findings</th>
+              <th class="cell">Date</th>
             </tr>
           </thead>
           <tbody>
@@ -112,11 +138,11 @@ export async function generateAuditReport(auditId: string) {
               let findingCount = 0;
               try { findingCount = JSON.parse(run.findings as string).length; } catch {}
               return `<tr>
-                <td style="padding:6px 10px;border:1px solid #e5e7eb;">${run.scanType}</td>
-                <td style="padding:6px 10px;border:1px solid #e5e7eb;">${run.url}</td>
-                <td style="padding:6px 10px;border:1px solid #e5e7eb;">${run.status}</td>
-                <td style="padding:6px 10px;border:1px solid #e5e7eb;">${findingCount} checks</td>
-                <td style="padding:6px 10px;border:1px solid #e5e7eb;">${run.startedAt.toISOString().split("T")[0]}</td>
+                <td class="cell">${run.scanType}</td>
+                <td class="cell">${run.url}</td>
+                <td class="cell">${run.status}</td>
+                <td class="cell">${findingCount} checks</td>
+                <td class="cell">${run.startedAt.toISOString().split("T")[0]}</td>
               </tr>`;
             }).join("\n")}
           </tbody>
@@ -126,71 +152,130 @@ export async function generateAuditReport(auditId: string) {
 
   const date = new Date().toISOString().split("T")[0];
 
+  const completionNote = checked === 0
+    ? `<div class="warning-banner">This audit has not been started yet. No checks have been completed.</div>`
+    : notChecked > 0
+    ? `<div class="info-banner">${checked} of ${totalChecks} checks completed (${progressPct}%). ${notChecked} checks remaining.</div>`
+    : "";
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>GDPR Audit Report - ${audit.site.name}</title>
+  <title>GDPR Audit Report - ${escapeHtml(audit.site.name)}</title>
   <style>
-    @media print {
-      body { font-size: 11px; }
-      .no-print { display: none; }
-      @page { margin: 15mm; }
-    }
+    * { box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      max-width: 1000px;
+      max-width: 900px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 32px 24px;
       color: #1f2937;
       line-height: 1.5;
+      font-size: 13px;
     }
-    table { page-break-inside: auto; }
-    tr { page-break-inside: avoid; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+    .header h1 { font-size: 22px; margin: 0 0 2px 0; }
+    .header .subtitle { margin: 0; color: #6b7280; font-size: 13px; }
+    .print-btn { padding: 8px 16px; background: #1f2937; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .print-btn:hover { background: #374151; }
+    .info-card { margin-bottom: 20px; padding: 16px 20px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .info-card h2 { font-size: 14px; margin: 0 0 10px 0; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-table td { padding: 3px 0; }
+    .info-table .label { color: #6b7280; padding-right: 20px; white-space: nowrap; }
+    .info-table .value { font-weight: 500; }
+    .summary-grid { display: flex; gap: 16px; }
+    .stat-box { text-align: center; padding: 12px 20px; background: white; border-radius: 6px; border: 1px solid #e5e7eb; min-width: 80px; }
+    .stat-number { font-size: 26px; font-weight: 700; line-height: 1.1; }
+    .stat-label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px; }
+    .progress-bar-container { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 12px 20px; background: white; border-radius: 6px; border: 1px solid #e5e7eb; }
+    .progress-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; }
+    .progress-text { font-size: 11px; color: #6b7280; margin-top: 4px; }
+    .warning-banner { padding: 10px 16px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; color: #92400e; font-size: 12px; margin-bottom: 20px; }
+    .info-banner { padding: 10px 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; color: #1e40af; font-size: 12px; margin-bottom: 20px; }
+    .category { margin-bottom: 20px; }
+    .cat-header { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 0; }
+    .cat-title { font-size: 14px; font-weight: 600; }
+    .cat-stats { font-size: 11px; display: flex; gap: 10px; }
+    .results-table { width: 100%; border-collapse: collapse; }
+    .cell { padding: 5px 8px; border-bottom: 1px solid #f3f4f6; vertical-align: top; font-size: 12px; }
+    .id-cell { width: 36px; font-weight: 600; color: #6b7280; }
+    .check-cell { width: 35%; }
+    .status-cell { width: 70px; text-align: center; font-weight: 600; font-size: 11px; white-space: nowrap; }
+    .notes-cell { color: #4b5563; }
+    thead .cell { background: #f9fafb; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; display: flex; justify-content: space-between; }
+    @media print {
+      body { font-size: 10px; padding: 0; }
+      .no-print { display: none !important; }
+      @page { margin: 12mm; }
+      .info-card { break-inside: avoid; }
+      .category { break-inside: avoid; }
+      .stat-box { border-color: #d1d5db; }
+    }
   </style>
 </head>
 <body>
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
+  <div class="header">
     <div>
-      <h1 style="font-size:24px;margin:0 0 4px 0;">GDPR Audit Report</h1>
-      <p style="margin:0;color:#6b7280;font-size:14px;">Generated ${date}</p>
+      <h1>GDPR Compliance Audit Report</h1>
+      <p class="subtitle">${escapeHtml(audit.site.name)} - ${date}</p>
     </div>
-    <button class="no-print" onclick="window.print()" style="padding:8px 16px;background:#1f2937;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">
-      Print / Save PDF
-    </button>
+    <button class="print-btn no-print" onclick="window.print()">Print / Save PDF</button>
   </div>
 
-  <div style="margin-bottom:24px;padding:16px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;">
-    <h2 style="font-size:18px;margin:0 0 12px 0;">Site details</h2>
-    <table style="font-size:14px;">
-      <tr><td style="padding:2px 16px 2px 0;color:#6b7280;">Site</td><td style="font-weight:500;">${audit.site.name}</td></tr>
-      <tr><td style="padding:2px 16px 2px 0;color:#6b7280;">URL</td><td>${audit.site.url}</td></tr>
-      <tr><td style="padding:2px 16px 2px 0;color:#6b7280;">Platform</td><td>${audit.site.platform}</td></tr>
-      ${audit.site.cookiebotId ? `<tr><td style="padding:2px 16px 2px 0;color:#6b7280;">Cookiebot ID</td><td style="font-family:monospace;">${audit.site.cookiebotId}</td></tr>` : ""}
-      ${audit.site.gtmId ? `<tr><td style="padding:2px 16px 2px 0;color:#6b7280;">GTM ID</td><td style="font-family:monospace;">${audit.site.gtmId}</td></tr>` : ""}
-      <tr><td style="padding:2px 16px 2px 0;color:#6b7280;">Audit status</td><td>${audit.status}</td></tr>
-      ${audit.auditorName ? `<tr><td style="padding:2px 16px 2px 0;color:#6b7280;">Auditor</td><td>${audit.auditorName}</td></tr>` : ""}
+  <div class="info-card">
+    <h2>Site details</h2>
+    <table class="info-table">
+      <tr><td class="label">Site</td><td class="value">${escapeHtml(audit.site.name)}</td></tr>
+      <tr><td class="label">URL</td><td class="value">${escapeHtml(audit.site.url)}</td></tr>
+      <tr><td class="label">Platform</td><td class="value">${audit.site.platform}</td></tr>
+      ${audit.site.cookiebotId ? `<tr><td class="label">Cookiebot ID</td><td class="value" style="font-family:monospace;">${escapeHtml(audit.site.cookiebotId)}</td></tr>` : ""}
+      ${audit.site.gtmId ? `<tr><td class="label">GTM ID</td><td class="value" style="font-family:monospace;">${escapeHtml(audit.site.gtmId)}</td></tr>` : ""}
+      ${audit.auditorName ? `<tr><td class="label">Auditor</td><td class="value">${escapeHtml(audit.auditorName)}</td></tr>` : ""}
+      <tr><td class="label">Report date</td><td class="value">${date}</td></tr>
     </table>
   </div>
 
-  <div style="margin-bottom:24px;padding:16px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;">
-    <h2 style="font-size:18px;margin:0 0 8px 0;">Summary</h2>
-    <div style="display:flex;gap:24px;font-size:14px;">
-      <div><span style="font-size:28px;font-weight:700;color:#16a34a;">${ok}</span><br><span style="color:#6b7280;">OK</span></div>
-      <div><span style="font-size:28px;font-weight:700;color:#dc2626;">${issues}</span><br><span style="color:#6b7280;">Issues</span></div>
-      <div><span style="font-size:28px;font-weight:700;color:#9ca3af;">${na}</span><br><span style="color:#6b7280;">N/A</span></div>
-      <div><span style="font-size:28px;font-weight:700;color:#9ca3af;">${totalChecks - checked}</span><br><span style="color:#6b7280;">Not checked</span></div>
-      <div style="margin-left:auto;text-align:right;"><span style="font-size:28px;font-weight:700;">${totalChecks}</span><br><span style="color:#6b7280;">Total checks</span></div>
+  <div class="info-card">
+    <h2>Summary</h2>
+    <div class="summary-grid">
+      <div class="stat-box">
+        <div class="stat-number" style="color:#16a34a;">${ok}</div>
+        <div class="stat-label">OK</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" style="color:#dc2626;">${issues}</div>
+        <div class="stat-label">Issues</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" style="color:#6b7280;">${na}</div>
+        <div class="stat-label">N/A</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" style="color:#d1d5db;">${notChecked}</div>
+        <div class="stat-label">Not checked</div>
+      </div>
+      <div class="progress-bar-container">
+        <div style="font-size:20px;font-weight:700;">${progressPct}%</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:${progressPct}%;background:${issues > 0 ? "#dc2626" : "#16a34a"};"></div>
+        </div>
+        <div class="progress-text">${checked} of ${totalChecks} checks completed</div>
+      </div>
     </div>
   </div>
 
-  <h2 style="font-size:18px;margin:0 0 12px 0;">Audit results</h2>
+  ${completionNote}
+
   ${categorySections}
 
   ${scanSection}
 
-  <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af;">
-    Stormfors GDPR Compliance Audit - ${date}
+  <div class="footer">
+    <span>Stormfors GDPR Compliance Audit</span>
+    <span>${date}</span>
   </div>
 </body>
 </html>`;

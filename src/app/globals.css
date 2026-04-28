@@ -147,3 +147,30 @@
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
+
+@media print {
+  body, html {
+    background: white !important;
+    color: black !important;
+  }
+  .dark body, .dark html, [data-theme="dark"] body {
+    background: white !important;
+    color: black !important;
+  }
+  aside, nav, header {
+    display: none !important;
+  }
+  .prose {
+    color: black !important;
+  }
+  .prose * {
+    color: black !important;
+  }
+  .prose code {
+    background: #f3f4f6 !important;
+    color: black !important;
+  }
+  .prose th {
+    background: #f3f4f6 !important;
+  }
+}

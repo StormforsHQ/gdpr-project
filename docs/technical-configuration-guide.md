@@ -4,6 +4,10 @@ Setup guide for GDPR-compliant consent management using Cookiebot (CMP) and Goog
 
 **Architecture principle:** Only GTM goes in the site header. Everything else - Cookiebot, analytics, marketing pixels - deploys inside GTM. This gives a single control plane for all scripts and consent.
 
+### How this relates to the Audit Protocol
+
+This guide explains how to correctly set up a site's compliance infrastructure from scratch - it is aimed at the developer or implementer. The **Audit Protocol** is the companion document that explains how to verify an existing site was set up correctly. If you follow this guide when building a site, the site should pass the audit. Use the Audit Protocol to check sites that were not set up with this guide.
+
 ---
 
 ## Core Setup (all platforms)

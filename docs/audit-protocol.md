@@ -3,7 +3,15 @@
 Step-by-step guide for running a compliance audit on any client site. Designed so anyone on the team can follow it without prior GDPR expertise.
 
 **Time estimate:** 2-4 hours per site (depending on complexity)
-**Checklist reference:** GDPR Compliance Audit Checklist v2 (Google Sheet)
+**Checklist reference:** GDPR Compliance Audit App (all checks tracked in the app database)
+
+### How this relates to the Technical Configuration Guide
+
+The **Technical Configuration Guide** explains how to correctly set up Cookiebot, GTM, and consent management from scratch. It is the "how to build it right" document - aimed at the developer or implementer who is configuring a site's compliance infrastructure.
+
+This **Audit Protocol** is the "how to verify it was done right" document - aimed at anyone reviewing an existing site to check whether the technical setup is correct and complete. If a site was set up following the Technical Guide, it should pass this audit. In practice, most existing client sites were not set up with the guide, which is why the audit exists.
+
+In short: the Technical Guide is the prerequisite for compliance. The Audit Protocol is the verification that compliance was achieved.
 
 ---
 
@@ -25,12 +33,11 @@ Step-by-step guide for running a compliance audit on any client site. Designed s
 - AesirX Privacy Scanner (privacyscanner.aesirx.io) or Crumble (if running batch scans)
 
 ### Setup
-1. Open the audit spreadsheet (Google Sheet)
-2. Add a new row for the site
-3. Fill in: Client name, Site URL, Platform, Target regions, your name as Auditor, today's date
-4. Open the site in an incognito/private window (no cached cookies)
-5. Open DevTools (F12) and switch to the Network tab
-6. Keep a second tab open for the Cookiebot admin panel
+1. Add the site in the audit app (click "Add site", fill in name, URL, platform, Cookiebot ID, GTM ID)
+2. Open the site's audit page in the app
+3. Open the client site in an incognito/private window (no cached cookies)
+4. Open DevTools (F12) and switch to the Network tab
+5. Keep a second tab open for the Cookiebot admin panel
 
 ---
 
@@ -318,17 +325,17 @@ If the site doesn't have geo-targeting configured and serves international visit
 ## After the audit
 
 ### If issues found
-1. Document every issue in the spreadsheet (Issue status + what was found)
+1. All issues are already tracked in the app (checks with "Issue" status + notes)
 2. Fix what you can fix directly (script cleanup, GTM configuration, Cookiebot settings)
 3. Create a list of client-dependent fixes (DPAs, privacy policy updates, form changes)
 4. Send the client-dependent list to the client with clear instructions
 5. After all fixes: re-run Phase 6 and Phase 7 (consent banner + live testing) to verify
-6. Update the spreadsheet: change status to OK for fixed items
-7. When all checks pass: set Overall Status to "Compliant"
+6. Update check statuses to OK in the app for fixed items
+7. When all checks pass: download the audit report from the app
 
 ### If compliant
-1. Set Overall Status to "Compliant" in the spreadsheet
-2. Produce the client-facing compliance report (template TBD)
+1. Download the audit report from the app (Report button in site header)
+2. Share the report with the client as proof of compliance
 3. Note the date - schedule the next audit in 3 months or after any site changes
 
 ### Re-audit triggers

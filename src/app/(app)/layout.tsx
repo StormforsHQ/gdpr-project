@@ -40,11 +40,11 @@ export default async function AppShellLayout({
   return (
     <TooltipProvider>
       <ErrorLogProvider>
-        <div className="flex h-screen overflow-hidden">
+        <div className="flex h-screen overflow-hidden print:block print:h-auto print:overflow-visible">
           <Sidebar sites={sites} />
-          <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col print:block">
             <TopNavbar />
-            <main className="flex-1 overflow-y-auto scrollbar-subtle">
+            <main className="flex-1 overflow-y-auto scrollbar-subtle print:overflow-visible">
               {children}
             </main>
           </div>

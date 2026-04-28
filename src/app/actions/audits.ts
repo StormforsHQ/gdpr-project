@@ -24,7 +24,7 @@ export async function getLatestAudit(siteId: string) {
   });
 }
 
-export async function createAudit(siteId: string) {
+export async function createAudit(siteId: string, revalidate = true) {
   const audit = await prisma.audit.create({
     data: {
       siteId,
@@ -32,7 +32,9 @@ export async function createAudit(siteId: string) {
     },
   });
 
-  revalidatePath(`/sites/${siteId}`);
+  if (revalidate) {
+    revalidatePath(`/sites/${siteId}`);
+  }
   return audit;
 }
 

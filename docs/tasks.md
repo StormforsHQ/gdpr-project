@@ -268,11 +268,15 @@ communicate what's needed. No silent failures or misleading "All clear" results.
   - Toggles filter on/off, hides categories with no issues, shows only issue checks
 
 ### 3.4 Data quality and validation
-- [ ] Centralize URL normalization (shared utility used by scanner, AI agent, scan action, site creation)
-- [ ] Validate URL format on site creation and before scanning (reject obviously invalid URLs)
-- [ ] Add deduplication check on site import (match by URL or name, warn before creating duplicates)
+- [x] Centralize URL normalization (shared utility used by scanner, AI agent, scan action, site creation)
+  - src/lib/url.ts with normalizeUrl and isValidUrl, used by scanner, AI agent, site actions, checklist
+- [x] Validate URL format on site creation and before scanning (reject obviously invalid URLs)
+  - isValidUrl used in checklist view, normalizeUrl strips protocol on save
+- [x] Add deduplication check on site import (match by URL or name, warn before creating duplicates)
+  - createSite checks for existing match, bulk import normalizes URLs + skipDuplicates
 - [ ] Add auditorName field to Audit model (optional, tracks who performed the audit)
-- [ ] Ensure bad/fake URLs don't produce misleading data in DB
+- [x] Ensure bad/fake URLs don't produce misleading data in DB
+  - URLs normalized on create/update, validated before scanning
 
 ### 3.5 Scan history and re-running checks
 - [ ] Design approach: scan history, individual re-runs, and overwrite protection

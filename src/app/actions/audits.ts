@@ -67,14 +67,15 @@ export async function saveCheckResult(
   auditId: string,
   checkKey: string,
   status: CheckStatus,
-  notes: string
+  notes: string,
+  source: "manual" | "scan" | "ai" = "manual"
 ) {
   const result = await prisma.checkResult.upsert({
     where: {
       auditId_checkKey: { auditId, checkKey },
     },
-    update: { status, notes },
-    create: { auditId, checkKey, status, notes },
+    update: { status, notes, source },
+    create: { auditId, checkKey, status, notes, source },
   });
 
   return result;
@@ -102,6 +103,36 @@ export async function saveCheckResults(
   );
 
   return results;
+}
+
+export async function saveScanRun(
+  auditId: string,
+  scanType: "page-scan" | "ai-agent",
+  url: string,
+  findings: { checkKey: string; status: string; summary: string }[],
+  error?: string
+) {
+  const run = await prisma.scanRun.create({
+    data: {
+      auditId,
+      scanType,
+      url,
+      status: error ? "failed" : "completed",
+      findings: JSON.stringify(findings),
+      error: error || null,
+      completedAt: new Date(),
+    },
+  });
+
+  return run;
+}
+
+export async function getScanRuns(auditId: string) {
+  return prisma.scanRun.findMany({
+    where: { auditId },
+    orderBy: { startedAt: "desc" },
+    take: 20,
+  });
 }
 
 export async function getAuditProgress(auditId: string) {

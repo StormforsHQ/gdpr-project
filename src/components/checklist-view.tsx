@@ -11,7 +11,7 @@ import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
-import { saveCheckResult } from "@/app/actions/audits";
+import { saveCheckResult, saveScanRun } from "@/app/actions/audits";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
 import {
   AlertDialog,
@@ -24,20 +24,33 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useErrorLog, ErrorLogDrawer } from "@/components/error-log";
-import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock } from "lucide-react";
 
-type CheckState = Record<string, { status: CheckStatus; notes: string }>;
+type CheckEntry = { status: CheckStatus; notes: string; source: "manual" | "scan" | "ai" };
+type CheckState = Record<string, CheckEntry>;
+
+export type ScanRunEntry = {
+  id: string;
+  scanType: string;
+  url: string;
+  status: string;
+  findings: string;
+  startedAt: Date;
+  completedAt: Date | null;
+};
 
 interface ChecklistViewProps {
   siteUrl?: string;
   auditId?: string;
-  initialStates?: Record<string, { status: string; notes: string }>;
+  initialStates?: Record<string, { status: string; notes: string; source: string }>;
+  initialScanRuns?: ScanRunEntry[];
   siteFields?: { cookiebotId?: string | null; gtmId?: string | null };
 }
 
-export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: ChecklistViewProps) {
+export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns, siteFields }: ChecklistViewProps) {
   const { errors, addError } = useErrorLog();
   const [errorLogOpen, setErrorLogOpen] = useState(false);
+  const [scanRuns, setScanRuns] = useState<ScanRunEntry[]>(initialScanRuns ?? []);
   const [checkStates, setCheckStates] = useState<CheckState>(() => {
     if (!initialStates) return {};
     const states: CheckState = {};
@@ -45,6 +58,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
       states[key] = {
         status: value.status as CheckStatus,
         notes: value.notes,
+        source: (value.source as "manual" | "scan" | "ai") || "manual",
       };
     }
     return states;
@@ -65,6 +79,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
   const [urlError, setUrlError] = useState<string | null>(null);
   const [creditWarning, setCreditWarning] = useState<string | null>(null);
   const [filterIssues, setFilterIssues] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -73,11 +88,11 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
     setGuideOpen(true);
   };
 
-  const getCheckState = (key: string) =>
-    checkStates[key] ?? { status: "not_checked" as CheckStatus, notes: "" };
+  const getCheckState = (key: string): CheckEntry =>
+    checkStates[key] ?? { status: "not_checked" as CheckStatus, notes: "", source: "manual" as const };
 
   const persistCheck = useCallback(
-    (key: string, status: CheckStatus, notes: string) => {
+    (key: string, status: CheckStatus, notes: string, source: "manual" | "scan" | "ai" = "manual") => {
       if (!auditId) return;
 
       if (saveTimers.current[key]) {
@@ -85,7 +100,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
       }
 
       saveTimers.current[key] = setTimeout(() => {
-        saveCheckResult(auditId, key, status, notes).catch((err) => {
+        saveCheckResult(auditId, key, status, notes, source).catch((err) => {
           addError("save", `Failed to save check ${key}`, err instanceof Error ? err.message : "Unknown error");
         });
       }, 500);
@@ -95,24 +110,28 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
 
   const updateCheck = (key: string, field: "status" | "notes", value: string) => {
     setCheckStates((prev) => {
-      const current = prev[key] ?? { status: "not_checked" as CheckStatus, notes: "" };
-      const updated = { ...current, [field]: value };
-      persistCheck(key, updated.status as CheckStatus, updated.notes);
+      const current = prev[key] ?? { status: "not_checked" as CheckStatus, notes: "", source: "manual" as const };
+      const updated = { ...current, [field]: value, source: "manual" as const };
+      persistCheck(key, updated.status as CheckStatus, updated.notes, "manual");
       return { ...prev, [key]: updated };
     });
   };
 
-  const applyCheckResults = (results: CheckResult[]) => {
+  const applyCheckResults = (results: CheckResult[], source: "scan" | "ai") => {
     setCheckStates((prev) => {
       const next = { ...prev };
       for (const check of results) {
+        const existing = prev[check.checkKey];
+        if (existing?.source === "manual" && existing.status !== "not_checked") {
+          continue;
+        }
         const findingSummary = check.findings
           .map((f) => f.detail)
           .join("; ");
         const status = check.status as CheckStatus;
         const notes = findingSummary || check.summary;
-        next[check.checkKey] = { status, notes };
-        persistCheck(check.checkKey, status, notes);
+        next[check.checkKey] = { status, notes, source };
+        persistCheck(check.checkKey, status, notes, source);
       }
       return next;
     });
@@ -171,14 +190,23 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
       const result = await runPageScan(scanUrl);
       if (!result.error) {
         setScanResult(result);
-        applyCheckResults(result.checks);
+        applyCheckResults(result.checks, "scan");
         const failedChecks = result.checks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
         for (const check of failedChecks) {
           addError("scan", `Check ${check.checkKey} failed`, check.summary);
         }
+        if (auditId) {
+          const findings = result.checks.map((c) => ({ checkKey: c.checkKey, status: c.status, summary: c.summary }));
+          const run = await saveScanRun(auditId, "page-scan", scanUrl, findings);
+          setScanRuns((prev) => [run, ...prev]);
+        }
       } else {
         setScanResult(result);
         addError("scan", `Page scan failed: ${result.error}`, scanUrl);
+        if (auditId) {
+          const run = await saveScanRun(auditId, "page-scan", scanUrl, [], result.error);
+          setScanRuns((prev) => [run, ...prev]);
+        }
       }
     } catch (err) {
       addError("scan", "Page scan crashed", err instanceof Error ? err.message : "Unknown error");
@@ -191,10 +219,15 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
     setAiScanning(true);
     try {
       const results = await runAllAIChecks(scanUrl);
-      applyCheckResults(results);
+      applyCheckResults(results, "ai");
       const failedChecks = results.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
       for (const check of failedChecks) {
         addError("ai", `AI check ${check.checkKey} failed`, check.summary);
+      }
+      if (auditId) {
+        const findings = results.map((c) => ({ checkKey: c.checkKey, status: c.status, summary: c.summary }));
+        const run = await saveScanRun(auditId, "ai-agent", scanUrl, findings);
+        setScanRuns((prev) => [run, ...prev]);
       }
     } catch (err) {
       addError("ai", "AI analysis crashed", err instanceof Error ? err.message : "Unknown error");
@@ -251,24 +284,38 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
     setConfirmAction(null);
   };
 
-  const handleRunCheck = async (checkKey: string) => {
+  const handleRunCheck = async (checkKey: string, automation: string) => {
     if (!scanUrl.trim()) return;
 
-    const credits = await checkOpenRouterCredits();
-    if (!credits.available) {
-      setCreditWarning(credits.error || "No OpenRouter credits remaining");
-      return;
+    if (automation === "ai-agent") {
+      const credits = await checkOpenRouterCredits();
+      if (!credits.available) {
+        setCreditWarning(credits.error || "No OpenRouter credits remaining");
+        return;
+      }
     }
 
     setRunningChecks((prev) => new Set(prev).add(checkKey));
     try {
-      const result = await runSingleAICheck(checkKey, scanUrl);
-      applyCheckResults([result]);
-      if (result.status === "na" && result.findings.some((f) => f.severity === "warning")) {
-        addError("ai", `AI check ${checkKey} failed`, result.summary);
+      if (automation === "page-scan") {
+        const result = await runPageScan(scanUrl);
+        if (!result.error) {
+          const checkResult = result.checks.find((c) => c.checkKey === checkKey);
+          if (checkResult) {
+            applyCheckResults([checkResult], "scan");
+          }
+        } else {
+          addError("scan", `Scan check ${checkKey} failed`, result.error);
+        }
+      } else {
+        const result = await runSingleAICheck(checkKey, scanUrl);
+        applyCheckResults([result], "ai");
+        if (result.status === "na" && result.findings.some((f) => f.severity === "warning")) {
+          addError("ai", `AI check ${checkKey} failed`, result.summary);
+        }
       }
     } catch (err) {
-      addError("ai", `AI check ${checkKey} crashed`, err instanceof Error ? err.message : "Unknown error");
+      addError(automation === "page-scan" ? "scan" : "ai", `Check ${checkKey} crashed`, err instanceof Error ? err.message : "Unknown error");
     } finally {
       setRunningChecks((prev) => {
         const next = new Set(prev);
@@ -372,6 +419,45 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
         </CardContent>
       </Card>
 
+      {scanRuns.length > 0 && (
+        <div>
+          <button
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setShowHistory(!showHistory)}
+          >
+            <History className="h-3.5 w-3.5" />
+            {scanRuns.length} scan run{scanRuns.length !== 1 ? "s" : ""}
+            {showHistory ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          </button>
+          {showHistory && (
+            <div className="mt-2 space-y-1">
+              {scanRuns.map((run) => {
+                const findings = JSON.parse(run.findings) as { checkKey: string; status: string; summary: string }[];
+                const issues = findings.filter((f) => f.status === "issue").length;
+                return (
+                  <div key={run.id} className="flex items-center gap-3 text-xs text-muted-foreground px-2 py-1.5 rounded-md bg-muted/50">
+                    <Clock className="h-3 w-3 shrink-0" />
+                    <span>{new Date(run.startedAt).toLocaleString()}</span>
+                    <Badge variant="secondary" className="text-[10px]">
+                      {run.scanType === "page-scan" ? "Scan" : "AI"}
+                    </Badge>
+                    <span className="truncate">{run.url}</span>
+                    {run.status === "completed" ? (
+                      <>
+                        <span>{findings.length} checks</span>
+                        {issues > 0 && <Badge variant="destructive" className="text-[10px]">{issues}</Badge>}
+                      </>
+                    ) : (
+                      <Badge variant="secondary" className="text-[10px] bg-amber-500/15 text-amber-600">Failed</Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center gap-4 text-sm">
         <span className="text-muted-foreground">
           Progress: {totalChecked}/{totalChecks} checked
@@ -459,7 +545,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
                       onNotesChange={(n) => updateCheck(check.key, "notes", n)}
                       onOpenGuide={openGuide}
                       onViewScanDetails={scanCheck ? openScanDetails : undefined}
-                      onRunCheck={check.automation === "ai-agent" ? handleRunCheck : undefined}
+                      onRunCheck={(check.automation === "ai-agent" || check.automation === "page-scan") ? (key) => handleRunCheck(key, check.automation) : undefined}
                     />
                   );
                 })}
@@ -490,6 +576,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, siteFields }: C
             </AlertDialogTitle>
             <AlertDialogDescription>
               This will overwrite existing {confirmAction === "scan" ? "scan" : "AI analysis"} results.
+              Manually reviewed checks will be preserved.
               To re-run individual checks instead, use the Re-run button on each check.
             </AlertDialogDescription>
           </AlertDialogHeader>

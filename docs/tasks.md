@@ -261,7 +261,8 @@ communicate what's needed. No silent failures or misleading "All clear" results.
   - Audit progress calculated from check results (0=none, 1-68=partial, 69=complete)
 - [x] Add legend/explanation for the status dots
   - Legend at bottom of sidebar nav
-- [ ] Add tech stack summary section at bottom of sidebar (like json-ld app)
+- [x] Add tech stack summary section at bottom of sidebar
+  - Shows Next.js 16, Prisma, PostgreSQL, shadcn/ui, OpenRouter, Cheerio
 
 ### 3.3 Filtering and navigation
 - [x] Make issue count badge clickable to filter checklist to issues only (across all categories)
@@ -274,7 +275,8 @@ communicate what's needed. No silent failures or misleading "All clear" results.
   - isValidUrl used in checklist view, normalizeUrl strips protocol on save
 - [x] Add deduplication check on site import (match by URL or name, warn before creating duplicates)
   - createSite checks for existing match, bulk import normalizes URLs + skipDuplicates
-- [ ] Add auditorName field to Audit model (optional, tracks who performed the audit)
+- [x] Add auditorName field to Audit model (optional, tracks who performed the audit)
+  - Nullable field added to Prisma schema, synced via db push on deploy
 - [x] Ensure bad/fake URLs don't produce misleading data in DB
   - URLs normalized on create/update, validated before scanning
 
@@ -290,7 +292,9 @@ communicate what's needed. No silent failures or misleading "All clear" results.
 - [ ] Follow Stormfors branding/design system (once available)
 
 ### 3.7 Testing
-- [ ] Run Playwright E2E tests on all pages (console errors, navigation, responsive)
+- [x] Run Playwright E2E tests on all pages (console errors, navigation, responsive)
+  - 21 tests: navigation, sidebar, help drawer, theme toggle, checklist demo mode
+  - Config at playwright.config.ts, tests in tests/ directory
 - [ ] Test scan + AI analyze edge cases (invalid URLs, timeouts, sites that block scrapers, empty pages)
 - [ ] Test CRUD flows (add/edit/delete sites, audit state persistence across sessions)
 - [ ] Test auto-save reliability (rapid toggling, network interruptions)

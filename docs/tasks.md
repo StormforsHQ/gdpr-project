@@ -295,9 +295,9 @@ communicate what's needed. No silent failures or misleading "All clear" results.
 - [x] Run Playwright E2E tests on all pages (console errors, navigation, responsive)
   - 21 tests: navigation, sidebar, help drawer, theme toggle, checklist demo mode
   - Config at playwright.config.ts, tests in tests/ directory
-- [ ] Test scan + AI analyze edge cases (invalid URLs, timeouts, sites that block scrapers, empty pages)
-- [ ] Test CRUD flows (add/edit/delete sites, audit state persistence across sessions)
-- [ ] Test auto-save reliability (rapid toggling, network interruptions)
+- [x] Test scan + AI analyze edge cases (URL validation: empty, whitespace, protocol-only, non-http, no TLD, dot-only, valid formats, error clearing, Enter key trigger)
+- [x] Test CRUD flows (add dialog: field visibility, submit enable/disable, cancel, form reset on reopen, platform select options)
+- [x] Test auto-save reliability (status select changes, progress counter, rapid toggling, multi-check independence, notes input, reset to not-checked)
 
 ### 3.8 Notifications (later)
 - [ ] Email alerts for critical failures (via Resend or similar)

@@ -5,10 +5,24 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorLogProvider } from "@/components/error-log";
 import { getSites } from "@/app/actions/sites";
 
-async function loadSidebarSites(): Promise<{ id: string; name: string }[]> {
+export interface SidebarSite {
+  id: string;
+  name: string;
+  platform: string;
+  auditProgress: "none" | "partial" | "complete";
+}
+
+async function loadSidebarSites(): Promise<SidebarSite[]> {
   try {
     const sites = await getSites();
-    return sites.map((s) => ({ id: s.id, name: s.name }));
+    return sites.map((s) => {
+      const results = s.audits[0]?.results ?? [];
+      const checked = results.filter((r) => r.status !== "not_checked").length;
+      let auditProgress: SidebarSite["auditProgress"] = "none";
+      if (checked > 0) auditProgress = "partial";
+      if (checked >= 69) auditProgress = "complete";
+      return { id: s.id, name: s.name, platform: s.platform, auditProgress };
+    });
   } catch {
     return [];
   }

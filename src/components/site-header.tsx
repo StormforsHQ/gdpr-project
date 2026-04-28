@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EditSiteDialog } from "@/components/edit-site-dialog";
 import { CHECK_REQUIREMENTS, type CheckRequirement } from "@/lib/glossary";
-import { generateAuditReport } from "@/app/actions/report";
-import { Settings, ExternalLink, AlertTriangle, Download } from "lucide-react";
+import { Settings, ExternalLink, AlertTriangle, FileText } from "lucide-react";
+import Link from "next/link";
 
 interface SiteHeaderProps {
   site: {
@@ -65,21 +65,12 @@ export function SiteHeader({ site, auditId }: SiteHeaderProps) {
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={async () => {
-                const html = await generateAuditReport(auditId);
-                if (!html) return;
-                const blob = new Blob([html], { type: "text/html" });
-                const url = URL.createObjectURL(blob);
-                window.open(url, "_blank");
-              }}
-            >
-              <Download className="h-4 w-4" />
-              Report
-            </Button>
+            <Link href={`/sites/${site.id}/report`}>
+              <Button variant="outline" size="sm" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Report
+              </Button>
+            </Link>
             <Button
               variant="outline"
               size="sm"

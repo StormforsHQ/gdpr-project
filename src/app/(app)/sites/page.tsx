@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AddSiteDialog } from "@/components/add-site-dialog";
+import { DeleteSiteButton } from "@/components/delete-site-button";
 import { getSites } from "@/app/actions/sites";
 
 type SiteWithAudit = {
@@ -106,6 +107,7 @@ export default async function SitesPage() {
                   <TableHead>Platform</TableHead>
                   <TableHead>Progress</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -141,6 +143,9 @@ export default async function SitesPage() {
                         <Badge variant={badge.variant} className="text-xs">
                           {badge.label}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DeleteSiteButton siteId={site.id} siteName={site.name} />
                       </TableCell>
                     </TableRow>
                   );

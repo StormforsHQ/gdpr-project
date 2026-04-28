@@ -13,10 +13,10 @@ interface ReportPageProps {
 export default async function ReportPage({ params }: ReportPageProps) {
   const { id } = await params;
   const site = await getSite(id);
-  if (!site) return <div className="p-6">Site not found.</div>;
+  if (!site) return <div className="p-12 text-center text-gray-500">Site not found.</div>;
 
   const audit = await getLatestAudit(site.id);
-  if (!audit) return <div className="p-6">No audit found for this site.</div>;
+  if (!audit) return <div className="p-12 text-center text-gray-500">No audit found for this site.</div>;
 
   const report = await getLatestReport(audit.id);
 

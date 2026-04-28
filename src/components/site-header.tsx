@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EditSiteDialog } from "@/components/edit-site-dialog";
 import { CHECK_REQUIREMENTS, type CheckRequirement } from "@/lib/glossary";
-import { Settings, ExternalLink, AlertTriangle, FileText } from "lucide-react";
+import { Settings, ExternalLink, AlertTriangle, FileText, ChevronDown } from "lucide-react";
+import type { ReportListItem } from "@/app/actions/report";
 
 interface SiteHeaderProps {
   site: {
@@ -19,6 +20,7 @@ interface SiteHeaderProps {
     webflowId?: string | null;
   };
   auditId: string;
+  reportVersions: ReportListItem[];
 }
 
 const PLATFORM_LABELS: Record<string, string> = {
@@ -49,9 +51,25 @@ function getMissingFieldCounts(site: SiteHeaderProps["site"]): { field: CheckReq
     .map(([field, v]) => ({ field: field as CheckRequirement, label: v.label, count: v.count }));
 }
 
-export function SiteHeader({ site, auditId }: SiteHeaderProps) {
+export function SiteHeader({ site, auditId, reportVersions }: SiteHeaderProps) {
   const [editOpen, setEditOpen] = useState(false);
+  const [reportMenuOpen, setReportMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const missingFields = getMissingFieldCounts(site);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setReportMenuOpen(false);
+      }
+    }
+    if (reportMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [reportMenuOpen]);
+
+  const hasVersions = reportVersions.length > 0;
 
   return (
     <Card>
@@ -64,12 +82,51 @@ export function SiteHeader({ site, auditId }: SiteHeaderProps) {
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            <a href={`/report/${site.id}`} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="sm" className="gap-2">
-                <FileText className="h-4 w-4" />
-                Report
-              </Button>
-            </a>
+            <div className="relative" ref={menuRef}>
+              <div className="flex">
+                <a href={`/report/${site.id}`} target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" size="sm" className={`gap-2 ${hasVersions ? "rounded-r-none border-r-0" : ""}`}>
+                    <FileText className="h-4 w-4" />
+                    Report
+                  </Button>
+                </a>
+                {hasVersions && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-l-none px-1.5"
+                    onClick={() => setReportMenuOpen(!reportMenuOpen)}
+                  >
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+
+              {reportMenuOpen && (
+                <div className="absolute right-0 top-full mt-1 z-20 w-56 rounded-md border border-border bg-popover shadow-md">
+                  <div className="p-1">
+                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                      Saved versions
+                    </div>
+                    {reportVersions.map((v) => (
+                      <a
+                        key={v.id}
+                        href={`/report/${site.id}?version=${v.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between px-2 py-1.5 text-sm rounded-sm hover:bg-accent cursor-pointer"
+                        onClick={() => setReportMenuOpen(false)}
+                      >
+                        <span>v{v.version}.0</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(v.createdAt).toISOString().split("T")[0]}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <Button
               variant="outline"
               size="sm"

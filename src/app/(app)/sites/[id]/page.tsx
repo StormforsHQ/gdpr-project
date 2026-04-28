@@ -3,6 +3,7 @@ import { ChecklistView } from "@/components/checklist-view";
 import { SiteHeader } from "@/components/site-header";
 import { getSite } from "@/app/actions/sites";
 import { getLatestAudit, createAudit, getScanRuns } from "@/app/actions/audits";
+import { listReports } from "@/app/actions/report";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,8 @@ async function loadSiteData(id: string) {
       } catch (err) {
         console.error("getScanRuns failed (non-fatal):", err);
       }
-      return { site, audit: existingAudit, scanRuns };
+      const reportVersions = await listReports(existingAudit.id);
+      return { site, audit: existingAudit, scanRuns, reportVersions };
     }
 
     const newAudit = await createAudit(site.id, false);
@@ -34,6 +36,7 @@ async function loadSiteData(id: string) {
         results: [] as { id: string; auditId: string; checkKey: string; status: string; notes: string; source: string; createdAt: Date; updatedAt: Date }[],
       },
       scanRuns: [],
+      reportVersions: [],
     };
 
   } catch (error) {
@@ -65,7 +68,7 @@ export default async function SitePage({ params }: SitePageProps) {
     );
   }
 
-  const { site, audit, scanRuns } = data;
+  const { site, audit, scanRuns, reportVersions } = data;
   const initialStates: Record<string, { status: string; notes: string; source: string }> = {};
   for (const result of audit.results) {
     initialStates[result.checkKey] = {
@@ -77,7 +80,7 @@ export default async function SitePage({ params }: SitePageProps) {
 
   return (
     <div className="p-6 space-y-6">
-      <SiteHeader site={site} auditId={audit.id} />
+      <SiteHeader site={site} auditId={audit.id} reportVersions={reportVersions} />
       <ChecklistView
         siteUrl={site.url}
         auditId={audit.id}

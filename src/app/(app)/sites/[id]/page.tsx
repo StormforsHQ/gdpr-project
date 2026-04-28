@@ -17,7 +17,12 @@ async function loadSiteData(id: string) {
 
     const existingAudit = await getLatestAudit(site.id);
     if (existingAudit) {
-      const scanRuns = await getScanRuns(existingAudit.id);
+      let scanRuns: Awaited<ReturnType<typeof getScanRuns>> = [];
+      try {
+        scanRuns = await getScanRuns(existingAudit.id);
+      } catch (err) {
+        console.error("getScanRuns failed (non-fatal):", err);
+      }
       return { site, audit: existingAudit, scanRuns };
     }
 
@@ -32,7 +37,10 @@ async function loadSiteData(id: string) {
     };
 
   } catch (error) {
-    console.error("loadSiteData failed:", error);
+    console.error("loadSiteData failed for id:", id, "error:", error instanceof Error ? error.message : error);
+    if (error instanceof Error && error.stack) {
+      console.error("Stack:", error.stack);
+    }
     return null;
   }
 }
@@ -63,7 +71,7 @@ export default async function SitePage({ params }: SitePageProps) {
     initialStates[result.checkKey] = {
       status: result.status,
       notes: result.notes,
-      source: result.source,
+      source: (result as Record<string, unknown>).source as string ?? "manual",
     };
   }
 

@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EditSiteDialog } from "@/components/edit-site-dialog";
 import { CHECK_REQUIREMENTS, type CheckRequirement } from "@/lib/glossary";
 import { Settings, ExternalLink, AlertTriangle, FileText } from "lucide-react";
-import Link from "next/link";
 
 interface SiteHeaderProps {
   site: {
@@ -65,12 +64,12 @@ export function SiteHeader({ site, auditId }: SiteHeaderProps) {
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            <Link href={`/sites/${site.id}/report`}>
+            <a href={`/report/${site.id}`} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm" className="gap-2">
                 <FileText className="h-4 w-4" />
                 Report
               </Button>
-            </Link>
+            </a>
             <Button
               variant="outline"
               size="sm"

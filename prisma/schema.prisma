@@ -34,8 +34,27 @@ model Audit {
   site    Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
   results CheckResult[]
   scans   ScanRun[]
+  reports Report[]
 
   @@map("audits")
+}
+
+model Report {
+  id               String   @id @default(cuid())
+  auditId          String   @map("audit_id")
+  version          Int      @default(1)
+  executiveSummary  String   @default("") @map("executive_summary")
+  conclusion       String   @default("") @map("conclusion")
+  snapshotHtml     String   @map("snapshot_html")
+  statsOk          Int      @default(0) @map("stats_ok")
+  statsIssues      Int      @default(0) @map("stats_issues")
+  statsNa          Int      @default(0) @map("stats_na")
+  statsNotChecked  Int      @default(0) @map("stats_not_checked")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  audit Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
 }
 
 model CheckResult {

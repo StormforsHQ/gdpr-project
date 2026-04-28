@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+export const dynamic = "force-dynamic";
 import {
   Table,
   TableBody,
@@ -110,11 +112,11 @@ export default async function SitesPage() {
                 {sites.map((site) => {
                   const badge = STATUS_BADGES[site.status] ?? STATUS_BADGES.not_started;
                   return (
-                    <TableRow key={site.id}>
+                    <TableRow key={site.id} className="group relative cursor-pointer">
                       <TableCell>
                         <Link
                           href={`/sites/${site.id}`}
-                          className="text-sm font-medium hover:underline"
+                          className="text-sm font-medium group-hover:underline after:absolute after:inset-0"
                         >
                           {site.name}
                         </Link>

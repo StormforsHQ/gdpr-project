@@ -41,6 +41,4 @@ EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-HEALTHCHECK --interval=5s --timeout=3s --start-period=30s --retries=3 \
-  CMD wget -qO- http://localhost:3000/api/health || exit 1
 CMD ["sh", "/app/entrypoint.sh"]

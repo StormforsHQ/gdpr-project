@@ -246,21 +246,26 @@ communicate what's needed. No silent failures or misleading "All clear" results.
 ## Layer 3: UX and usability
 
 ### 3.1 Help system
-- [ ] Add help icon (?) next to sun/moon toggle in top right
-- [ ] Quick start guide: what the app does, how to add a site, how to run an audit, what the statuses mean
-- [ ] Explain automation types (Auto, Browser, AI, GTM API, Cookiebot, Manual) and what each needs
-- [ ] Link to reference docs (Technical Guide, Audit Protocol, Cheat Sheet) from help
+- [x] Add help icon (?) next to sun/moon toggle in top right
+- [x] Quick start guide: what the app does, how to add a site, how to run an audit, what the statuses mean
+- [x] Explain automation types (Auto, Browser, AI, GTM API, Cookiebot, Manual) and what each needs
+- [x] Link to reference docs (Technical Guide, Audit Protocol, Cheat Sheet, MCP Servers) from help
 
 ### 3.2 Sidebar improvements
-- [ ] Fix sidebar alignment (Sites parent item and sub-items background not aligned)
-- [ ] Group sites by platform (Webflow, HubSpot, Next.js) with platform headers
-- [ ] Sort sites alphabetically within each platform group
-- [ ] Add status dots next to site names (green = audit complete, orange = partial, grey = not started)
-- [ ] Add legend/explanation for the status dots
+- [x] Fix sidebar alignment (Sites parent item and sub-items background not aligned)
+- [x] Group sites by platform (Webflow, HubSpot, Next.js) with platform headers
+  - Platform headers only shown when sites span multiple platforms
+- [x] Sort sites alphabetically within each platform group
+  - getSites already orders by name asc, groups maintain that order
+- [x] Add status dots next to site names (green = audit complete, orange = partial, grey = not started)
+  - Audit progress calculated from check results (0=none, 1-68=partial, 69=complete)
+- [x] Add legend/explanation for the status dots
+  - Legend at bottom of sidebar nav
 - [ ] Add tech stack summary section at bottom of sidebar (like json-ld app)
 
 ### 3.3 Filtering and navigation
-- [ ] Make issue count badge clickable to filter checklist to issues only (across all categories)
+- [x] Make issue count badge clickable to filter checklist to issues only (across all categories)
+  - Toggles filter on/off, hides categories with no issues, shows only issue checks
 
 ### 3.4 Data quality and validation
 - [ ] Centralize URL normalization (shared utility used by scanner, AI agent, scan action, site creation)

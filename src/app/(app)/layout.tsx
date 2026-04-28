@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorLogProvider } from "@/components/error-log";
 import { getSites } from "@/app/actions/sites";
 
+export const dynamic = "force-dynamic";
+
 export interface SidebarSite {
   id: string;
   name: string;

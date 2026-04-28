@@ -4,6 +4,8 @@ import { SiteHeader } from "@/components/site-header";
 import { getSite } from "@/app/actions/sites";
 import { getLatestAudit, createAudit } from "@/app/actions/audits";
 
+export const dynamic = "force-dynamic";
+
 interface SitePageProps {
   params: Promise<{ id: string }>;
 }

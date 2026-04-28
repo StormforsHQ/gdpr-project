@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { normalizeUrl } from "@/lib/url";
 
 export async function getSites() {
   return prisma.site.findMany({
@@ -40,10 +41,11 @@ export async function createSite(data: {
   cookiebotId?: string;
   gtmId?: string;
 }) {
+  const cleanUrl = normalizeUrl(data.url).replace(/^https?:\/\//, "");
   const site = await prisma.site.create({
     data: {
       name: data.name,
-      url: data.url,
+      url: cleanUrl,
       platform: data.platform || "webflow",
       webflowId: data.webflowId || null,
       cookiebotId: data.cookiebotId || null,
@@ -67,9 +69,13 @@ export async function updateSite(
     gtmId?: string | null;
   }
 ) {
+  const updateData = { ...data };
+  if (updateData.url) {
+    updateData.url = normalizeUrl(updateData.url).replace(/^https?:\/\//, "");
+  }
   const site = await prisma.site.update({
     where: { id },
-    data,
+    data: updateData,
   });
 
   revalidatePath("/sites");

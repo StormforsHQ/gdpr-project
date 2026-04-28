@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import { normalizeUrl } from "@/lib/url";
 
 export interface ScanFinding {
   element: string;
@@ -77,10 +78,6 @@ const SOCIAL_EMBEDS = [
   { pattern: /embedsocial\.com/i, name: "EmbedSocial" },
 ];
 
-function normalizeUrl(url: string): string {
-  if (!url.startsWith("http")) url = "https://" + url;
-  return url.replace(/\/$/, "");
-}
 
 export async function scanSite(url: string): Promise<ScanResult> {
   const normalizedUrl = normalizeUrl(url);

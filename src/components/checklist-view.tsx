@@ -85,6 +85,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
   const [showHistory, setShowHistory] = useState(false);
   const [fixAvailability, setFixAvailability] = useState<Record<string, FixAvailability>>({});
   const [fixingChecks, setFixingChecks] = useState<Set<string>>(new Set());
+  const [lastSkippedCount, setLastSkippedCount] = useState(0);
 
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -126,12 +127,14 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
     });
   };
 
-  const applyCheckResults = (results: CheckResult[], source: "scan" | "ai") => {
+  const applyCheckResults = (results: CheckResult[], source: "scan" | "ai"): number => {
+    let skipped = 0;
     setCheckStates((prev) => {
       const next = { ...prev };
       for (const check of results) {
         const existing = prev[check.checkKey];
         if (existing?.source === "manual" && existing.status !== "not_checked") {
+          skipped++;
           continue;
         }
         const findingSummary = check.findings
@@ -164,6 +167,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
         checks: [...updatedChecks, ...newChecks],
       };
     });
+
+    return skipped;
   };
 
   const toggleCategory = (id: string) => {
@@ -200,7 +205,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
       if (!result.error) {
         setLastScanType("page-scan");
         setScanResult(result);
-        applyCheckResults(result.checks, "scan");
+        let totalSkipped = applyCheckResults(result.checks, "scan");
         const failedChecks = result.checks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
         for (const check of failedChecks) {
           addError("scan", `Check ${check.checkKey} failed`, check.summary);
@@ -215,7 +220,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
         if (cbid) {
           try {
             const cbResults = await runCookiebotScan(cbid);
-            applyCheckResults(cbResults, "scan");
+            totalSkipped += applyCheckResults(cbResults, "scan");
             if (auditId) {
               const cbFindings = cbResults.map((c) => ({ checkKey: c.checkKey, status: c.status, summary: c.summary }));
               const cbRun = await saveScanRun(auditId, "cookiebot", scanUrl, cbFindings);
@@ -225,6 +230,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
             addError("scan", "Cookiebot scan failed", err instanceof Error ? err.message : "Unknown error");
           }
         }
+        setLastSkippedCount(totalSkipped);
       } else {
         setScanResult(result);
         addError("scan", `Page scan failed: ${result.error}`, scanUrl);
@@ -245,7 +251,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
     try {
       const results = await runAllAIChecks(scanUrl);
       setLastScanType("ai-agent");
-      applyCheckResults(results, "ai");
+      const skipped = applyCheckResults(results, "ai");
+      setLastSkippedCount(skipped);
       const failedChecks = results.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
       for (const check of failedChecks) {
         addError("ai", `AI check ${check.checkKey} failed`, check.summary);
@@ -460,6 +467,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
               )}
               {scanIssueCount === 0 && scanFailedCount === 0 && (
                 <Badge variant="secondary" className="text-xs bg-green-500/15 text-green-600 dark:text-green-400">All clear</Badge>
+              )}
+              {lastSkippedCount > 0 && (
+                <span className="text-amber-600 dark:text-amber-400">{lastSkippedCount} skipped (manually reviewed)</span>
               )}
             </div>
           )}

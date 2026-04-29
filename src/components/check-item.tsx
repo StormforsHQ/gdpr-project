@@ -89,6 +89,17 @@ export function CheckItem({
         <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 ${automationInfo.className}`}>
           {automationInfo.label}
         </span>
+        {missingRequirements.length > 0 && status === "not_checked" && (
+          <Tooltip>
+            <TooltipTrigger>
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs">
+              <p>{missingRequirements.map((r) => r.reason).join(". ")}</p>
+              <p className="opacity-80 mt-0.5">Add it in site settings to enable this check.</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
         {scanResult && (
           <Button
             variant="ghost"

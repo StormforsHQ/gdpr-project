@@ -15,7 +15,7 @@ import { AlertCircle, Trash2, X } from "lucide-react";
 export interface ErrorEntry {
   id: string;
   timestamp: Date;
-  source: "scan" | "ai" | "save" | "system";
+  source: "scan" | "ai" | "save" | "system" | "fix";
   message: string;
   detail?: string;
 }
@@ -65,6 +65,7 @@ const SOURCE_LABELS: Record<ErrorEntry["source"], string> = {
   ai: "AI check",
   save: "Save",
   system: "System",
+  fix: "Auto-fix",
 };
 
 interface ErrorLogDrawerProps {

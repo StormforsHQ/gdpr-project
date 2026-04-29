@@ -9,11 +9,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Check, CheckStatus, LegalReference } from "@/lib/checklist";
 import type { CheckResult } from "@/lib/scanner";
-import { STATUS_CONFIG, AUTOMATION_CONFIG } from "@/lib/checklist";
+import { AUTOMATION_CONFIG } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { GlossaryText } from "@/components/glossary-text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -126,12 +125,6 @@ export function CheckItem({
         >
           <Info className="h-4 w-4 text-muted-foreground" />
         </Button>
-        <Badge
-          variant={status === "issue" ? "destructive" : "secondary"}
-          className="text-xs"
-        >
-          {STATUS_CONFIG[status].label}
-        </Badge>
       </div>
 
       {expanded && (

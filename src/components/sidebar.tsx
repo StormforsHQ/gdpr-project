@@ -14,7 +14,6 @@ import {
   LayoutDashboard,
   Globe,
   BookOpen,
-  Settings,
 } from "lucide-react";
 
 const PLATFORM_LABELS: Record<string, string> = {
@@ -213,15 +212,6 @@ export function Sidebar({ sites }: SidebarProps) {
             </div>
           )}
         </div>
-
-        <Link
-          href="/settings"
-          onClick={() => setMobileOpen(false)}
-          className={navLinkClass(isActive("/settings"))}
-        >
-          <Settings className="h-4 w-4" />
-          Settings
-        </Link>
 
         <div className="pt-3 mt-3 border-t">
           <div className="px-3 space-y-1">

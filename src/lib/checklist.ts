@@ -135,7 +135,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "B5", label: "Google Consent Mode V2 enabled", description: "Checkbox in Cookiebot CMP template. All 4 parameters transmitting.", automation: "browser-test",
+        key: "B5", label: "Google Consent Mode V2 enabled", description: "Checkbox in Cookiebot CMP template. All 4 parameters transmitting.", automation: "page-scan",
         legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 6(1)(a), Art. 7, Art. 25",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
@@ -370,7 +370,7 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Consent banner",
     checks: [
       {
-        key: "G1", label: "Banner appears on first visit", description: "Consent dialog visible and functional", automation: "browser-test",
+        key: "G1", label: "Banner appears on first visit", description: "Consent dialog visible and functional", automation: "page-scan",
         legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 6(1)(a), Art. 7 - consent must precede processing",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
@@ -397,7 +397,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "G3", label: "Granular category controls available", description: "User can accept/reject per category", automation: "browser-test",
+        key: "G3", label: "Granular category controls available", description: "User can accept/reject per category", automation: "cookiebot-api",
         legalBasis: "GDPR Art. 7 - conditions for consent; Art. 4(11) - specific consent",
         references: [
           { label: "GDPR Art. 7 - Conditions for consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
@@ -446,7 +446,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "G8", label: "Consent withdrawal accessible at all times", description: "Persistent widget or footer link lets users review and change consent. Withdrawal must be as easy as giving consent.", automation: "browser-test",
+        key: "G8", label: "Consent withdrawal accessible at all times", description: "Persistent widget or footer link lets users review and change consent. Withdrawal must be as easy as giving consent.", automation: "page-scan",
         legalBasis: "GDPR Art. 7(3) - withdrawal must be as easy as giving consent",
         references: [
           { label: "GDPR Art. 7(3) - Withdrawal of consent", url: "https://gdpr-info.eu/art-7-gdpr/" },

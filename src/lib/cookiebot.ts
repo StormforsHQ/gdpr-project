@@ -258,6 +258,40 @@ export function checkC6(data: CookiebotData): CheckResult {
   };
 }
 
+export function checkG3(data: CookiebotData): CheckResult {
+  const categories = [
+    { name: "Statistics", count: data.statistics.length },
+    { name: "Marketing", count: data.marketing.length },
+    { name: "Preferences", count: data.preferences.length },
+  ];
+
+  const activeCategories = categories.filter((c) => c.count > 0);
+
+  if (activeCategories.length === 0) {
+    return {
+      checkKey: "G3",
+      status: "issue",
+      findings: [{
+        element: "Cookiebot",
+        detail: "No optional cookie categories configured. Users have nothing to consent to granularly.",
+        severity: "warning",
+      }],
+      summary: "No optional cookie categories found",
+    };
+  }
+
+  return {
+    checkKey: "G3",
+    status: "ok",
+    findings: activeCategories.map((c) => ({
+      element: c.name,
+      detail: `${c.count} cookie(s) in ${c.name.toLowerCase()} category`,
+      severity: "info" as const,
+    })),
+    summary: `${activeCategories.length} granular consent categories available (${activeCategories.map((c) => c.name).join(", ")})`,
+  };
+}
+
 export function runCookiebotChecks(data: CookiebotData): CheckResult[] {
   return [
     checkC1(data),
@@ -266,5 +300,6 @@ export function runCookiebotChecks(data: CookiebotData): CheckResult[] {
     checkC4(data),
     checkC5(data),
     checkC6(data),
+    checkG3(data),
   ];
 }

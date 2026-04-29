@@ -251,9 +251,9 @@ export function CheckItem({
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs text-xs">
                   <p className="font-medium">{fixInfo.label}</p>
-                  <p className="text-muted-foreground mt-0.5">{fixInfo.description}</p>
+                  <p className="opacity-80 mt-0.5">{fixInfo.description}</p>
                   {!fixInfo.ready && (
-                    <p className="text-amber-500 mt-1">
+                    <p className="text-amber-300 mt-1">
                       Needs: {fixInfo.missingServices.join(", ")}
                     </p>
                   )}

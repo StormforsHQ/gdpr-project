@@ -120,6 +120,9 @@ export async function scanSite(url: string): Promise<ScanResult> {
       checkF5($),
       checkI3($),
       checkI4($),
+      checkG1($, html),
+      checkG8($, html),
+      checkB5($, html),
     ];
 
     return {
@@ -698,6 +701,131 @@ function checkI4($: cheerio.CheerioAPI): CheckResult {
       ? "Privacy policy linked in footer"
       : "Privacy policy link missing from footer",
   };
+}
+
+function checkG1($: cheerio.CheerioAPI, html: string): CheckResult {
+  const findings: ScanFinding[] = [];
+
+  const hasCookiebotScript = $("script[src*='consent.cookiebot.com'], script[src*='consentcdn.cookiebot.com']").length > 0;
+  const hasCookiebotBanner = $("[id*='CybotCookiebot'], [class*='CybotCookiebot'], #cookiebanner, .cookieconsent").length > 0;
+  const hasOtherCMP = /OneTrust|onetrust|quantcast|didomi|trustarc|cookie-?consent|gdpr-?consent/i.test(html);
+
+  if (hasCookiebotScript || hasCookiebotBanner) {
+    findings.push({
+      element: "Cookiebot",
+      detail: "Cookiebot consent script detected - banner should appear on first visit",
+      severity: "info",
+    });
+    return { checkKey: "G1", status: "ok", findings, summary: "Cookiebot consent banner script found" };
+  }
+
+  if (hasOtherCMP) {
+    findings.push({
+      element: "CMP",
+      detail: "Non-Cookiebot consent management platform detected",
+      severity: "info",
+    });
+    return { checkKey: "G1", status: "ok", findings, summary: "Consent management platform detected" };
+  }
+
+  findings.push({
+    element: "page",
+    detail: "No consent management script detected. Consent banner will not appear.",
+    severity: "error",
+  });
+  return { checkKey: "G1", status: "issue", findings, summary: "No consent banner/CMP detected" };
+}
+
+function checkG8($: cheerio.CheerioAPI, html: string): CheckResult {
+  const findings: ScanFinding[] = [];
+
+  const hasCookiebotWidget = /CookiebotWidget|CookieConsent\.renew|Cookiebot\.renew/i.test(html);
+  const hasConsentLink = $("a").toArray().some((a) => {
+    const href = $(a).attr("href") || "";
+    const text = $(a).text() || "";
+    const onclick = $(a).attr("onclick") || "";
+    return /cookie.*settings|consent.*settings|manage.*cookies|cookie.*preferences|hantera.*kakor|cookie-?settings/i.test(text)
+      || /cookie.*settings|consent.*settings/i.test(href)
+      || /CookieConsent\.renew|Cookiebot\.renew/i.test(onclick);
+  });
+  const hasConsentButton = $("button").toArray().some((btn) => {
+    const text = $(btn).text() || "";
+    const onclick = $(btn).attr("onclick") || "";
+    return /cookie.*settings|manage.*cookies|consent.*settings|hantera.*kakor/i.test(text)
+      || /CookieConsent\.renew|Cookiebot\.renew/i.test(onclick);
+  });
+
+  if (hasCookiebotWidget) {
+    findings.push({
+      element: "CookiebotWidget",
+      detail: "Cookiebot persistent consent widget detected",
+      severity: "info",
+    });
+    return { checkKey: "G8", status: "ok", findings, summary: "Consent withdrawal widget found" };
+  }
+
+  if (hasConsentLink || hasConsentButton) {
+    findings.push({
+      element: "consent link/button",
+      detail: "Consent management link or button found on page",
+      severity: "info",
+    });
+    return { checkKey: "G8", status: "ok", findings, summary: "Consent settings link found" };
+  }
+
+  findings.push({
+    element: "page",
+    detail: "No persistent consent widget, link, or button found. Users must be able to withdraw consent at any time.",
+    severity: "error",
+  });
+  return { checkKey: "G8", status: "issue", findings, summary: "No consent withdrawal mechanism found" };
+}
+
+function checkB5($: cheerio.CheerioAPI, html: string): CheckResult {
+  const findings: ScanFinding[] = [];
+
+  const hasGtag = /googletagmanager\.com\/gtag\/js|gtag\s*\(\s*['"]consent['"]/i.test(html);
+  const hasConsentDefault = /gtag\s*\(\s*['"]consent['"]\s*,\s*['"]default['"]/i.test(html);
+  const hasGCMParams = /ad_storage|analytics_storage|ad_user_data|ad_personalization/i.test(html);
+  const hasCookiebotGCM = /data-georegions|data-consentmode/i.test(
+    ($("script[src*='consent.cookiebot.com']").attr("data-georegions") || "") +
+    ($("script[src*='consent.cookiebot.com']").attr("data-consentmode") || "") +
+    $.html($("script[src*='consent.cookiebot.com']")) || ""
+  );
+
+  if (hasConsentDefault && hasGCMParams) {
+    findings.push({
+      element: "gtag consent",
+      detail: "Google Consent Mode V2 default command found with consent parameters",
+      severity: "info",
+    });
+    return { checkKey: "B5", status: "ok", findings, summary: "Consent Mode V2 configured via gtag" };
+  }
+
+  if (hasCookiebotGCM) {
+    findings.push({
+      element: "Cookiebot GCM",
+      detail: "Cookiebot script has Consent Mode attributes configured",
+      severity: "info",
+    });
+    return { checkKey: "B5", status: "ok", findings, summary: "Consent Mode V2 configured via Cookiebot" };
+  }
+
+  if (hasGtag && !hasConsentDefault) {
+    findings.push({
+      element: "gtag",
+      detail: "Google tag found but no consent default command. Consent Mode V2 may not be configured.",
+      severity: "warning",
+    });
+    return { checkKey: "B5", status: "issue", findings, summary: "Google tag without Consent Mode V2 default" };
+  }
+
+  findings.push({
+    element: "page",
+    detail: "No Google Consent Mode V2 configuration detected. Check GTM Cookiebot template settings.",
+    severity: "info",
+  });
+  return { checkKey: "B5", status: "na", findings, summary: "Cannot determine Consent Mode V2 from HTML alone - verify in GTM" };
 }
 
 function detectCookiebotId($: cheerio.CheerioAPI): string | null {

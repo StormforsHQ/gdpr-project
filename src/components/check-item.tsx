@@ -93,10 +93,10 @@ export function CheckItem({
             <TooltipTrigger>
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs text-xs">
+            <TooltipContent side="top" className="max-w-xs text-xs text-black dark:text-black">
               <div>
                 <p>{missingRequirements.map((r) => r.reason).join(" ")}</p>
-                <p className="opacity-70 mt-0.5">Add it in the site settings page to run this check.</p>
+                <p className="opacity-60 mt-0.5">Add it in the site settings page to run this check.</p>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -255,12 +255,12 @@ export function CheckItem({
                     {isFixing ? "Fixing..." : "Fix this"}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs text-xs">
+                <TooltipContent side="top" className="max-w-xs text-xs text-black dark:text-black">
                   <div>
                     <p className="font-medium">{fixInfo.label}</p>
-                    <p className="opacity-70 mt-0.5">{fixInfo.description}</p>
+                    <p className="opacity-60 mt-0.5">{fixInfo.description}</p>
                     {!fixInfo.ready && (
-                      <p className="text-amber-300 mt-1">
+                      <p className="text-amber-700 mt-1">
                         Needs: {fixInfo.missingServices.join(", ")}
                       </p>
                     )}

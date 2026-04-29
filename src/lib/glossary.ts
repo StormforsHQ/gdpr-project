@@ -79,6 +79,7 @@ export const CHECK_REQUIREMENTS: Record<string, CheckFieldRequirement[]> = {
   C3: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Need Cookiebot ID to fetch cc.js and verify marketing cookies require consent" }],
   C4: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Need Cookiebot ID to fetch cc.js and verify preference cookies require consent" }],
   C5: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Need Cookiebot ID to fetch cc.js and check for unclassified cookies" }],
+  G3: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Need Cookiebot ID to fetch cc.js and verify granular category controls" }],
   H1: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Need Cookiebot admin access to run compliance scan" }],
   H2: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Need Cookiebot admin access to run GCM checker" }],
   H3: [{ field: "gtmId", label: "GTM Container ID", reason: "Need GTM Preview Mode access to test decline-all behavior" }],

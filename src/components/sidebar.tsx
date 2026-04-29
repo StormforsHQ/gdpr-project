@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   Globe,
   BookOpen,
+  Settings,
 } from "lucide-react";
 
 const PLATFORM_LABELS: Record<string, string> = {
@@ -234,6 +235,17 @@ export function Sidebar({ sites }: SidebarProps) {
           <p className="text-[10px] text-muted-foreground/50">
             Next.js 16 / Prisma / PostgreSQL / Hetzner via Coolify
           </p>
+        </div>
+
+        <div className="border-t px-2 py-2">
+          <Link
+            href="/settings"
+            onClick={() => setMobileOpen(false)}
+            className={navLinkClass(isActive("/settings"))}
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </Link>
         </div>
       </nav>
     </>

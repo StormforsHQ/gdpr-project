@@ -231,12 +231,9 @@ export function Sidebar({ sites }: SidebarProps) {
         </div>
 
         <div className="pt-3 mt-3 border-t px-3 pb-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1.5">Stack</p>
-          <div className="flex flex-wrap gap-1">
-            {["Next.js 16", "Prisma", "PostgreSQL", "shadcn/ui", "OpenRouter", "Cheerio"].map((t) => (
-              <span key={t} className="text-[10px] text-muted-foreground/80 bg-muted/70 rounded px-1.5 py-0.5">{t}</span>
-            ))}
-          </div>
+          <p className="text-[10px] text-muted-foreground/50">
+            Next.js 16 / Prisma / PostgreSQL / Hetzner via Coolify
+          </p>
         </div>
       </nav>
     </>

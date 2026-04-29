@@ -16,7 +16,8 @@ import type { CheckResult } from "@/lib/scanner";
 import { STATUS_CONFIG, AUTOMATION_CONFIG } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { GlossaryText } from "@/components/glossary-text";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, FileSearch, Play, Loader2, Scale, Landmark, AlertTriangle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, FileSearch, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -25,18 +26,29 @@ const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   na: <MinusCircle className="h-4 w-4 text-muted-foreground" />,
 };
 
+export interface FixInfo {
+  label: string;
+  description: string;
+  ready: boolean;
+  missingServices: string[];
+  requires: string[];
+}
+
 interface CheckItemProps {
   check: Check;
   status: CheckStatus;
   notes: string;
   scanResult?: CheckResult;
   isRunning?: boolean;
+  isFixing?: boolean;
   siteFields?: { cookiebotId?: string | null; gtmId?: string | null };
+  fixInfo?: FixInfo;
   onStatusChange: (status: CheckStatus) => void;
   onNotesChange: (notes: string) => void;
   onOpenGuide: (key: string) => void;
   onViewScanDetails?: (key: string) => void;
   onRunCheck?: (key: string) => void;
+  onApplyFix?: (key: string) => void;
 }
 
 export function CheckItem({
@@ -51,6 +63,9 @@ export function CheckItem({
   onOpenGuide,
   onViewScanDetails,
   onRunCheck,
+  fixInfo,
+  isFixing,
+  onApplyFix,
 }: CheckItemProps) {
   const [expanded, setExpanded] = useState(false);
   const automationInfo = AUTOMATION_CONFIG[check.automation];
@@ -212,6 +227,38 @@ export function CheckItem({
                 )}
                 {isRunning ? "Running..." : status !== "not_checked" ? "Re-run" : "Run check"}
               </Button>
+            )}
+            {fixInfo && status === "issue" && (
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    variant={fixInfo.ready ? "default" : "outline"}
+                    size="sm"
+                    className="h-8 text-xs gap-1.5"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (fixInfo.ready && onApplyFix) onApplyFix(check.key);
+                    }}
+                    disabled={!fixInfo.ready || isFixing}
+                  >
+                    {isFixing ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Wrench className="h-3 w-3" />
+                    )}
+                    {isFixing ? "Fixing..." : "Fix this"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs text-xs">
+                  <p className="font-medium">{fixInfo.label}</p>
+                  <p className="text-muted-foreground mt-0.5">{fixInfo.description}</p>
+                  {!fixInfo.ready && (
+                    <p className="text-amber-500 mt-1">
+                      Needs: {fixInfo.missingServices.join(", ")}
+                    </p>
+                  )}
+                </TooltipContent>
+              </Tooltip>
             )}
             <Select
               value={status}

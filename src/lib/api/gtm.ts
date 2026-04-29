@@ -1,0 +1,101 @@
+const API_BASE = "https://tagmanager.googleapis.com/tagmanager/v2";
+
+function getToken(): string | null {
+  return process.env.GTM_API_TOKEN || null;
+}
+
+export function isGtmConfigured(): boolean {
+  return !!getToken();
+}
+
+async function gtmFetch(path: string, options?: RequestInit) {
+  const token = getToken();
+  if (!token) throw new Error("GTM_API_TOKEN not configured");
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`GTM API ${res.status}: ${body}`);
+  }
+
+  return res.json();
+}
+
+export interface GtmTag {
+  tagId: string;
+  name: string;
+  type: string;
+  firingTriggerId?: string[];
+  consentSettings?: {
+    consentStatus: string;
+    consentType?: { type: string; status: string }[];
+  };
+  parameter?: { key: string; value: string; type: string }[];
+  path: string;
+}
+
+export interface GtmTrigger {
+  triggerId: string;
+  name: string;
+  type: string;
+  path: string;
+}
+
+export async function listTags(accountId: string, containerId: string, workspaceId: string): Promise<GtmTag[]> {
+  const data = await gtmFetch(
+    `/accounts/${accountId}/containers/${containerId}/workspaces/${workspaceId}/tags`
+  );
+  return data.tag || [];
+}
+
+export async function getTag(path: string): Promise<GtmTag> {
+  return gtmFetch(`/${path}`);
+}
+
+export async function updateTag(path: string, tag: Partial<GtmTag>): Promise<GtmTag> {
+  return gtmFetch(`/${path}`, {
+    method: "PUT",
+    body: JSON.stringify(tag),
+  });
+}
+
+export async function listTriggers(accountId: string, containerId: string, workspaceId: string): Promise<GtmTrigger[]> {
+  const data = await gtmFetch(
+    `/accounts/${accountId}/containers/${containerId}/workspaces/${workspaceId}/triggers`
+  );
+  return data.trigger || [];
+}
+
+export async function getContainerInfo(containerId: string): Promise<{
+  accountId: string;
+  containerId: string;
+  name: string;
+  publicId: string;
+}> {
+  const accounts = await gtmFetch("/accounts");
+  for (const account of accounts.account || []) {
+    try {
+      const containers = await gtmFetch(`/accounts/${account.accountId}/containers`);
+      const container = (containers.container || []).find(
+        (c: { publicId: string }) => c.publicId === containerId
+      );
+      if (container) {
+        return {
+          accountId: account.accountId,
+          containerId: container.containerId,
+          name: container.name,
+          publicId: container.publicId,
+        };
+      }
+    } catch {}
+  }
+  throw new Error(`GTM container ${containerId} not found`);
+}

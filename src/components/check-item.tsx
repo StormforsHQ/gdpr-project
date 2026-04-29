@@ -95,8 +95,8 @@ export function CheckItem({
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs text-xs">
-              <p>{missingRequirements.map((r) => r.reason).join(". ")}</p>
-              <p className="opacity-80 mt-0.5">Add it in site settings to enable this check.</p>
+              <p>{missingRequirements.map((r) => r.reason).join(" ")}</p>
+              <p className="opacity-80 mt-0.5">Add it in the site settings page to run this check.</p>
             </TooltipContent>
           </Tooltip>
         )}

@@ -19,6 +19,7 @@ export interface ScanResult {
   scannedAt: string;
   checks: CheckResult[];
   error?: string;
+  detectedCookiebotId?: string;
 }
 
 const KNOWN_TRACKING_SCRIPTS = [
@@ -101,6 +102,8 @@ export async function scanSite(url: string): Promise<ScanResult> {
     const html = await response.text();
     const $ = cheerio.load(html);
 
+    const detectedCookiebotId = detectCookiebotId($);
+
     const checks: CheckResult[] = [
       checkA1($, html),
       checkA2($, html),
@@ -123,6 +126,7 @@ export async function scanSite(url: string): Promise<ScanResult> {
       url: normalizedUrl,
       scannedAt: new Date().toISOString(),
       checks,
+      detectedCookiebotId: detectedCookiebotId || undefined,
     };
   } catch (err) {
     return {
@@ -694,4 +698,19 @@ function checkI4($: cheerio.CheerioAPI): CheckResult {
       ? "Privacy policy linked in footer"
       : "Privacy policy link missing from footer",
   };
+}
+
+function detectCookiebotId($: cheerio.CheerioAPI): string | null {
+  const cbidAttr = $("script[data-cbid]").attr("data-cbid");
+  if (cbidAttr) return cbidAttr;
+
+  let cbid: string | null = null;
+  $("script[src]").each((_, el) => {
+    const src = $(el).attr("src") || "";
+    const match = src.match(/consent\.cookiebot\.com\/uc\.js\?cbid=([a-f0-9-]+)/i)
+      || src.match(/consentcdn\.cookiebot\.com\/.*?cbid=([a-f0-9-]+)/i);
+    if (match) cbid = match[1];
+  });
+
+  return cbid;
 }

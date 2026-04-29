@@ -9,7 +9,7 @@ import { CheckItem } from "@/components/check-item";
 import { CheckGuideDrawer } from "@/components/check-guide-drawer";
 import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
-import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits } from "@/app/actions/scan";
+import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
 import { saveCheckResult, saveScanRun } from "@/app/actions/audits";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
@@ -41,13 +41,14 @@ export type ScanRunEntry = {
 
 interface ChecklistViewProps {
   siteUrl?: string;
+  siteId?: string;
   auditId?: string;
   initialStates?: Record<string, { status: string; notes: string; source: string }>;
   initialScanRuns?: ScanRunEntry[];
   siteFields?: { cookiebotId?: string | null; gtmId?: string | null };
 }
 
-export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns, siteFields }: ChecklistViewProps) {
+export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initialScanRuns, siteFields }: ChecklistViewProps) {
   const { errors, addError } = useErrorLog();
   const [errorLogOpen, setErrorLogOpen] = useState(false);
   const [scanRuns, setScanRuns] = useState<ScanRunEntry[]>(initialScanRuns ?? []);
@@ -188,7 +189,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns
   const executeScan = async () => {
     setScanning(true);
     try {
-      const result = await runPageScan(scanUrl);
+      const result = await runPageScan(scanUrl, siteId);
       if (!result.error) {
         setLastScanType("page-scan");
         setScanResult(result);
@@ -201,6 +202,21 @@ export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns
           const findings = result.checks.map((c) => ({ checkKey: c.checkKey, status: c.status, summary: c.summary }));
           const run = await saveScanRun(auditId, "page-scan", scanUrl, findings);
           setScanRuns((prev) => [run, ...prev]);
+        }
+
+        const cbid = result.detectedCookiebotId || siteFields?.cookiebotId;
+        if (cbid) {
+          try {
+            const cbResults = await runCookiebotScan(cbid);
+            applyCheckResults(cbResults, "scan");
+            if (auditId) {
+              const cbFindings = cbResults.map((c) => ({ checkKey: c.checkKey, status: c.status, summary: c.summary }));
+              const cbRun = await saveScanRun(auditId, "cookiebot", scanUrl, cbFindings);
+              setScanRuns((prev) => [cbRun, ...prev]);
+            }
+          } catch (err) {
+            addError("scan", "Cookiebot scan failed", err instanceof Error ? err.message : "Unknown error");
+          }
         }
       } else {
         setScanResult(result);
@@ -300,8 +316,19 @@ export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns
 
     setRunningChecks((prev) => new Set(prev).add(checkKey));
     try {
-      if (automation === "page-scan") {
-        const result = await runPageScan(scanUrl);
+      if (automation === "cookiebot-api") {
+        const cbid = siteFields?.cookiebotId;
+        if (!cbid) {
+          addError("scan", `Check ${checkKey} requires Cookiebot ID`, "Add a Cookiebot ID to the site settings");
+          return;
+        }
+        const results = await runCookiebotScan(cbid);
+        const checkResult = results.find((c) => c.checkKey === checkKey);
+        if (checkResult) {
+          applyCheckResults([checkResult], "scan");
+        }
+      } else if (automation === "page-scan") {
+        const result = await runPageScan(scanUrl, siteId);
         if (!result.error) {
           const checkResult = result.checks.find((c) => c.checkKey === checkKey);
           if (checkResult) {
@@ -563,7 +590,7 @@ export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns
                       onNotesChange={(n) => updateCheck(check.key, "notes", n)}
                       onOpenGuide={openGuide}
                       onViewScanDetails={scanCheck ? openScanDetails : undefined}
-                      onRunCheck={(check.automation === "ai-agent" || check.automation === "page-scan") ? (key) => handleRunCheck(key, check.automation) : undefined}
+                      onRunCheck={(check.automation === "ai-agent" || check.automation === "page-scan" || check.automation === "cookiebot-api") ? (key) => handleRunCheck(key, check.automation) : undefined}
                     />
                   );
                 })}
@@ -572,6 +599,67 @@ export function ChecklistView({ siteUrl, auditId, initialStates, initialScanRuns
           </Card>
         );
       })}
+
+      {!filterIssues && (
+        <Card className="border-dashed">
+          <CardHeader
+            className="cursor-pointer hover:bg-accent/30 transition-colors py-3"
+            onClick={() => setExpandedCategories((prev) => {
+              const next = new Set(prev);
+              if (next.has("_not_covered")) next.delete("_not_covered");
+              else next.add("_not_covered");
+              return next;
+            })}
+          >
+            <div className="flex items-center gap-3">
+              {expandedCategories.has("_not_covered") ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              )}
+              <CardTitle className="text-sm flex-1 text-muted-foreground">
+                Areas outside this audit
+              </CardTitle>
+            </div>
+          </CardHeader>
+          {expandedCategories.has("_not_covered") && (
+            <CardContent className="pt-0 space-y-3 text-sm text-muted-foreground">
+              <p>
+                This audit covers website cookie consent, script management, privacy policies, and
+                third-party integrations. The following GDPR-related areas require separate audits:
+              </p>
+              <ul className="space-y-2 list-none">
+                <li>
+                  <span className="font-medium text-foreground">Email marketing compliance</span>
+                  {" "}- Unsubscribe links in every email (GDPR Art. 21), opt-in/double opt-in flows,
+                  email consent records. Requires access to the email platform (e.g. Mailchimp, HubSpot, Brevo).
+                </li>
+                <li>
+                  <span className="font-medium text-foreground">Data retention and cleanup</span>
+                  {" "}- Automated deletion of inactive data after retention periods expire.
+                  Requires access to backend systems and database infrastructure.
+                </li>
+                <li>
+                  <span className="font-medium text-foreground">Deletion request processing</span>
+                  {" "}- Automated or manual handling of GDPR erasure requests (Art. 17).
+                  Verifying that deletion requests are processed within 30 days and data is actually removed
+                  from all systems including backups.
+                </li>
+                <li>
+                  <span className="font-medium text-foreground">Data pipeline opt-out propagation</span>
+                  {" "}- When a user opts out or requests deletion, all downstream systems (scrapers,
+                  CRMs, analytics, data warehouses) must respect it. Requires mapping the full data flow.
+                </li>
+                <li>
+                  <span className="font-medium text-foreground">Internal data processing</span>
+                  {" "}- Employee data handling, HR systems, internal tools, physical security
+                  (CCTV, access logs). Falls under the organization's general GDPR compliance program.
+                </li>
+              </ul>
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       <CheckGuideDrawer
         checkKey={guideKey}

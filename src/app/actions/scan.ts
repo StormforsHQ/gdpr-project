@@ -2,6 +2,8 @@
 
 import { scanSite, type ScanResult } from "@/lib/scanner";
 import { runAICheck, AI_CHECK_KEYS } from "@/lib/ai-agent";
+import { fetchCookiebotData, runCookiebotChecks } from "@/lib/cookiebot";
+import { prisma } from "@/lib/db";
 import type { CheckResult } from "@/lib/scanner";
 
 export async function checkOpenRouterCredits(): Promise<{ available: boolean; credits: number; error?: string }> {
@@ -33,7 +35,7 @@ export async function checkOpenRouterCredits(): Promise<{ available: boolean; cr
   }
 }
 
-export async function runPageScan(url: string): Promise<ScanResult> {
+export async function runPageScan(url: string, siteId?: string): Promise<ScanResult> {
   if (!url || url.trim().length === 0) {
     return {
       url: "",
@@ -44,7 +46,21 @@ export async function runPageScan(url: string): Promise<ScanResult> {
   }
 
   try {
-    return await scanSite(url);
+    const result = await scanSite(url);
+
+    if (result.detectedCookiebotId && siteId) {
+      try {
+        const site = await prisma.site.findUnique({ where: { id: siteId } });
+        if (site && !site.cookiebotId) {
+          await prisma.site.update({
+            where: { id: siteId },
+            data: { cookiebotId: result.detectedCookiebotId },
+          });
+        }
+      } catch {}
+    }
+
+    return result;
   } catch (error) {
     console.error("Page scan failed:", error);
     return {
@@ -53,6 +69,37 @@ export async function runPageScan(url: string): Promise<ScanResult> {
       checks: [],
       error: error instanceof Error ? error.message : "Scan failed",
     };
+  }
+}
+
+export async function runCookiebotScan(cookiebotId: string): Promise<CheckResult[]> {
+  if (!cookiebotId || cookiebotId.trim().length === 0) {
+    return [{
+      checkKey: "C1",
+      status: "na",
+      findings: [{ element: "", detail: "Cookiebot ID is required", severity: "warning" }],
+      summary: "No Cookiebot ID provided",
+    }];
+  }
+
+  try {
+    const data = await fetchCookiebotData(cookiebotId.trim());
+    if (!data) {
+      return [{
+        checkKey: "C1",
+        status: "na",
+        findings: [{ element: "", detail: `Could not fetch data for Cookiebot ID: ${cookiebotId}`, severity: "warning" }],
+        summary: "Cookiebot data unavailable",
+      }];
+    }
+    return runCookiebotChecks(data);
+  } catch (error) {
+    return [{
+      checkKey: "C1",
+      status: "na",
+      findings: [{ element: "", detail: error instanceof Error ? error.message : "Cookiebot scan failed", severity: "warning" }],
+      summary: "Cookiebot scan failed",
+    }];
   }
 }
 

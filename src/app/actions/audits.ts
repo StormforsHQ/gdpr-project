@@ -109,7 +109,7 @@ export async function saveCheckResults(
 
 export async function saveScanRun(
   auditId: string,
-  scanType: "page-scan" | "ai-agent",
+  scanType: "page-scan" | "ai-agent" | "cookiebot",
   url: string,
   findings: { checkKey: string; status: string; summary: string }[],
   error?: string

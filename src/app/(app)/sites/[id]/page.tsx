@@ -83,6 +83,7 @@ export default async function SitePage({ params }: SitePageProps) {
       <SiteHeader site={site} auditId={audit.id} reportVersions={reportVersions} />
       <ChecklistView
         siteUrl={site.url}
+        siteId={site.id}
         auditId={audit.id}
         initialStates={initialStates}
         initialScanRuns={scanRuns}

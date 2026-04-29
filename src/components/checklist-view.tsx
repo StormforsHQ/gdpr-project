@@ -1,17 +1,18 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CheckItem } from "@/components/check-item";
+import { CheckItem, type FixInfo } from "@/components/check-item";
 import { CheckGuideDrawer } from "@/components/check-guide-drawer";
 import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
 import { saveCheckResult, saveScanRun } from "@/app/actions/audits";
+import { getFixAvailability, applyFix, type FixAvailability } from "@/app/actions/fixes";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
 import {
   AlertDialog,
@@ -82,8 +83,14 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
   const [creditWarning, setCreditWarning] = useState<string | null>(null);
   const [filterIssues, setFilterIssues] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [fixAvailability, setFixAvailability] = useState<Record<string, FixAvailability>>({});
+  const [fixingChecks, setFixingChecks] = useState<Set<string>>(new Set());
 
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  useEffect(() => {
+    getFixAvailability().then(setFixAvailability).catch(() => {});
+  }, []);
 
   const openGuide = (key: string) => {
     setGuideKey(key);
@@ -301,6 +308,27 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
     if (confirmAction === "scan") executeScan();
     if (confirmAction === "ai") executeAIScan();
     setConfirmAction(null);
+  };
+
+  const handleApplyFix = async (checkKey: string) => {
+    setFixingChecks((prev) => new Set(prev).add(checkKey));
+    try {
+      const result = await applyFix(checkKey, siteFields?.cookiebotId, siteFields?.gtmId);
+      if (result.success) {
+        updateCheck(checkKey, "status", "ok");
+        updateCheck(checkKey, "notes", `Auto-fixed: ${result.message}`);
+      } else {
+        addError("fix", `Fix for ${checkKey} failed`, result.message);
+      }
+    } catch (err) {
+      addError("fix", `Fix for ${checkKey} crashed`, err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setFixingChecks((prev) => {
+        const next = new Set(prev);
+        next.delete(checkKey);
+        return next;
+      });
+    }
   };
 
   const handleRunCheck = async (checkKey: string, automation: string) => {
@@ -577,6 +605,16 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
                 {visibleChecks.map((check) => {
                   const state = getCheckState(check.key);
                   const scanCheck = getScanCheckResult(check.key);
+                  const fa = fixAvailability[check.key];
+                  const fixInfo: FixInfo | undefined = fa
+                    ? {
+                        label: fa.fix.label,
+                        description: fa.fix.description,
+                        ready: fa.ready,
+                        missingServices: fa.missingServices,
+                        requires: fa.fix.requires,
+                      }
+                    : undefined;
                   return (
                     <CheckItem
                       key={check.key}
@@ -585,12 +623,15 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
                       notes={state.notes}
                       scanResult={scanCheck}
                       isRunning={runningChecks.has(check.key)}
+                      isFixing={fixingChecks.has(check.key)}
                       siteFields={siteFields}
+                      fixInfo={fixInfo}
                       onStatusChange={(s) => updateCheck(check.key, "status", s)}
                       onNotesChange={(n) => updateCheck(check.key, "notes", n)}
                       onOpenGuide={openGuide}
                       onViewScanDetails={scanCheck ? openScanDetails : undefined}
                       onRunCheck={(check.automation === "ai-agent" || check.automation === "page-scan" || check.automation === "cookiebot-api") ? (key) => handleRunCheck(key, check.automation) : undefined}
+                      onApplyFix={handleApplyFix}
                     />
                   );
                 })}

@@ -7,9 +7,10 @@ import { updateReportText, type ReportData } from "@/app/actions/report";
 interface ReportViewProps {
   report: ReportData;
   siteId: string;
+  showVersion?: boolean;
 }
 
-export function ReportView({ report, siteId }: ReportViewProps) {
+export function ReportView({ report, siteId, showVersion = true }: ReportViewProps) {
   const router = useRouter();
   const [editingSection, setEditingSection] = useState<"summary" | "conclusion" | null>(null);
   const [summaryDraft, setSummaryDraft] = useState(report.executiveSummary);
@@ -47,7 +48,7 @@ export function ReportView({ report, siteId }: ReportViewProps) {
       {/* Toolbar */}
       <div className="print:hidden" style={{ position: "sticky", top: 0, zIndex: 10, background: "#f8f8f8", borderBottom: "1px solid #e0e0e0", padding: "10px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: "13px", color: "#666" }}>
-          Version {report.version}.0 - {date}
+          {showVersion ? `Version ${report.version}.0 - ` : ""}{date}
         </span>
         <button
           onClick={() => window.print()}
@@ -66,7 +67,7 @@ export function ReportView({ report, siteId }: ReportViewProps) {
           <span style={{ fontSize: "22px", fontWeight: 300, color: "#2d8a4e" }}>GDPR Compliance Audit</span>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", borderTop: "1px solid #ccc", borderBottom: "1px solid #ccc", padding: "10px 0", fontSize: "12px", marginBottom: "40px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: showVersion ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", borderTop: "1px solid #ccc", borderBottom: "1px solid #ccc", padding: "10px 0", fontSize: "12px", marginBottom: "40px" }}>
           <div>
             <div style={{ color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "10px", marginBottom: "2px" }}>Company</div>
             <div style={{ fontWeight: 500 }}>{report.site.name}</div>
@@ -75,10 +76,12 @@ export function ReportView({ report, siteId }: ReportViewProps) {
             <div style={{ color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "10px", marginBottom: "2px" }}>Project</div>
             <div style={{ fontWeight: 500 }}>GDPR ePR Audit</div>
           </div>
-          <div>
-            <div style={{ color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "10px", marginBottom: "2px" }}>Version</div>
-            <div style={{ fontWeight: 500 }}>{report.version}.0</div>
-          </div>
+          {showVersion && (
+            <div>
+              <div style={{ color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "10px", marginBottom: "2px" }}>Version</div>
+              <div style={{ fontWeight: 500 }}>{report.version}.0</div>
+            </div>
+          )}
           <div>
             <div style={{ color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "10px", marginBottom: "2px" }}>Date</div>
             <div style={{ fontWeight: 500 }}>{date}</div>

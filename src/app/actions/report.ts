@@ -209,6 +209,24 @@ export async function listReports(auditId: string): Promise<ReportListItem[]> {
   });
 }
 
+export async function deleteReport(reportId: string): Promise<{ success: boolean }> {
+  try {
+    await prisma.report.delete({ where: { id: reportId } });
+    return { success: true };
+  } catch {
+    return { success: false };
+  }
+}
+
+export async function deleteAllReports(auditId: string): Promise<{ success: boolean }> {
+  try {
+    await prisma.report.deleteMany({ where: { auditId } });
+    return { success: true };
+  } catch {
+    return { success: false };
+  }
+}
+
 export async function updateReportText(reportId: string, executiveSummary: string, conclusion: string) {
   const report = await prisma.report.update({
     where: { id: reportId },

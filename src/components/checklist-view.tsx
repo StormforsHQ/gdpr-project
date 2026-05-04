@@ -109,7 +109,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
   const [confirmAction, setConfirmAction] = useState<"scan" | "ai" | null>(null);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [creditWarning, setCreditWarning] = useState<string | null>(null);
-  const [filterIssues, setFilterIssues] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [showHistory, setShowHistory] = useState(false);
   const [fixAvailability, setFixAvailability] = useState<Record<string, FixAvailability>>({});
   const [fixingChecks, setFixingChecks] = useState<Set<string>>(new Set());
@@ -431,12 +431,29 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
   const totalChecked = Object.values(checkStates).filter(
     (s) => s.status !== "not_checked"
   ).length;
-  const issueEntries = Object.values(checkStates).filter((s) => s.status === "issue");
-  const totalIssues = issueEntries.length;
-  const issuesBySource = {
-    scan: issueEntries.filter((s) => s.source === "scan").length,
-    ai: issueEntries.filter((s) => s.source === "ai").length,
-    manual: issueEntries.filter((s) => s.source === "manual").length,
+  const totalIssues = Object.values(checkStates).filter((s) => s.status === "issue").length;
+  const totalOk = Object.values(checkStates).filter((s) => s.status === "ok").length;
+  const totalNa = Object.values(checkStates).filter((s) => s.status === "na").length;
+  const totalNotChecked = totalChecks - totalChecked;
+  const totalWithComments = Object.values(checkStates).filter((s) => s.notes.trim()).length;
+
+  const toggleFilter = (filter: string) => {
+    setActiveFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(filter)) next.delete(filter);
+      else next.add(filter);
+      return next;
+    });
+  };
+
+  const matchesFilter = (key: string): boolean => {
+    if (activeFilters.size === 0) return true;
+    const state = getCheckState(key);
+    for (const filter of activeFilters) {
+      if (filter === "has_comments" && state.notes.trim()) return true;
+      if (filter === state.status) return true;
+    }
+    return false;
   };
 
   const scannedCheckCount = scanResult?.checks.length ?? 0;
@@ -558,42 +575,62 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
         </div>
       )}
 
-      <div className="flex items-center gap-4 text-sm">
-        <span className="text-muted-foreground">
-          Progress: {totalChecked}/{totalChecks} checked
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-muted-foreground text-xs mr-1">
+          {totalChecked}/{totalChecks} checked
         </span>
-        {totalIssues > 0 && (
-          <button onClick={() => setFilterIssues((f) => !f)}>
-            <Badge
-              variant={filterIssues ? "default" : "destructive"}
-              className={`cursor-pointer ${filterIssues ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
-            >
-              {filterIssues ? "Showing issues only" : (
-                <>
-                  {totalIssues} issue{totalIssues !== 1 ? "s" : ""} total
-                  {totalIssues > 0 && (() => {
-                    const parts: string[] = [];
-                    if (issuesBySource.scan > 0) parts.push(`${issuesBySource.scan} auto`);
-                    if (issuesBySource.ai > 0) parts.push(`${issuesBySource.ai} AI`);
-                    if (issuesBySource.manual > 0) parts.push(`${issuesBySource.manual} manual`);
-                    return parts.length > 0 ? ` (${parts.join(", ")})` : "";
-                  })()}
-                </>
-              )}
-            </Badge>
-          </button>
-        )}
-        {filterIssues && totalIssues === 0 && (
-          <button onClick={() => setFilterIssues(false)}>
-            <Badge variant="secondary" className="cursor-pointer">
-              No issues - click to clear filter
-            </Badge>
+        <button onClick={() => toggleFilter("not_checked")}>
+          <Badge
+            variant="secondary"
+            className={`cursor-pointer text-xs ${activeFilters.has("not_checked") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+          >
+            Not checked ({totalNotChecked})
+          </Badge>
+        </button>
+        <button onClick={() => toggleFilter("ok")}>
+          <Badge
+            variant="secondary"
+            className={`cursor-pointer text-xs bg-green-500/15 text-green-600 dark:text-green-400 ${activeFilters.has("ok") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+          >
+            OK ({totalOk})
+          </Badge>
+        </button>
+        <button onClick={() => toggleFilter("issue")}>
+          <Badge
+            variant="destructive"
+            className={`cursor-pointer text-xs ${activeFilters.has("issue") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+          >
+            Issues ({totalIssues})
+          </Badge>
+        </button>
+        <button onClick={() => toggleFilter("na")}>
+          <Badge
+            variant="secondary"
+            className={`cursor-pointer text-xs ${activeFilters.has("na") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+          >
+            N/A ({totalNa})
+          </Badge>
+        </button>
+        <button onClick={() => toggleFilter("has_comments")}>
+          <Badge
+            variant="outline"
+            className={`cursor-pointer text-xs ${activeFilters.has("has_comments") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+          >
+            Has comments ({totalWithComments})
+          </Badge>
+        </button>
+        {activeFilters.size > 0 && (
+          <button
+            onClick={() => setActiveFilters(new Set())}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Clear filters
           </button>
         )}
         {errors.length > 0 && (
           <Link
             href="/settings"
-            className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 hover:underline"
+            className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 hover:underline ml-auto"
           >
             <AlertCircle className="h-3.5 w-3.5" />
             {errors.length} error{errors.length !== 1 ? "s" : ""} - view in Settings
@@ -605,11 +642,11 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
         const isExpanded = expandedCategories.has(category.id);
         const stats = getCategoryStats(category.id);
 
-        if (filterIssues && stats.issues === 0) return null;
-
-        const visibleChecks = filterIssues
-          ? category.checks.filter((c) => getCheckState(c.key).status === "issue")
+        const visibleChecks = activeFilters.size > 0
+          ? category.checks.filter((c) => matchesFilter(c.key))
           : category.checks;
+
+        if (activeFilters.size > 0 && visibleChecks.length === 0) return null;
 
         return (
           <Card key={category.id}>
@@ -679,7 +716,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
         );
       })}
 
-      {!filterIssues && (
+      {activeFilters.size === 0 && (
         <Card className="border-dashed">
           <CardHeader
             className="cursor-pointer hover:bg-accent/30 transition-colors py-3"

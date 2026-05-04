@@ -3,6 +3,7 @@ import { TopNavbar } from "@/components/top-navbar";
 import { Sidebar } from "@/components/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorLogProvider } from "@/components/error-log";
+import { ChatButton } from "@/components/chat/chat-button";
 import { getSites } from "@/app/actions/sites";
 
 export const dynamic = "force-dynamic";
@@ -49,6 +50,7 @@ export default async function AppShellLayout({
             </main>
           </div>
           <Toaster />
+          <ChatButton />
         </div>
       </ErrorLogProvider>
     </TooltipProvider>

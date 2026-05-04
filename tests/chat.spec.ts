@@ -14,7 +14,7 @@ test("chat button visible on sites page and opens panel", async ({ page }) => {
 
   await chatBtn.click();
   await expect(page.locator("text=GDPR Help")).toBeVisible();
-  await expect(page.locator("text=Ask anything about GDPR")).toBeVisible();
+  await expect(page.locator("text=Ask me anything")).toBeVisible();
 
   // Check input and send button exist
   await expect(page.locator("textarea[placeholder*='Ask about']")).toBeVisible();

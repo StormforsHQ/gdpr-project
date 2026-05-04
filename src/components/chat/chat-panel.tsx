@@ -18,6 +18,13 @@ interface ChatPanelProps {
   onClose: () => void;
 }
 
+const EXAMPLE_QUESTIONS = [
+  "What does check A1 mean?",
+  "How do I set up Cookiebot with GTM?",
+  "What should I fix first?",
+  "Explain the difference between page scan and AI checks",
+];
+
 export function ChatPanel({ open, onClose }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -48,14 +55,13 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
     }
   }, [open]);
 
-  async function handleSend() {
-    const text = input.trim();
-    if (!text || streaming) return;
+  async function sendMessage(text: string) {
+    if (!text.trim() || streaming) return;
 
     setError(null);
     setInput("");
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: text };
+    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: text.trim() };
     const assistantMsg: Message = { id: crypto.randomUUID(), role: "assistant", content: "" };
 
     const updatedMessages = [...messages, userMsg];
@@ -64,6 +70,7 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
 
     const controller = new AbortController();
     abortRef.current = controller;
+    const timeout = setTimeout(() => controller.abort(), 60000);
 
     try {
       const chatHistory = updatedMessages.map((m) => ({ role: m.role, content: m.content }));
@@ -120,12 +127,17 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
         }
       }
     } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setError("Request timed out. Try a shorter question.");
+        setMessages((prev) => prev.filter((m) => m.id !== assistantMsg.id));
+        return;
+      }
       const errorMsg = err instanceof Error ? err.message : "Something went wrong";
       setError(errorMsg);
       addError("chat", errorMsg);
       setMessages((prev) => prev.filter((m) => m.id !== assistantMsg.id));
     } finally {
+      clearTimeout(timeout);
       setStreaming(false);
       abortRef.current = null;
     }
@@ -143,80 +155,103 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      sendMessage(input);
     }
   }
 
   if (!open) return null;
 
   return (
-    <div className="fixed right-0 top-0 z-50 flex h-full w-full flex-col border-l bg-background shadow-xl sm:w-[420px]">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <h2 className="text-sm font-semibold">GDPR Help</h2>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClear} title="Clear chat">
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+    <>
+      {/* Overlay for click-outside-to-close */}
+      <div className="fixed inset-0 z-40 bg-black/20 sm:block" onClick={onClose} />
 
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4 scrollbar-subtle">
-        {messages.length === 0 && (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-center text-sm text-muted-foreground">
-              Ask anything about GDPR checks, scan results, or what to fix.
-              {siteId && <span className="block mt-1">Context: viewing a site audit.</span>}
-            </p>
+      <div className="fixed right-0 top-0 z-50 flex h-full w-full flex-col border-l bg-background shadow-xl sm:w-[420px]">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <h2 className="text-sm font-semibold">GDPR Help</h2>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClear} title="Clear chat">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-        )}
-        {messages.map((msg) => (
-          <ChatMessage key={msg.id} role={msg.role} content={msg.content} />
-        ))}
-        {streaming && messages.at(-1)?.content === "" && (
-          <div className="flex justify-start">
-            <div className="rounded-lg bg-muted px-3 py-2">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+
+        {/* Messages */}
+        <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4 scrollbar-subtle">
+          {messages.length === 0 && (
+            <div className="flex h-full flex-col items-center justify-center gap-4">
+              <div className="text-center">
+                <p className="text-sm font-medium">Ask me anything</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  I can help with GDPR checks, scan results, and what to fix.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                {EXAMPLE_QUESTIONS.map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => sendMessage(q)}
+                    className="rounded-full border px-4 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+              {siteId && (
+                <p className="text-[11px] text-muted-foreground">
+                  Context: viewing a site audit
+                </p>
+              )}
             </div>
+          )}
+          {messages.map((msg) => (
+            <ChatMessage key={msg.id} role={msg.role} content={msg.content} />
+          ))}
+          {streaming && messages.at(-1)?.content === "" && (
+            <div className="flex justify-start">
+              <div className="rounded-lg bg-muted px-3 py-2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mx-4 mb-2 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
+            <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="ml-auto shrink-0 underline">dismiss</button>
           </div>
         )}
-      </div>
 
-      {/* Error */}
-      {error && (
-        <div className="mx-4 mb-2 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
-          <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="ml-auto shrink-0 underline">dismiss</button>
+        {/* Footer */}
+        <div className="border-t p-3">
+          <div className="flex gap-2">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask about a check, scan result, or how to fix..."
+              rows={1}
+              className="flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring"
+            />
+            <Button size="icon" onClick={() => sendMessage(input)} disabled={!input.trim() || streaming} className="shrink-0">
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+          {tokenCount > 0 && (
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              {tokenCount.toLocaleString()} tokens this session
+            </p>
+          )}
         </div>
-      )}
-
-      {/* Footer */}
-      <div className="border-t p-3">
-        <div className="flex gap-2">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask about a check, scan result, or how to fix..."
-            rows={1}
-            className="flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring"
-          />
-          <Button size="icon" onClick={handleSend} disabled={!input.trim() || streaming} className="shrink-0">
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-        {tokenCount > 0 && (
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            {tokenCount.toLocaleString()} tokens this session
-          </p>
-        )}
       </div>
-    </div>
+    </>
   );
 }

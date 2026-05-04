@@ -6,7 +6,7 @@ import { getEffectiveAPIKey, getAISettings } from "@/app/actions/ai-settings";
 
 export const dynamic = "force-dynamic";
 
-const MAX_TOOL_ROUNDS = 5;
+const MAX_TOOL_ROUNDS = 8;
 
 const TOOLS = [
   {
@@ -14,7 +14,7 @@ const TOOLS = [
     function: {
       name: "listCategories",
       description:
-        "List all 11 audit categories with their IDs, names, and how many checks each has. Use this to get an overview of what the audit covers or to find which category a topic belongs to.",
+        "List all 11 audit categories with their IDs, names, check count, and check names. Use this to get an overview of what the audit covers, to find which category a topic belongs to, or to orient before answering a general question.",
       parameters: { type: "object", properties: {}, required: [] },
     },
   },
@@ -23,14 +23,13 @@ const TOOLS = [
     function: {
       name: "getChecks",
       description:
-        "Get all checks in a specific category. Returns each check's key, full name, description, and how it's automated. Use this when the user asks about a topic area (e.g. cookies, consent, forms, tracking) or when you need to find specific checks.",
+        "Get all checks in a specific category. Returns each check's key, full name, description, automation type, and legal basis. Use this when the user asks about a topic area (e.g. cookies, consent, forms, tracking, scripts, embeds, privacy policy) or when you need to find specific checks.",
       parameters: {
         type: "object",
         properties: {
           categoryId: {
             type: "string",
-            description:
-              "The category ID letter (A through K). Call listCategories first if you don't know the ID.",
+            description: "The category ID letter (A through K). Call listCategories first if you don't know the ID.",
           },
         },
         required: ["categoryId"],
@@ -42,14 +41,13 @@ const TOOLS = [
     function: {
       name: "getCheckGuide",
       description:
-        "Get the detailed guide for a specific check: why it matters, step-by-step instructions, tools to use, and practical tips. Use this when the user asks how to check or fix something specific.",
+        "Get the detailed guide for a specific check: why it matters, step-by-step audit instructions, tools to use, and practical tips. Use this when the user asks how to check or fix something, or wants to understand why a check matters.",
       parameters: {
         type: "object",
         properties: {
           checkKey: {
             type: "string",
-            description:
-              "The check key (e.g. 'A1', 'C3', 'G4'). Call getChecks first if you need to find the right key.",
+            description: "The check key (e.g. 'A1', 'C3', 'G4'). Call getChecks or searchChecks first if you need to find the right key.",
           },
         },
         required: ["checkKey"],
@@ -59,40 +57,135 @@ const TOOLS = [
   {
     type: "function" as const,
     function: {
-      name: "getSiteStatus",
+      name: "searchChecks",
       description:
-        "Get the current audit status for the site the user is viewing: site info, configuration, audit progress, and which checks have issues. The site is identified automatically from the page the user is on - you do not need to provide any ID. Use this when the user asks 'what should I fix?', 'how is this site doing?', or anything about the current site's results.",
+        "Search all 69 checks by keyword. Searches check names, descriptions, and legal basis text. Returns matching checks with their category, name, and description. Use this when the user asks about a topic and you need to find relevant checks without knowing the category.",
       parameters: {
         type: "object",
-        properties: {},
-        required: [],
+        properties: {
+          query: {
+            type: "string",
+            description: "Search term (e.g. 'cookie', 'consent', 'youtube', 'form', 'pixel', 'privacy policy')",
+          },
+        },
+        required: ["query"],
       },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "listSites",
+      description:
+        "List all sites in the app with their name, URL, platform, configuration status, and a summary of their latest audit progress. Use this when the user asks 'what sites do we have?', 'show me all sites', or wants to compare across sites.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "getSiteByName",
+      description:
+        "Look up a specific site by name and get its full audit status including configuration, progress counts, issues found, and scan history. Use this when the user mentions a site by name (e.g. 'how is Luna Diabetes doing?', 'tell me about the Stormfors audit').",
+      parameters: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string",
+            description: "The site name or partial name to search for (case-insensitive)",
+          },
+        },
+        required: ["name"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "getCurrentSiteStatus",
+      description:
+        "Get the audit status for the site the user is currently viewing. Automatically identified from the page URL - no parameters needed. Returns site info, configuration, audit progress, issues, and recent scan history. Use when the user asks about 'this site', 'current results', or 'what should I fix?' without naming a specific site.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "getCheckResult",
+      description:
+        "Get the detailed result for a specific check on a specific site: its current status, notes, how it was tested (manual vs automated), and when it was last updated. Use when the user asks about a specific check on a specific site, e.g. 'what's the status of A2 for Luna Diabetes?' or 'did we check the footer scripts?'.",
+      parameters: {
+        type: "object",
+        properties: {
+          siteName: {
+            type: "string",
+            description: "The site name to look up. Use 'current' to use the site the user is currently viewing.",
+          },
+          checkKey: {
+            type: "string",
+            description: "The check key (e.g. 'A1', 'C3', 'G4').",
+          },
+        },
+        required: ["siteName", "checkKey"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "getScanHistory",
+      description:
+        "Get the scan history for a site: all scan runs with their type, URL scanned, status, timing, and number of findings. Use when the user asks 'when was the last scan?', 'how many scans have we run?', or about scan results.",
+      parameters: {
+        type: "object",
+        properties: {
+          siteName: {
+            type: "string",
+            description: "The site name to look up. Use 'current' to use the site the user is currently viewing.",
+          },
+        },
+        required: ["siteName"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "getComplianceOverview",
+      description:
+        "Get a compliance overview across all sites: each site's progress, issue count, and configuration status. Use when the user asks 'which sites have the most issues?', 'overall compliance status', or wants a portfolio view.",
+      parameters: { type: "object", properties: {}, required: [] },
     },
   },
 ];
 
+// --- Tool implementations ---
+
 function executeListCategories(): string {
-  const categories = CHECKLIST.map((cat) => ({
-    id: cat.id,
-    name: cat.label,
-    checkCount: cat.checks.length,
-    checks: cat.checks.map((c) => `${c.key}: ${c.label}`),
-  }));
-  return JSON.stringify(categories);
+  return JSON.stringify(
+    CHECKLIST.map((cat) => ({
+      id: cat.id,
+      name: cat.label,
+      checkCount: cat.checks.length,
+      checks: cat.checks.map((c) => `${c.key}: ${c.label}`),
+    })),
+  );
 }
 
 function executeGetChecks(categoryId: string): string {
   const cat = CHECKLIST.find((c) => c.id === categoryId.toUpperCase());
-  if (!cat) return JSON.stringify({ error: `Category '${categoryId}' not found. Use listCategories to see valid IDs.` });
+  if (!cat) return JSON.stringify({ error: `Category '${categoryId}' not found. Valid IDs: A through K.` });
 
-  const checks = cat.checks.map((c) => ({
-    key: c.key,
-    name: c.label,
-    description: c.description,
-    automation: c.automation,
-    legalBasis: c.legalBasis || null,
-  }));
-  return JSON.stringify({ category: cat.label, checks });
+  return JSON.stringify({
+    category: cat.label,
+    checks: cat.checks.map((c) => ({
+      key: c.key,
+      name: c.label,
+      description: c.description,
+      automation: c.automation,
+      legalBasis: c.legalBasis || null,
+    })),
+  });
 }
 
 function executeGetCheckGuide(checkKey: string): string {
@@ -101,7 +194,7 @@ function executeGetCheckGuide(checkKey: string): string {
   const check = CHECKLIST.flatMap((cat) => cat.checks).find((c) => c.key === key);
 
   if (!guide && !check) {
-    return JSON.stringify({ error: `Check '${checkKey}' not found. Use getChecks to find valid keys.` });
+    return JSON.stringify({ error: `Check '${checkKey}' not found. Use searchChecks to find the right key.` });
   }
 
   const result: Record<string, unknown> = {};
@@ -121,58 +214,298 @@ function executeGetCheckGuide(checkKey: string): string {
   return JSON.stringify(result);
 }
 
-async function executeGetSiteStatus(siteId: string): Promise<string> {
-  try {
-    const site = await prisma.site.findUnique({
-      where: { id: siteId },
-      include: {
-        audits: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-          include: { results: true },
+function executeSearchChecks(query: string): string {
+  const lower = query.toLowerCase();
+  const allChecks = CHECKLIST.flatMap((cat) =>
+    cat.checks.map((c) => ({ ...c, category: cat.label, categoryId: cat.id })),
+  );
+
+  const matches = allChecks.filter(
+    (c) =>
+      c.label.toLowerCase().includes(lower) ||
+      c.description.toLowerCase().includes(lower) ||
+      (c.legalBasis && c.legalBasis.toLowerCase().includes(lower)) ||
+      c.key.toLowerCase() === lower,
+  );
+
+  if (matches.length === 0) {
+    return JSON.stringify({ results: [], message: `No checks found matching '${query}'. Try a broader search term.` });
+  }
+
+  return JSON.stringify({
+    results: matches.map((c) => ({
+      key: c.key,
+      name: c.label,
+      category: `${c.categoryId}. ${c.category}`,
+      description: c.description,
+      automation: c.automation,
+    })),
+  });
+}
+
+async function executeListSites(): Promise<string> {
+  const sites = await prisma.site.findMany({
+    include: {
+      audits: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        include: {
+          results: { select: { status: true } },
         },
       },
-    });
-    if (!site) return JSON.stringify({ error: "Site not found" });
+    },
+    orderBy: { name: "asc" },
+  });
 
-    const result: Record<string, unknown> = {
-      name: site.name,
-      url: site.url,
-      platform: site.platform,
-      cookiebotId: site.cookiebotId || "not set",
-      gtmId: site.gtmId || "not set",
-    };
-
-    const audit = site.audits[0];
-    if (!audit || audit.results.length === 0) {
-      result.auditStatus = "No audit results yet. The user should run a scan first.";
-      return JSON.stringify(result);
-    }
-
-    const counts = { ok: 0, issue: 0, na: 0, not_checked: 0 };
-    for (const r of audit.results) {
-      if (r.status in counts) counts[r.status as keyof typeof counts]++;
-    }
-    result.progress = counts;
-
-    const issues = audit.results.filter((r) => r.status === "issue");
-    if (issues.length > 0) {
-      const allChecks = CHECKLIST.flatMap((cat) => cat.checks);
-      result.issues = issues.map((r) => {
-        const check = allChecks.find((c) => c.key === r.checkKey);
-        return {
-          key: r.checkKey,
-          name: check?.label ?? "Unknown",
-          automation: check?.automation ?? "unknown",
-          notes: r.notes || null,
-        };
-      });
-    }
-
-    return JSON.stringify(result);
-  } catch {
-    return JSON.stringify({ error: "Failed to load site data" });
+  if (sites.length === 0) {
+    return JSON.stringify({ sites: [], message: "No sites added yet. Add one using the + button in the sidebar." });
   }
+
+  return JSON.stringify({
+    sites: sites.map((s) => {
+      const audit = s.audits[0];
+      const counts = { ok: 0, issue: 0, na: 0, not_checked: 0 };
+      if (audit) {
+        for (const r of audit.results) {
+          if (r.status in counts) counts[r.status as keyof typeof counts]++;
+        }
+      }
+      return {
+        name: s.name,
+        url: s.url,
+        platform: s.platform,
+        cookiebotConfigured: !!s.cookiebotId,
+        gtmConfigured: !!s.gtmId,
+        auditProgress: audit ? counts : "No audit started",
+      };
+    }),
+  });
+}
+
+async function findSiteByName(name: string): Promise<{ id: string; name: string } | null> {
+  const sites = await prisma.site.findMany({ select: { id: true, name: true } });
+  const lower = name.toLowerCase();
+  return sites.find((s) => s.name.toLowerCase().includes(lower)) || null;
+}
+
+async function executeSiteAuditStatus(siteId: string): Promise<string> {
+  const site = await prisma.site.findUnique({
+    where: { id: siteId },
+    include: {
+      audits: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        include: {
+          results: true,
+          scans: { orderBy: { startedAt: "desc" }, take: 3 },
+        },
+      },
+    },
+  });
+  if (!site) return JSON.stringify({ error: "Site not found" });
+
+  const result: Record<string, unknown> = {
+    name: site.name,
+    url: site.url,
+    platform: site.platform,
+    cookiebotId: site.cookiebotId || "not set",
+    gtmId: site.gtmId || "not set",
+  };
+
+  const audit = site.audits[0];
+  if (!audit || audit.results.length === 0) {
+    result.auditStatus = "No audit results yet. Run a scan first.";
+    return JSON.stringify(result);
+  }
+
+  const counts = { ok: 0, issue: 0, na: 0, not_checked: 0 };
+  for (const r of audit.results) {
+    if (r.status in counts) counts[r.status as keyof typeof counts]++;
+  }
+  result.progress = counts;
+
+  const allChecks = CHECKLIST.flatMap((cat) => cat.checks);
+
+  const issues = audit.results.filter((r) => r.status === "issue");
+  if (issues.length > 0) {
+    result.issues = issues.map((r) => {
+      const check = allChecks.find((c) => c.key === r.checkKey);
+      return {
+        key: r.checkKey,
+        name: check?.label ?? "Unknown",
+        automation: check?.automation ?? "unknown",
+        notes: r.notes || null,
+      };
+    });
+  }
+
+  if (audit.scans.length > 0) {
+    result.recentScans = audit.scans.map((s) => ({
+      type: s.scanType,
+      url: s.url,
+      status: s.status,
+      date: s.startedAt.toISOString().split("T")[0],
+    }));
+  }
+
+  return JSON.stringify(result);
+}
+
+async function executeGetSiteByName(name: string): Promise<string> {
+  const site = await findSiteByName(name);
+  if (!site) {
+    return JSON.stringify({
+      error: `No site found matching '${name}'. Use listSites to see all available sites.`,
+    });
+  }
+  return executeSiteAuditStatus(site.id);
+}
+
+async function executeGetCurrentSiteStatus(siteId: string): Promise<string> {
+  if (!siteId) {
+    return JSON.stringify({
+      error: "The user is not currently viewing a site audit page. They need to navigate to a site first, or you can use getSiteByName to look up a specific site.",
+    });
+  }
+  return executeSiteAuditStatus(siteId);
+}
+
+async function executeGetCheckResult(siteName: string, checkKey: string, fallbackSiteId?: string): Promise<string> {
+  const key = checkKey.toUpperCase();
+  const check = CHECKLIST.flatMap((cat) => cat.checks).find((c) => c.key === key);
+  if (!check) {
+    return JSON.stringify({ error: `Check '${checkKey}' not found.` });
+  }
+
+  let siteId: string | undefined;
+  let resolvedSiteName: string;
+
+  if (siteName === "current") {
+    siteId = fallbackSiteId;
+    resolvedSiteName = "current site";
+    if (!siteId) {
+      return JSON.stringify({ error: "User is not viewing a site page. Use a site name instead of 'current'." });
+    }
+  } else {
+    const site = await findSiteByName(siteName);
+    if (!site) {
+      return JSON.stringify({ error: `No site found matching '${siteName}'.` });
+    }
+    siteId = site.id;
+    resolvedSiteName = site.name;
+  }
+
+  const audit = await prisma.audit.findFirst({
+    where: { siteId },
+    orderBy: { createdAt: "desc" },
+    include: { results: { where: { checkKey: key } } },
+  });
+
+  if (!audit || audit.results.length === 0) {
+    return JSON.stringify({
+      site: resolvedSiteName,
+      check: { key, name: check.label },
+      status: "not_checked",
+      notes: null,
+      message: "This check has not been evaluated yet.",
+    });
+  }
+
+  const result = audit.results[0];
+  return JSON.stringify({
+    site: resolvedSiteName,
+    check: { key, name: check.label, description: check.description, automation: check.automation },
+    status: result.status,
+    notes: result.notes || null,
+    source: result.source,
+    lastUpdated: result.updatedAt.toISOString().split("T")[0],
+  });
+}
+
+async function executeGetScanHistory(siteName: string, fallbackSiteId?: string): Promise<string> {
+  let siteId: string | undefined;
+  let resolvedSiteName: string;
+
+  if (siteName === "current") {
+    siteId = fallbackSiteId;
+    resolvedSiteName = "current site";
+    if (!siteId) {
+      return JSON.stringify({ error: "User is not viewing a site page. Use a site name instead." });
+    }
+  } else {
+    const site = await findSiteByName(siteName);
+    if (!site) {
+      return JSON.stringify({ error: `No site found matching '${siteName}'.` });
+    }
+    siteId = site.id;
+    resolvedSiteName = site.name;
+  }
+
+  const audit = await prisma.audit.findFirst({
+    where: { siteId },
+    orderBy: { createdAt: "desc" },
+    include: { scans: { orderBy: { startedAt: "desc" }, take: 10 } },
+  });
+
+  if (!audit || audit.scans.length === 0) {
+    return JSON.stringify({ site: resolvedSiteName, scans: [], message: "No scans have been run yet." });
+  }
+
+  return JSON.stringify({
+    site: resolvedSiteName,
+    totalScans: audit.scans.length,
+    scans: audit.scans.map((s) => ({
+      type: s.scanType,
+      url: s.url,
+      status: s.status,
+      findings: (() => { try { return JSON.parse(s.findings).length; } catch { return 0; } })(),
+      date: s.startedAt.toISOString().split("T")[0],
+      duration: s.completedAt
+        ? `${Math.round((s.completedAt.getTime() - s.startedAt.getTime()) / 1000)}s`
+        : "in progress",
+      error: s.error || null,
+    })),
+  });
+}
+
+async function executeGetComplianceOverview(): Promise<string> {
+  const sites = await prisma.site.findMany({
+    include: {
+      audits: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        include: {
+          results: { select: { status: true } },
+          scans: { orderBy: { startedAt: "desc" }, take: 1, select: { startedAt: true } },
+        },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  if (sites.length === 0) {
+    return JSON.stringify({ message: "No sites in the system yet." });
+  }
+
+  const overview = sites.map((s) => {
+    const audit = s.audits[0];
+    const counts = { ok: 0, issue: 0, na: 0, not_checked: 0 };
+    if (audit) {
+      for (const r of audit.results) {
+        if (r.status in counts) counts[r.status as keyof typeof counts]++;
+      }
+    }
+    return {
+      name: s.name,
+      platform: s.platform,
+      cookiebotConfigured: !!s.cookiebotId,
+      gtmConfigured: !!s.gtmId,
+      progress: audit ? counts : null,
+      lastScan: audit?.scans[0]?.startedAt.toISOString().split("T")[0] || "never",
+    };
+  });
+
+  return JSON.stringify({ totalSites: sites.length, sites: overview });
 }
 
 async function executeTool(name: string, args: Record<string, string>, fallbackSiteId?: string): Promise<string> {
@@ -183,8 +516,20 @@ async function executeTool(name: string, args: Record<string, string>, fallbackS
       return executeGetChecks(args.categoryId);
     case "getCheckGuide":
       return executeGetCheckGuide(args.checkKey);
-    case "getSiteStatus":
-      return executeGetSiteStatus(args.siteId || fallbackSiteId || "");
+    case "searchChecks":
+      return executeSearchChecks(args.query);
+    case "listSites":
+      return executeListSites();
+    case "getSiteByName":
+      return executeGetSiteByName(args.name);
+    case "getCurrentSiteStatus":
+      return executeGetCurrentSiteStatus(fallbackSiteId || "");
+    case "getCheckResult":
+      return executeGetCheckResult(args.siteName, args.checkKey, fallbackSiteId);
+    case "getScanHistory":
+      return executeGetScanHistory(args.siteName, fallbackSiteId);
+    case "getComplianceOverview":
+      return executeGetComplianceOverview();
     default:
       return JSON.stringify({ error: `Unknown tool: ${name}` });
   }
@@ -207,17 +552,17 @@ This app audits websites for GDPR and ePrivacy compliance. It has 69 checks acro
 - **Guide drawer**: Click the book icon on any check to see detailed instructions for that specific check.
 
 ## Reference pages (in the sidebar under "Reference")
-- **Technical Guide**: Detailed technical documentation covering how Cookiebot, GTM, consent management, and script setup work together. Explains the technical architecture behind the audit checks.
-- **Audit Protocol**: Step-by-step protocol for conducting a complete GDPR audit from start to finish. Covers preparation, execution, and reporting phases.
-- **Audit Cheat Sheet**: Quick reference card with the most important checks and common issues to look for.
-- **MCP Servers**: Overview of Model Context Protocol servers used for automation. Lists available MCP servers for Webflow, GTM, and Cookiebot with their capabilities, setup instructions, and what audit checks they enable. MCP servers allow the app to read and modify site configurations programmatically.
+- **Technical Guide**: Detailed technical documentation covering how Cookiebot, GTM, consent management, and script setup work together.
+- **Audit Protocol**: Step-by-step protocol for conducting a complete GDPR audit from start to finish.
+- **Audit Cheat Sheet**: Quick reference card with the most important checks and common issues.
+- **MCP Servers**: Overview of Model Context Protocol servers for automation. Lists Webflow, GTM, and Cookiebot MCP servers with capabilities and setup instructions.
 
 ## Warning triangles
-Amber warning triangles appear on checks that need a Cookiebot ID or GTM Container ID that hasn't been added to the site yet. Go to Edit Site (pencil icon) to add the IDs.
+Amber warning triangles appear on checks that need a Cookiebot ID or GTM Container ID that hasn't been added to the site yet. Add IDs via Edit Site (pencil icon).
 
 ## Getting started with a new audit
 1. Add the site (+ button in sidebar) with its URL and platform
-2. If the site uses Cookiebot, add the Cookiebot ID (found in the Cookiebot dashboard or in the page source)
+2. If the site uses Cookiebot, add the Cookiebot ID (found in the Cookiebot dashboard or page source)
 3. If the site uses GTM, add the GTM Container ID (starts with GTM-)
 4. Click "Scan site" to run automated checks
 5. Click "AI Analyze" for AI-powered checks
@@ -226,11 +571,17 @@ Amber warning triangles appear on checks that need a Cookiebot ID or GTM Contain
 8. Generate a report when the audit is complete
 
 ## Your tools
-You have access to tools that let you look up check details, guides, and the current site's audit status. Use them to give specific, accurate answers. Don't guess about check details - look them up.
+You have tools to look up anything in the app. Use them - don't guess. Key tools:
 
-When the user asks about a topic (cookies, consent, tracking, etc.), use listCategories and getChecks to find the relevant checks. When they ask "what should I fix first?" or about the current site's results, use getSiteStatus - it automatically returns data for the site the user is currently viewing.
+- **searchChecks**: Find checks by keyword. Use for topic questions ("cookies", "consent", "youtube").
+- **getCheckGuide**: Get the full guide for a check. Use when the user wants to know how to check or fix something.
+- **listSites / getSiteByName**: Look up any site by name, from any page.
+- **getCurrentSiteStatus**: Get audit data for the site the user is currently viewing.
+- **getCheckResult**: Get a specific check's status and notes for a specific site.
+- **getScanHistory**: See what scans have been run and when.
+- **getComplianceOverview**: Compare compliance status across all sites.
 
-IMPORTANT: getSiteStatus can only see the site the user is currently viewing. You cannot look up other sites by name. If the user asks about a site they are not currently viewing, tell them to navigate to that site's audit page first. If they ask about a site that doesn't exist, suggest they add it using the + button in the sidebar.`;
+Always look up data before answering. If the user asks about a site by name, use getSiteByName. If they ask about "this site" or "current results", use getCurrentSiteStatus. Use searchChecks to find relevant checks for any topic question.`;
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -350,8 +701,7 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          const fallback = "I looked up several things but couldn't form a complete answer. Could you rephrase your question?";
-          send({ content: fallback });
+          send({ content: "I looked up several things but couldn't form a complete answer. Could you rephrase your question?" });
           send({ done: true, usage: { totalTokens: 0 } });
           controller.close();
         } catch (err) {

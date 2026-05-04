@@ -41,6 +41,7 @@ export interface CategoryData {
 export interface CheckData {
   key: string;
   label: string;
+  description: string;
   status: string;
   statusLabel: string;
   notes: string;
@@ -87,6 +88,7 @@ async function loadAuditData(auditId: string) {
       return {
         key: check.key,
         label: check.label,
+        description: check.description,
         status,
         statusLabel: STATUS_CONFIG[status as keyof typeof STATUS_CONFIG]?.label || "Not checked",
         notes: deduplicateNotes(result?.notes || ""),
@@ -105,31 +107,28 @@ async function loadAuditData(auditId: string) {
   };
 }
 
-function statsChanged(
-  current: { ok: number; issues: number; na: number; notChecked: number },
-  saved: { statsOk: number; statsIssues: number; statsNa: number; statsNotChecked: number },
-): boolean {
-  return (
-    current.ok !== saved.statsOk ||
-    current.issues !== saved.statsIssues ||
-    current.na !== saved.statsNa ||
-    current.notChecked !== saved.statsNotChecked
-  );
+function buildSnapshotKey(categories: CategoryData[]): string {
+  const parts: string[] = [];
+  for (const cat of categories) {
+    for (const check of cat.checks) {
+      parts.push(`${check.key}:${check.status}:${check.notes}`);
+    }
+  }
+  return parts.join("|");
 }
 
 export async function getOrCreateReport(auditId: string): Promise<string | null> {
   const data = await loadAuditData(auditId);
   if (!data) return null;
 
+  const snapshotKey = buildSnapshotKey(data.categories);
+
   const lastReport = await prisma.report.findFirst({
     where: { auditId },
     orderBy: { version: "desc" },
   });
 
-  if (lastReport && !statsChanged(
-    { ok: data.statsOk, issues: data.statsIssues, na: data.statsNa, notChecked: data.statsNotChecked },
-    lastReport,
-  )) {
+  if (lastReport && lastReport.snapshotHtml === snapshotKey) {
     return lastReport.id;
   }
 
@@ -143,7 +142,7 @@ export async function getOrCreateReport(auditId: string): Promise<string | null>
       version,
       executiveSummary: summary,
       conclusion: concl,
-      snapshotHtml: "",
+      snapshotHtml: snapshotKey,
       statsOk: data.statsOk,
       statsIssues: data.statsIssues,
       statsNa: data.statsNa,

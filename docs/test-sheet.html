@@ -112,6 +112,45 @@
   <li><input type="checkbox">Checklist still functional (dropdowns, notes) without saving</li>
 </ul>
 
+<h2>Scanner Accuracy - Client Sites</h2>
+<p>Test against actual Webflow client sites. Pick 3-5 sites: at least one known-compliant (e.g. Luna Diabetes) and one with known issues (e.g. TSS).</p>
+<ul>
+  <li><input type="checkbox">Page scan results match what you see on the live site (scripts, privacy link, embeds)</li>
+  <li><input type="checkbox">AI analysis results are reasonable (not hallucinating issues or missing obvious ones)</li>
+  <li><input type="checkbox">No false positives: checks marked "Issue" that are actually fine on the site</li>
+  <li><input type="checkbox">No false negatives: real issues on the site that the scanner misses</li>
+  <li><input type="checkbox">Warning triangles show correctly for checks that need a missing Cookiebot/GTM ID</li>
+  <li><input type="checkbox">Skipped checks (missing IDs) are not counted as "OK"</li>
+</ul>
+
+<h2>Cookiebot cc.js Parser</h2>
+<p>Test against sites where you know the Cookiebot setup. Requires Cookiebot ID entered in site settings.</p>
+<ul>
+  <li><input type="checkbox">Parser fetches cc.js successfully for a valid Cookiebot ID</li>
+  <li><input type="checkbox">Invalid/wrong Cookiebot ID shows a clear error, not a false "OK"</li>
+  <li><input type="checkbox">C1: Correct cookie count and categories extracted</li>
+  <li><input type="checkbox">C2-C6: Category consent settings match what Cookiebot dashboard shows</li>
+  <li><input type="checkbox">G3: Auto-blocking mode detection matches actual site behavior</li>
+  <li><input type="checkbox">Re-running individual Cookiebot checks gives consistent results</li>
+</ul>
+
+<h2>Scanner Accuracy - External Sites</h2>
+<p>Optional: test against non-client sites to catch edge cases. Pick small/mid-size sites, not enterprise.</p>
+<ul>
+  <li><input type="checkbox">Site with Cookiebot but no GTM: scanner handles gracefully</li>
+  <li><input type="checkbox">Site with GTM but no Cookiebot: scanner handles gracefully</li>
+  <li><input type="checkbox">Site with neither: all relevant checks show as skipped/N/A, not false results</li>
+  <li><input type="checkbox">Site with a different CMP (e.g. OneTrust, CookieYes): scanner doesn't crash or give misleading results</li>
+  <li><input type="checkbox">Non-Webflow site (WordPress, Squarespace): scanner still runs page checks correctly</li>
+</ul>
+
+<h2>Report Accuracy After Scans</h2>
+<ul>
+  <li><input type="checkbox">Generated report reflects actual scan results (not stale data)</li>
+  <li><input type="checkbox">Skipped/blocked checks appear correctly in report (not as "OK")</li>
+  <li><input type="checkbox">Notes from scanner and manual review both appear</li>
+</ul>
+
 <h2>Notes</h2>
 <p style="border:1px solid #ccc;min-height:80px;padding:8px;"></p>
 

@@ -3,6 +3,7 @@
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { HelpButton } from "@/components/help-drawer";
+import { CreditDisplay } from "@/components/credit-display";
 import { Sun, Moon } from "lucide-react";
 
 export function TopNavbar() {
@@ -14,6 +15,7 @@ export function TopNavbar() {
 
   return (
     <header className="flex h-14 items-center justify-end border-b px-4 pl-14 md:pl-4 gap-1 print:hidden">
+      <CreditDisplay />
       <HelpButton />
       <Button
         variant="ghost"

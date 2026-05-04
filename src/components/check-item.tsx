@@ -284,12 +284,14 @@ export function CheckItem({
                 <SelectItem value="na">N/A</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div>
             <textarea
               placeholder="Notes..."
               value={notes}
               onChange={(e) => onNotesChange(e.target.value)}
               rows={2}
-              className="flex-1 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 resize-y min-h-[2rem]"
+              className="w-full rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 resize-y min-h-[2rem]"
             />
           </div>
         </div>

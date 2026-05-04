@@ -4,7 +4,13 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Download, Upload, Loader2, CheckCircle2, AlertCircle, Trash2, X } from "lucide-react";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
+import { Download, Upload, Loader2, CheckCircle2, AlertCircle, Trash2, X, Database, AlertTriangle, Sparkles, Globe } from "lucide-react";
 import { importDatabase } from "@/app/actions/backup";
 import { useErrorLog, type ErrorEntry } from "@/components/error-log";
 
@@ -91,125 +97,184 @@ export default function SettingsPage() {
     <div className="mx-auto max-w-2xl p-6 space-y-6">
       <h1 className="text-xl font-semibold">Settings</h1>
 
-      <Card className="p-6 space-y-4">
-        <div>
-          <h2 className="text-base font-medium">Database backup</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Export the entire database as a zip of CSV files. Use the import to
-            restore from a previous backup. Existing records are updated, new
-            records are added.
-          </p>
-        </div>
+      <Card className="px-4">
+        <Accordion>
+          <AccordionItem>
+            <AccordionTrigger>
+              <span className="flex items-center gap-2">
+                <Database className="h-4 w-4 text-muted-foreground" />
+                Database backup
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-4 pb-2">
+                <p className="text-sm text-muted-foreground">
+                  Export the entire database as a zip of CSV files. Use the import to
+                  restore from a previous backup. Existing records are updated, new
+                  records are added.
+                </p>
 
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={handleExport} disabled={exporting || importing}>
-            {exporting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4" />
-            )}
-            {exporting ? "Exporting..." : "Export backup"}
-          </Button>
-
-          <div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".zip"
-              onChange={handleImport}
-              className="hidden"
-              id="backup-upload"
-            />
-            <Button
-              variant="outline"
-              onClick={() => fileRef.current?.click()}
-              disabled={exporting || importing}
-            >
-              {importing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Upload className="h-4 w-4" />
-              )}
-              {importing ? "Importing..." : "Import backup"}
-            </Button>
-          </div>
-        </div>
-
-        {result && (
-          <div
-            className={`flex items-start gap-2 rounded-md p-3 text-sm ${
-              result.type === "success"
-                ? "bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300"
-                : "bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300"
-            }`}
-          >
-            {result.type === "success" ? (
-              <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
-            ) : (
-              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-            )}
-            {result.message}
-          </div>
-        )}
-      </Card>
-
-      <Card className="p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-medium flex items-center gap-2">
-              Error log
-              {errors.length > 0 && (
-                <Badge variant="destructive" className="text-xs">{errors.length}</Badge>
-              )}
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Errors from page scans, AI checks, auto-fixes, and saves during this session.
-            </p>
-          </div>
-          {errors.length > 0 && (
-            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={clearErrors}>
-              <Trash2 className="h-3 w-3" />
-              Clear all
-            </Button>
-          )}
-        </div>
-
-        {errors.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">
-            No errors recorded this session
-          </p>
-        ) : (
-          <div className="divide-y rounded-md border">
-            {errors.map((err) => (
-              <div key={err.id} className="px-4 py-3 group">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-[10px] shrink-0">
-                        {SOURCE_LABELS[err.source]}
-                      </Badge>
-                      <span className="text-[10px] text-muted-foreground">
-                        {err.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <p className="text-xs">{err.message}</p>
-                    {err.detail && (
-                      <p className="text-[11px] text-muted-foreground break-all">{err.detail}</p>
+                <div className="flex flex-wrap gap-3">
+                  <Button size="sm" onClick={handleExport} disabled={exporting || importing}>
+                    {exporting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
                     )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => dismissError(err.id)}
-                  >
-                    <X className="h-3 w-3" />
+                    {exporting ? "Exporting..." : "Export backup"}
                   </Button>
+
+                  <div>
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept=".zip"
+                      onChange={handleImport}
+                      className="hidden"
+                      id="backup-upload"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => fileRef.current?.click()}
+                      disabled={exporting || importing}
+                    >
+                      {importing ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      {importing ? "Importing..." : "Import backup"}
+                    </Button>
+                  </div>
                 </div>
+
+                {result && (
+                  <div
+                    className={`flex items-start gap-2 rounded-md p-3 text-sm ${
+                      result.type === "success"
+                        ? "bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300"
+                        : "bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300"
+                    }`}
+                  >
+                    {result.type === "success" ? (
+                      <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    )}
+                    {result.message}
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-        )}
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem>
+            <AccordionTrigger>
+              <span className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                Error log
+                {errors.length > 0 && (
+                  <Badge variant="destructive" className="text-xs">{errors.length}</Badge>
+                )}
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-3 pb-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Errors from scans, AI checks, auto-fixes, and saves during this session.
+                  </p>
+                  {errors.length > 0 && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 shrink-0" onClick={clearErrors}>
+                      <Trash2 className="h-3 w-3" />
+                      Clear all
+                    </Button>
+                  )}
+                </div>
+
+                {errors.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">
+                    No errors recorded this session
+                  </p>
+                ) : (
+                  <div className="divide-y rounded-md border">
+                    {errors.map((err) => (
+                      <div key={err.id} className="px-4 py-3 group">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-[10px] shrink-0">
+                                {SOURCE_LABELS[err.source]}
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground">
+                                {err.timestamp.toLocaleTimeString()}
+                              </span>
+                            </div>
+                            <p className="text-xs">{err.message}</p>
+                            {err.detail && (
+                              <p className="text-[11px] text-muted-foreground break-all">{err.detail}</p>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => dismissError(err.id)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem>
+            <AccordionTrigger>
+              <span className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-muted-foreground" />
+                AI / LLM
+                <Badge variant="secondary" className="text-[10px]">Coming soon</Badge>
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-2 pb-2">
+                <p className="text-sm text-muted-foreground">
+                  Configure the AI model used for compliance checks. Choose a primary model and an optional fallback,
+                  and manage your OpenRouter API key.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Currently using Google Gemini 2.0 Flash with Gemini 2.0 Flash Lite as fallback, configured via environment variables.
+                </p>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem>
+            <AccordionTrigger>
+              <span className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-muted-foreground" />
+                Language
+                <Badge variant="secondary" className="text-[10px]">Coming soon</Badge>
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-2 pb-2">
+                <p className="text-sm text-muted-foreground">
+                  Switch the app interface between English and Swedish. This will affect all labels,
+                  check descriptions, remediation steps, and reports.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Currently English only.
+                </p>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </Card>
     </div>
   );

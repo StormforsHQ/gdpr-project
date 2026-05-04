@@ -129,7 +129,6 @@ export default async function SitesPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="relative z-10 hover:underline"
-                          onClick={(e) => e.stopPropagation()}
                         >
                           {site.url}
                         </a>

@@ -11,7 +11,11 @@ export function isValidUrl(url: string): boolean {
   try {
     const withProtocol = trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
     const parsed = new URL(withProtocol);
-    return parsed.hostname.includes(".") && parsed.hostname.split(".").pop()!.length >= 2;
+    const parts = parsed.hostname.split(".");
+    const domainParts = parts[0] === "www" ? parts.slice(1) : parts;
+    if (domainParts.length < 2) return false;
+    const tld = domainParts[domainParts.length - 1];
+    return /^[a-z]{2,}$/i.test(tld);
   } catch {
     return false;
   }

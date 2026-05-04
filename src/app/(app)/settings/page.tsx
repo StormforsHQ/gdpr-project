@@ -13,6 +13,7 @@ import {
 import { Download, Upload, Loader2, CheckCircle2, AlertCircle, Trash2, X, Database, AlertTriangle, Sparkles, Globe } from "lucide-react";
 import { importDatabase } from "@/app/actions/backup";
 import { useErrorLog, type ErrorEntry } from "@/components/error-log";
+import { AISettingsPanel } from "@/components/ai-settings";
 
 const SOURCE_LABELS: Record<ErrorEntry["source"], string> = {
   scan: "Page scan",
@@ -238,19 +239,10 @@ export default function SettingsPage() {
               <span className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-muted-foreground" />
                 AI / LLM
-                <Badge variant="secondary" className="text-[10px]">Coming soon</Badge>
               </span>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="space-y-2 pb-2">
-                <p className="text-sm text-muted-foreground">
-                  Configure the AI model used for compliance checks. Choose a primary model and an optional fallback,
-                  and manage your OpenRouter API key.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Currently using Google Gemini 2.0 Flash with Gemini 2.0 Flash Lite as fallback, configured via environment variables.
-                </p>
-              </div>
+              <AISettingsPanel />
             </AccordionContent>
           </AccordionItem>
 

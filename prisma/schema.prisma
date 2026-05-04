@@ -73,6 +73,14 @@ model CheckResult {
   @@map("check_results")
 }
 
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}
+
 model ScanRun {
   id          String   @id @default(cuid())
   auditId     String   @map("audit_id")

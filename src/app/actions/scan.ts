@@ -4,12 +4,13 @@ import { scanSite, type ScanResult } from "@/lib/scanner";
 import { runAICheck, AI_CHECK_KEYS } from "@/lib/ai-agent";
 import { fetchCookiebotData, runCookiebotChecks } from "@/lib/cookiebot";
 import { prisma } from "@/lib/db";
+import { getEffectiveAPIKey } from "@/app/actions/ai-settings";
 import type { CheckResult } from "@/lib/scanner";
 
 export async function checkOpenRouterCredits(): Promise<{ available: boolean; credits: number; error?: string }> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = await getEffectiveAPIKey();
   if (!apiKey) {
-    return { available: false, credits: 0, error: "OPENROUTER_API_KEY not configured" };
+    return { available: false, credits: 0, error: "No OpenRouter API key configured. Add one in Settings." };
   }
 
   try {

@@ -7,12 +7,13 @@ export const dynamic = "force-dynamic";
 
 interface ReportPageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ version?: string }>;
+  searchParams: Promise<{ version?: string; hideVersion?: string }>;
 }
 
 export default async function ReportPage({ params, searchParams }: ReportPageProps) {
   const { id } = await params;
-  const { version } = await searchParams;
+  const { version, hideVersion } = await searchParams;
+  const showVersion = hideVersion !== "1";
 
   const site = await getSite(id);
   if (!site) return <div style={{ padding: "48px", textAlign: "center", color: "#888" }}>Site not found.</div>;
@@ -23,7 +24,7 @@ export default async function ReportPage({ params, searchParams }: ReportPagePro
   if (version) {
     const report = await getReportById(version);
     if (!report) return <div style={{ padding: "48px", textAlign: "center", color: "#888" }}>Report version not found.</div>;
-    return <ReportView report={report} siteId={site.id} />;
+    return <ReportView report={report} siteId={site.id} showVersion={showVersion} />;
   }
 
   const reportId = await getOrCreateReport(audit.id);
@@ -32,5 +33,5 @@ export default async function ReportPage({ params, searchParams }: ReportPagePro
   const report = await getReportById(reportId);
   if (!report) return <div style={{ padding: "48px", textAlign: "center", color: "#888" }}>Report not found.</div>;
 
-  return <ReportView report={report} siteId={site.id} />;
+  return <ReportView report={report} siteId={site.id} showVersion={showVersion} />;
 }

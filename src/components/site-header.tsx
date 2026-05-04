@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EditSiteDialog } from "@/components/edit-site-dialog";
 import { CHECK_REQUIREMENTS, type CheckRequirement } from "@/lib/glossary";
-import { Settings, ExternalLink, AlertTriangle, FileText, ChevronDown } from "lucide-react";
+import { Settings, ExternalLink, AlertTriangle, FileText, ChevronDown, Trash2 } from "lucide-react";
 import type { ReportListItem } from "@/app/actions/report";
+import { deleteReport, deleteAllReports } from "@/app/actions/report";
 
 interface SiteHeaderProps {
   site: {
@@ -54,6 +55,8 @@ function getMissingFieldCounts(site: SiteHeaderProps["site"]): { field: CheckReq
 export function SiteHeader({ site, auditId, reportVersions }: SiteHeaderProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [reportMenuOpen, setReportMenuOpen] = useState(false);
+  const [showVersion, setShowVersion] = useState(true);
+  const [versions, setVersions] = useState(reportVersions);
   const menuRef = useRef<HTMLDivElement>(null);
   const missingFields = getMissingFieldCounts(site);
 
@@ -69,7 +72,11 @@ export function SiteHeader({ site, auditId, reportVersions }: SiteHeaderProps) {
     }
   }, [reportMenuOpen]);
 
-  const hasVersions = reportVersions.length > 0;
+  const hasVersions = versions.length > 0;
+
+  const reportUrl = showVersion
+    ? `/report/${site.id}`
+    : `/report/${site.id}?hideVersion=1`;
 
   return (
     <Card>
@@ -84,10 +91,10 @@ export function SiteHeader({ site, auditId, reportVersions }: SiteHeaderProps) {
           <div className="flex items-center gap-2">
             <div className="relative" ref={menuRef}>
               <div className="flex">
-                <a href={`/report/${site.id}`} target="_blank" rel="noopener noreferrer">
+                <a href={reportUrl} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline" size="sm" className={`gap-2 ${hasVersions ? "rounded-r-none border-r-0" : ""}`}>
                     <FileText className="h-4 w-4" />
-                    Report
+                    New report
                   </Button>
                 </a>
                 {hasVersions && (
@@ -103,26 +110,65 @@ export function SiteHeader({ site, auditId, reportVersions }: SiteHeaderProps) {
               </div>
 
               {reportMenuOpen && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-56 rounded-md border border-border bg-popover shadow-md">
+                <div className="absolute right-0 top-full mt-1 z-20 w-64 rounded-md border border-border bg-popover shadow-md">
                   <div className="p-1">
-                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                      Saved versions
+                    <div className="flex items-center justify-between px-2 py-1.5">
+                      <span className="text-xs font-medium text-muted-foreground">Saved versions</span>
+                      {versions.length > 1 && (
+                        <button
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
+                          onClick={async () => {
+                            await deleteAllReports(auditId);
+                            setVersions([]);
+                            setReportMenuOpen(false);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Clear all
+                        </button>
+                      )}
                     </div>
-                    {reportVersions.map((v) => (
-                      <a
+                    {versions.map((v) => (
+                      <div
                         key={v.id}
-                        href={`/report/${site.id}?version=${v.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between px-2 py-1.5 text-sm rounded-sm hover:bg-accent cursor-pointer"
-                        onClick={() => setReportMenuOpen(false)}
+                        className="flex items-center gap-1 px-2 py-1.5 text-sm rounded-sm hover:bg-accent"
                       >
-                        <span>v{v.version}.0</span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(v.createdAt).toISOString().split("T")[0]}
-                        </span>
-                      </a>
+                        <a
+                          href={`/report/${site.id}?version=${v.id}${!showVersion ? "&hideVersion=1" : ""}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between flex-1"
+                          onClick={() => setReportMenuOpen(false)}
+                        >
+                          <span>v{v.version}.0</span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(v.createdAt).toISOString().split("T")[0]}
+                          </span>
+                        </a>
+                        <button
+                          className="text-muted-foreground hover:text-destructive shrink-0 ml-1"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await deleteReport(v.id);
+                            setVersions((prev) => prev.filter((r) => r.id !== v.id));
+                          }}
+                          aria-label="Delete version"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
                     ))}
+                    <div className="border-t mt-1 pt-1 px-2 py-1.5">
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={showVersion}
+                          onChange={(e) => setShowVersion(e.target.checked)}
+                          className="rounded"
+                        />
+                        Show version number in report
+                      </label>
+                    </div>
                   </div>
                 </div>
               )}

@@ -569,7 +569,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
                 const findings = JSON.parse(run.findings) as { checkKey: string; status: string; summary: string }[];
                 const issues = findings.filter((f) => f.status === "issue").length;
                 return (
-                  <div key={run.id} className="flex items-center gap-3 text-xs text-muted-foreground px-2 py-1.5 rounded-md bg-muted/50 group">
+                  <div key={run.id} className="flex items-center gap-3 text-xs text-muted-foreground px-2 py-1.5 rounded-md bg-muted/50">
                     <Clock className="h-3 w-3 shrink-0" />
                     <span>{new Date(run.startedAt).toLocaleString()}</span>
                     <Badge variant="secondary" className="text-[10px]">
@@ -585,14 +585,14 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
                       <Badge variant="secondary" className="text-[10px] bg-amber-500/15 text-amber-600">Failed</Badge>
                     )}
                     <button
-                      className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0"
+                      className="ml-auto text-muted-foreground hover:text-destructive shrink-0"
                       onClick={async () => {
                         await deleteScanRun(run.id);
                         setScanRuns((prev) => prev.filter((r) => r.id !== run.id));
                       }}
                       aria-label="Delete scan run"
                     >
-                      <X className="h-3 w-3" />
+                      <Trash2 className="h-3 w-3" />
                     </button>
                   </div>
                 );

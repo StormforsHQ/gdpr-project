@@ -1,31 +1,81 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { CHECKLIST } from "@/lib/checklist";
+import { CHECKLIST, type CheckCategory } from "@/lib/checklist";
 import { CHECK_GUIDES } from "@/lib/check-guides";
 import { getEffectiveAPIKey, getAISettings } from "@/app/actions/ai-settings";
 
 export const dynamic = "force-dynamic";
 
-function buildCheckReference(): string {
+function buildCheckIndex(): string {
   const lines: string[] = [];
   for (const cat of CHECKLIST) {
-    lines.push(`\n### ${cat.id}. ${cat.label}`);
-    for (const check of cat.checks) {
-      lines.push(`- **${check.key}**: ${check.label} — ${check.description} [${check.automation}]`);
-    }
+    const keys = cat.checks.map((c) => c.key).join(", ");
+    lines.push(`- **${cat.id}. ${cat.label}**: ${keys}`);
   }
   return lines.join("\n");
 }
 
-function buildGuideReference(): string {
-  const lines: string[] = [];
-  for (const [key, guide] of Object.entries(CHECK_GUIDES)) {
-    lines.push(`**${key} — ${guide.title}**: ${guide.why}`);
-    if (guide.steps.length > 0) {
-      lines.push(`Steps: ${guide.steps.join(" → ")}`);
+function findRelevantChecks(userMessage: string): string {
+  const upper = userMessage.toUpperCase();
+  const relevant: string[] = [];
+
+  for (const cat of CHECKLIST) {
+    const catMentioned = upper.includes(cat.id + ".") || upper.includes(cat.label.toUpperCase());
+
+    for (const check of cat.checks) {
+      const checkMentioned = upper.includes(check.key);
+      if (checkMentioned || catMentioned) {
+        let detail = `**${check.key}**: ${check.label} - ${check.description} [${check.automation}]`;
+        const guide = CHECK_GUIDES[check.key];
+        if (guide) {
+          detail += `\n  Why: ${guide.why}`;
+          detail += `\n  Steps: ${guide.steps.join(" -> ")}`;
+        }
+        relevant.push(detail);
+      }
     }
   }
-  return lines.join("\n");
+
+  return relevant.length > 0
+    ? `\n## Relevant check details\n${relevant.join("\n\n")}`
+    : "";
+}
+
+function findTopicChecks(userMessage: string): string {
+  const lower = userMessage.toLowerCase();
+  const topicMap: Record<string, string[]> = {
+    cookiebot: ["C1", "C2", "C3", "C4", "C5", "C6", "G3"],
+    consent: ["G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9"],
+    gtm: ["A3", "A4", "A5", "B1", "B2", "B3", "B4"],
+    script: ["A1", "A2", "D1", "D3"],
+    privacy: ["I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8"],
+    form: ["F1", "F2", "F3", "F4", "F5", "F6"],
+    embed: ["E1", "E2", "E3", "E4", "E5", "E6"],
+    tracking: ["D1", "D2", "D3", "H6", "H8"],
+    cookie: ["C1", "C2", "C3", "C4", "C5", "C6", "H6"],
+    scan: ["A1", "A2", "B1", "B5", "D1", "D3", "E1", "E2", "E3", "E4", "E5", "F1", "F3", "F5", "G1", "G8", "I3", "I4"],
+    fix: ["A1", "A2", "B1", "D1", "D3", "E1", "I4", "A3", "A4", "A5", "B3", "B4"],
+  };
+
+  const matchedKeys = new Set<string>();
+  for (const [topic, keys] of Object.entries(topicMap)) {
+    if (lower.includes(topic)) {
+      keys.forEach((k) => matchedKeys.add(k));
+    }
+  }
+
+  if (matchedKeys.size === 0) return "";
+
+  const allChecks = CHECKLIST.flatMap((cat) => cat.checks);
+  const details = [...matchedKeys].slice(0, 15).map((key) => {
+    const check = allChecks.find((c) => c.key === key);
+    if (!check) return "";
+    return `**${check.key}**: ${check.label} - ${check.description} [${check.automation}]`;
+  }).filter(Boolean);
+
+  return details.length > 0
+    ? `\n## Topic-related checks\n${details.join("\n")}`
+    : "";
 }
 
 async function buildSiteContext(siteId: string): Promise<string> {
@@ -63,7 +113,8 @@ async function buildSiteContext(siteId: string): Promise<string> {
       if (issues.length > 0) {
         lines.push("\nChecks with issues:");
         for (const r of issues) {
-          lines.push(`- ${r.checkKey}: ${r.notes || "(no notes)"}`);
+          const check = CHECKLIST.flatMap((cat) => cat.checks).find((c) => c.key === r.checkKey);
+          lines.push(`- ${r.checkKey} (${check?.label ?? "unknown"}): ${r.notes || "(no notes)"}`);
         }
       }
     }
@@ -73,33 +124,37 @@ async function buildSiteContext(siteId: string): Promise<string> {
   }
 }
 
-function buildSystemPrompt(checkRef: string, guideRef: string, siteContext: string): string {
+function buildSystemPrompt(siteContext: string, relevantChecks: string, topicChecks: string): string {
+  const checkIndex = buildCheckIndex();
+
   return `You are a GDPR compliance assistant built into the Stormfors audit app.
 Help users understand checks, scan results, and what actions to take.
 Be concise and practical. Answer in the same language the user writes in.
 
+## App overview
+This app audits websites for GDPR and ePrivacy compliance. It has 69 checks across 11 categories, automated scanning, AI analysis, and report generation.
+
 ## App navigation
 - Sites list: add/edit/delete sites, each has URL + platform + optional Cookiebot/GTM IDs
-- Audit page: 69 checks across 11 categories, run scans, review results
-- Reports: generate versioned reports with summary and findings
+- Audit page: 69 checks in 11 categories, run scans, review results, set statuses
+- Reports: generate versioned PDF-ready reports with executive summary and findings
 - Settings: database backup, AI/LLM model settings, error log
 
-## Warning triangles
-Checks show amber triangles when they need a Cookiebot ID or GTM Container ID that hasn't been added in site settings. Add IDs via the Edit Site dialog (pencil icon on the site header).
-
-## Running scans
-- "Scan site" runs 18 page scan checks (HTML analysis with cheerio)
+## How scans work
+- "Scan site" runs 18 page scan checks (HTML analysis)
 - "AI Analyze" runs 9 AI checks (costs OpenRouter credits)
-- Cookiebot checks run automatically if a Cookiebot ID is set on the site
-- GTM API checks need a GTM Container ID and run individually per check
+- Cookiebot checks run automatically if a Cookiebot ID is set
+- GTM API checks need a GTM Container ID and run individually
 - Individual checks can be re-run with the play button on each row
 
-## Check reference
-${checkRef}
+## Warning triangles
+Amber triangles appear when a check needs a Cookiebot ID or GTM Container ID that hasn't been added. Add IDs via Edit Site (pencil icon).
 
-## Check guides (why + steps)
-${guideRef}
-${siteContext}`;
+## Check index (69 checks, 11 categories)
+${checkIndex}
+
+If the user asks about a specific check, use the detailed information below. If they ask a general question, use the index to orient your answer.
+${relevantChecks}${topicChecks}${siteContext}`;
 }
 
 interface ChatMessage {
@@ -125,10 +180,11 @@ export async function POST(req: NextRequest) {
     }
 
     const settings = await getAISettings();
-    const checkRef = buildCheckReference();
-    const guideRef = buildGuideReference();
+    const lastUserMsg = messages.filter((m) => m.role === "user").at(-1)?.content ?? "";
+    const relevantChecks = findRelevantChecks(lastUserMsg);
+    const topicChecks = relevantChecks ? "" : findTopicChecks(lastUserMsg);
     const siteContext = siteId ? await buildSiteContext(siteId) : "";
-    const systemPrompt = buildSystemPrompt(checkRef, guideRef, siteContext);
+    const systemPrompt = buildSystemPrompt(siteContext, relevantChecks, topicChecks);
 
     const openRouterMessages = [
       { role: "system", content: systemPrompt },

@@ -3,8 +3,18 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, Upload, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Download, Upload, Loader2, CheckCircle2, AlertCircle, Trash2, X } from "lucide-react";
 import { importDatabase } from "@/app/actions/backup";
+import { useErrorLog, type ErrorEntry } from "@/components/error-log";
+
+const SOURCE_LABELS: Record<ErrorEntry["source"], string> = {
+  scan: "Page scan",
+  ai: "AI check",
+  save: "Save",
+  system: "System",
+  fix: "Auto-fix",
+};
 
 export default function SettingsPage() {
   const [exporting, setExporting] = useState(false);
@@ -14,6 +24,7 @@ export default function SettingsPage() {
     message: string;
   } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { errors, clearErrors, dismissError } = useErrorLog();
 
   async function handleExport() {
     setExporting(true);
@@ -138,6 +149,65 @@ export default function SettingsPage() {
               <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
             )}
             {result.message}
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-medium flex items-center gap-2">
+              Error log
+              {errors.length > 0 && (
+                <Badge variant="destructive" className="text-xs">{errors.length}</Badge>
+              )}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Errors from page scans, AI checks, auto-fixes, and saves during this session.
+            </p>
+          </div>
+          {errors.length > 0 && (
+            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={clearErrors}>
+              <Trash2 className="h-3 w-3" />
+              Clear all
+            </Button>
+          )}
+        </div>
+
+        {errors.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            No errors recorded this session
+          </p>
+        ) : (
+          <div className="divide-y rounded-md border">
+            {errors.map((err) => (
+              <div key={err.id} className="px-4 py-3 group">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-[10px] shrink-0">
+                        {SOURCE_LABELS[err.source]}
+                      </Badge>
+                      <span className="text-[10px] text-muted-foreground">
+                        {err.timestamp.toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <p className="text-xs">{err.message}</p>
+                    {err.detail && (
+                      <p className="text-[11px] text-muted-foreground break-all">{err.detail}</p>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => dismissError(err.id)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </Card>

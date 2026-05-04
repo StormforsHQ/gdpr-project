@@ -24,8 +24,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useErrorLog, ErrorLogDrawer } from "@/components/error-log";
+import { useErrorLog } from "@/components/error-log";
 import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock } from "lucide-react";
+import Link from "next/link";
 
 type CheckEntry = { status: CheckStatus; notes: string; source: "manual" | "scan" | "ai" };
 type CheckState = Record<string, CheckEntry>;
@@ -50,8 +51,7 @@ interface ChecklistViewProps {
 }
 
 export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initialScanRuns, siteFields }: ChecklistViewProps) {
-  const { errors, addError } = useErrorLog();
-  const [errorLogOpen, setErrorLogOpen] = useState(false);
+  const { errors, addError, clearErrors } = useErrorLog();
   const [scanRuns, setScanRuns] = useState<ScanRunEntry[]>(initialScanRuns ?? []);
   const [checkStates, setCheckStates] = useState<CheckState>(() => {
     if (!initialStates) return {};
@@ -200,6 +200,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
 
   const executeScan = async () => {
     setScanning(true);
+    clearErrors();
+    setScanResult(null);
     try {
       const result = await runPageScan(scanUrl, siteId);
       if (!result.error) {
@@ -248,6 +250,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
 
   const executeAIScan = async () => {
     setAiScanning(true);
+    clearErrors();
     try {
       const results = await runAllAIChecks(scanUrl);
       setLastScanType("ai-agent");
@@ -563,13 +566,13 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
           </button>
         )}
         {errors.length > 0 && (
-          <button
+          <Link
+            href="/settings"
             className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 hover:underline"
-            onClick={() => setErrorLogOpen(true)}
           >
             <AlertCircle className="h-3.5 w-3.5" />
-            {errors.length} error{errors.length !== 1 ? "s" : ""}
-          </button>
+            {errors.length} error{errors.length !== 1 ? "s" : ""} - view in Settings
+          </Link>
         )}
       </div>
 
@@ -744,10 +747,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
         </AlertDialogContent>
       </AlertDialog>
 
-      <ErrorLogDrawer
-        open={errorLogOpen}
-        onOpenChange={setErrorLogOpen}
-      />
     </div>
   );
 }

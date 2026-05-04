@@ -245,6 +245,8 @@ interface OpenRouterMessage {
 }
 
 export async function POST(req: NextRequest) {
+  const encoder = new TextEncoder();
+
   try {
     const body = await req.json();
     const { messages, siteId } = body as { messages: ChatMessage[]; siteId?: string };
@@ -268,95 +270,104 @@ export async function POST(req: NextRequest) {
       ...messages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
     ];
 
-    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: settings.primaryModel,
-          messages: openRouterMessages,
-          tools: TOOLS,
-          temperature: 0.3,
-        }),
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        return new Response(
-          JSON.stringify({ error: `OpenRouter error ${response.status}: ${text.slice(0, 200)}` }),
-          { status: 502 },
-        );
-      }
-
-      const data = await response.json();
-      const choice = data.choices?.[0];
-      if (!choice) {
-        return new Response(JSON.stringify({ error: "No response from model" }), { status: 502 });
-      }
-
-      const assistantMessage = choice.message;
-
-      if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
-        return streamFinalResponse(assistantMessage.content || "", data.usage?.total_tokens || 0);
-      }
-
-      openRouterMessages.push({
-        role: "assistant",
-        content: assistantMessage.content || null,
-        tool_calls: assistantMessage.tool_calls,
-      });
-
-      for (const toolCall of assistantMessage.tool_calls) {
-        let args: Record<string, string> = {};
-        try {
-          args = JSON.parse(toolCall.function.arguments);
-        } catch {
-          args = {};
+    const readable = new ReadableStream({
+      async start(controller) {
+        function send(data: Record<string, unknown>) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
         }
 
-        const result = await executeTool(toolCall.function.name, args, siteId);
+        try {
+          for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: settings.primaryModel,
+                messages: openRouterMessages,
+                tools: TOOLS,
+                temperature: 0.3,
+              }),
+            });
 
-        openRouterMessages.push({
-          role: "tool",
-          tool_call_id: toolCall.id,
-          content: result,
-        });
-      }
-    }
+            if (!response.ok) {
+              const text = await response.text();
+              send({ error: `OpenRouter error ${response.status}: ${text.slice(0, 200)}` });
+              controller.close();
+              return;
+            }
 
-    return streamFinalResponse("I looked up several things but couldn't form a complete answer. Could you rephrase your question?", 0);
+            const data = await response.json();
+            const choice = data.choices?.[0];
+            if (!choice) {
+              send({ error: "No response from model" });
+              controller.close();
+              return;
+            }
+
+            const assistantMessage = choice.message;
+
+            if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
+              const content = assistantMessage.content || "";
+              const chunkSize = 12;
+              for (let i = 0; i < content.length; i += chunkSize) {
+                send({ content: content.slice(i, i + chunkSize) });
+              }
+              send({ done: true, usage: { totalTokens: data.usage?.total_tokens || 0 } });
+              controller.close();
+              return;
+            }
+
+            send({ thinking: true });
+
+            openRouterMessages.push({
+              role: "assistant",
+              content: assistantMessage.content || null,
+              tool_calls: assistantMessage.tool_calls,
+            });
+
+            for (const toolCall of assistantMessage.tool_calls) {
+              let args: Record<string, string> = {};
+              try {
+                args = JSON.parse(toolCall.function.arguments);
+              } catch {
+                args = {};
+              }
+
+              const result = await executeTool(toolCall.function.name, args, siteId);
+
+              openRouterMessages.push({
+                role: "tool",
+                tool_call_id: toolCall.id,
+                content: result,
+              });
+            }
+          }
+
+          const fallback = "I looked up several things but couldn't form a complete answer. Could you rephrase your question?";
+          send({ content: fallback });
+          send({ done: true, usage: { totalTokens: 0 } });
+          controller.close();
+        } catch (err) {
+          send({ error: err instanceof Error ? err.message : "Stream error" });
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(readable, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
   } catch (err) {
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : "Internal error" }),
       { status: 500 },
     );
   }
-}
-
-function streamFinalResponse(content: string, totalTokens: number): Response {
-  const encoder = new TextEncoder();
-  const readable = new ReadableStream({
-    start(controller) {
-      const chunkSize = 12;
-      for (let i = 0; i < content.length; i += chunkSize) {
-        const chunk = content.slice(i, i + chunkSize);
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`));
-      }
-      controller.enqueue(
-        encoder.encode(`data: ${JSON.stringify({ done: true, usage: { totalTokens } })}\n\n`),
-      );
-      controller.close();
-    },
-  });
-
-  return new Response(readable, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    },
-  });
 }

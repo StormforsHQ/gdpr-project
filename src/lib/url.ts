@@ -14,6 +14,7 @@ export function isValidUrl(url: string): boolean {
     const parts = parsed.hostname.split(".");
     const domainParts = parts[0] === "www" ? parts.slice(1) : parts;
     if (domainParts.length < 2) return false;
+    if (domainParts.some((p) => !p)) return false;
     const tld = domainParts[domainParts.length - 1];
     return /^[a-z]{2,}$/i.test(tld);
   } catch {

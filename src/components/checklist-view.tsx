@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useErrorLog } from "@/components/error-log";
+import { ChecklistLegend } from "@/components/checklist-legend";
 import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock } from "lucide-react";
 import Link from "next/link";
 
@@ -574,6 +575,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
           )}
         </div>
       )}
+
+      <ChecklistLegend />
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground text-xs mr-1">

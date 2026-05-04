@@ -8,5 +8,11 @@ export function normalizeUrl(url: string): string {
 export function isValidUrl(url: string): boolean {
   const trimmed = url.trim();
   if (!trimmed) return false;
-  return /^(https?:\/\/)?[\w.-]+\.\w{2,}/.test(trimmed);
+  try {
+    const withProtocol = trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
+    const parsed = new URL(withProtocol);
+    return parsed.hostname.includes(".") && parsed.hostname.split(".").pop()!.length >= 2;
+  } catch {
+    return false;
+  }
 }

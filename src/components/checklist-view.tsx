@@ -11,7 +11,7 @@ import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
-import { saveCheckResult, saveScanRun } from "@/app/actions/audits";
+import { saveCheckResult, saveScanRun, deleteScanRun, deleteAllScanRuns } from "@/app/actions/audits";
 import { getFixAvailability, applyFix, type FixAvailability } from "@/app/actions/fixes";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
 import {
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useErrorLog } from "@/components/error-log";
 import { ChecklistLegend } from "@/components/checklist-legend";
-import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock } from "lucide-react";
+import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X } from "lucide-react";
 import Link from "next/link";
 
 type CheckEntry = { status: CheckStatus; notes: string; source: "manual" | "scan" | "ai" };
@@ -539,25 +539,41 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
 
       {scanRuns.length > 0 && (
         <div>
-          <button
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => setShowHistory(!showHistory)}
-          >
-            <History className="h-3.5 w-3.5" />
-            {scanRuns.length} scan run{scanRuns.length !== 1 ? "s" : ""}
-            {showHistory ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setShowHistory(!showHistory)}
+            >
+              <History className="h-3.5 w-3.5" />
+              {scanRuns.length} scan run{scanRuns.length !== 1 ? "s" : ""}
+              {showHistory ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            </button>
+            {showHistory && scanRuns.length > 1 && (
+              <button
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
+                onClick={async () => {
+                  if (!auditId) return;
+                  await deleteAllScanRuns(auditId);
+                  setScanRuns([]);
+                  setShowHistory(false);
+                }}
+              >
+                <Trash2 className="h-3 w-3" />
+                Clear all
+              </button>
+            )}
+          </div>
           {showHistory && (
             <div className="mt-2 space-y-1">
               {scanRuns.map((run) => {
                 const findings = JSON.parse(run.findings) as { checkKey: string; status: string; summary: string }[];
                 const issues = findings.filter((f) => f.status === "issue").length;
                 return (
-                  <div key={run.id} className="flex items-center gap-3 text-xs text-muted-foreground px-2 py-1.5 rounded-md bg-muted/50">
+                  <div key={run.id} className="flex items-center gap-3 text-xs text-muted-foreground px-2 py-1.5 rounded-md bg-muted/50 group">
                     <Clock className="h-3 w-3 shrink-0" />
                     <span>{new Date(run.startedAt).toLocaleString()}</span>
                     <Badge variant="secondary" className="text-[10px]">
-                      {run.scanType === "page-scan" ? "Scan" : "AI"}
+                      {run.scanType === "page-scan" ? "Scan" : run.scanType === "cookiebot" ? "Cookiebot" : "AI"}
                     </Badge>
                     <span className="truncate">{run.url}</span>
                     {run.status === "completed" ? (
@@ -568,6 +584,16 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
                     ) : (
                       <Badge variant="secondary" className="text-[10px] bg-amber-500/15 text-amber-600">Failed</Badge>
                     )}
+                    <button
+                      className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0"
+                      onClick={async () => {
+                        await deleteScanRun(run.id);
+                        setScanRuns((prev) => prev.filter((r) => r.id !== run.id));
+                      }}
+                      aria-label="Delete scan run"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
                 );
               })}

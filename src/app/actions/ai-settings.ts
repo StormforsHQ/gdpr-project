@@ -145,3 +145,36 @@ export async function getEffectiveAPIKey(): Promise<string | null> {
   const dbKey = await prisma.appSetting.findUnique({ where: { key: "ai_api_key" } }).catch(() => null);
   return dbKey?.value || process.env.OPENROUTER_API_KEY || null;
 }
+
+export async function getOpenRouterUsage(): Promise<{
+  configured: boolean;
+  usage?: number;
+  limit?: number;
+  remaining?: number;
+} | null> {
+  const apiKey = await getEffectiveAPIKey();
+  if (!apiKey) return { configured: false };
+
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/auth/key", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) return { configured: true };
+    const data = await res.json();
+
+    const usage = data.data?.usage;
+    const limit = data.data?.limit;
+    const hasLimit = limit != null;
+
+    return {
+      configured: true,
+      usage: usage != null ? Math.round(usage * 100) / 100 : undefined,
+      limit: hasLimit ? Math.round(limit * 100) / 100 : undefined,
+      remaining: hasLimit && usage != null
+        ? Math.round(Math.max(0, limit - usage) * 100) / 100
+        : undefined,
+    };
+  } catch {
+    return { configured: true };
+  }
+}

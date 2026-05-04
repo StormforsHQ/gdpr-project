@@ -4,6 +4,12 @@ import { useState, useEffect } from "react";
 import { Coins } from "lucide-react";
 import { getOpenRouterUsage } from "@/app/actions/ai-settings";
 
+function creditColor(remaining: number): string {
+  if (remaining <= 1) return "text-red-500 dark:text-red-400";
+  if (remaining <= 5) return "text-amber-500 dark:text-amber-400";
+  return "text-green-600 dark:text-green-400";
+}
+
 export function CreditDisplay() {
   const [data, setData] = useState<{
     configured: boolean;
@@ -31,8 +37,7 @@ export function CreditDisplay() {
     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mr-2">
       <Coins className="h-3.5 w-3.5 shrink-0" />
       <span>
-        ${data.remaining.toFixed(2)} remaining
-        {data.usage !== undefined && <span className="hidden sm:inline"> - ${data.usage.toFixed(2)} used</span>}
+        OpenRouter: <span className={creditColor(data.remaining)}>${data.remaining.toFixed(2)}</span>
       </span>
     </div>
   );

@@ -64,7 +64,7 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
   }, [sites]);
 
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { not_started: 0, in_progress: 0, issues_found: 0, compliant: 0 };
+    const counts: Record<string, number> = { not_started: 0, in_progress: 0, compliant: 0 };
     for (const s of sites) counts[s.status] = (counts[s.status] || 0) + 1;
     return counts;
   }, [sites]);
@@ -160,7 +160,7 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
           />
         </div>
         <div className="flex flex-wrap gap-1.5">
-          {(["not_started", "in_progress", "issues_found", "compliant"] as const).map((status) => {
+          {(["not_started", "in_progress", "compliant"] as const).map((status) => {
             const badge = STATUS_BADGES[status];
             const active = statusFilter.has(status);
             return (

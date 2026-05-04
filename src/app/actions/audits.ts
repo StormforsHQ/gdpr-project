@@ -137,6 +137,24 @@ export async function getScanRuns(auditId: string) {
   });
 }
 
+export async function deleteScanRun(id: string): Promise<{ success: boolean }> {
+  try {
+    await prisma.scanRun.delete({ where: { id } });
+    return { success: true };
+  } catch {
+    return { success: false };
+  }
+}
+
+export async function deleteAllScanRuns(auditId: string): Promise<{ success: boolean }> {
+  try {
+    await prisma.scanRun.deleteMany({ where: { auditId } });
+    return { success: true };
+  } catch {
+    return { success: false };
+  }
+}
+
 export async function getAuditProgress(auditId: string) {
   const results = await prisma.checkResult.findMany({
     where: { auditId },

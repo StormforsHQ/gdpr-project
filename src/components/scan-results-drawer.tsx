@@ -47,6 +47,8 @@ export function ScanResultsDrawer({
 
   if (!checkResult) return null;
 
+  const remediation = REMEDIATION[checkResult.checkKey];
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg p-0">
@@ -76,6 +78,17 @@ export function ScanResultsDrawer({
               </h3>
               <p className="text-sm">{getCheckLabel(checkResult.checkKey)}</p>
             </div>
+
+            {remediation?.plainExplanation && (
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                  What this means
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {remediation.plainExplanation}
+                </p>
+              </div>
+            )}
 
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
@@ -117,7 +130,7 @@ export function ScanResultsDrawer({
               </div>
             )}
 
-            {checkResult.status === "issue" && REMEDIATION[checkResult.checkKey] && (
+            {checkResult.status === "issue" && remediation && (
               <>
                 <Separator />
                 <div>
@@ -126,7 +139,7 @@ export function ScanResultsDrawer({
                     How to fix
                   </h3>
                   <ol className="space-y-2">
-                    {REMEDIATION[checkResult.checkKey].steps.map((step, i) => (
+                    {remediation.steps.map((step, i) => (
                       <li key={i} className="text-sm leading-relaxed flex gap-3">
                         <span className="text-xs font-mono text-muted-foreground mt-0.5 shrink-0 w-5 text-right">
                           {i + 1}.
@@ -138,16 +151,25 @@ export function ScanResultsDrawer({
                               {step.platform}
                             </Badge>
                           )}
-                          {step.needsDevOrLegal && (
-                            <span className="text-[10px] text-amber-500 ml-1">(needs dev/legal)</span>
-                          )}
                         </span>
                       </li>
                     ))}
                   </ol>
-                  {REMEDIATION[checkResult.checkKey].docLinks && (
+
+                  {remediation.devLegalNote && (
+                    <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
+                      <p className="text-xs font-medium text-amber-600 dark:text-amber-400 mb-1">
+                        * Needs developer or legal input
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {remediation.devLegalNote}
+                      </p>
+                    </div>
+                  )}
+
+                  {remediation.docLinks && (
                     <div className="mt-3 space-y-1">
-                      {REMEDIATION[checkResult.checkKey].docLinks!.map((link, i) => (
+                      {remediation.docLinks.map((link, i) => (
                         <a
                           key={i}
                           href={link.url}
@@ -167,9 +189,14 @@ export function ScanResultsDrawer({
 
             <Separator />
 
-            <div className="text-xs text-muted-foreground">
-              <p>Scanned: {scanResult?.url}</p>
-              <p>Time: {scanResult?.scannedAt ? new Date(scanResult.scannedAt).toLocaleString() : "-"}</p>
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">
+                <p>Scanned: {scanResult?.url}</p>
+                <p>Time: {scanResult?.scannedAt ? new Date(scanResult.scannedAt).toLocaleString() : "-"}</p>
+              </div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                For more details, click the <Info className="h-3 w-3 inline" /> icon on this check in the checklist.
+              </p>
             </div>
           </div>
         </ScrollArea>

@@ -58,11 +58,14 @@ export default async function SitePage({ params }: SitePageProps) {
       <div className="p-6 space-y-6">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold">Site Audit</h1>
-          <Badge variant="secondary">Demo mode</Badge>
+          <Badge variant="destructive" className="text-sm px-3 py-1">Demo mode</Badge>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Database not connected. Showing checklist in demo mode (changes won't be saved).
-        </p>
+        <div className="rounded-md border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-800 dark:text-red-300">
+          <p className="font-medium">Database not connected - running in demo mode</p>
+          <p className="mt-1 text-red-700 dark:text-red-400">
+            You can run scans, AI checks, and generate reports as usual, but nothing will be saved to the database. Any changes you make (statuses, notes) will be lost when you leave this page.
+          </p>
+        </div>
         <ChecklistView />
       </div>
     );

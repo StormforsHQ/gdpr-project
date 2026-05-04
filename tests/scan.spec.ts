@@ -93,7 +93,7 @@ test.describe("Check item interactions (demo mode)", () => {
       .first();
     await checkRow.click();
     await expect(
-      page.locator("textarea[placeholder='Add notes...']").first()
+      page.locator("textarea[placeholder*='Add notes']").first()
     ).toBeVisible();
   });
 

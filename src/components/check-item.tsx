@@ -287,7 +287,7 @@ export function CheckItem({
           </div>
           <div>
             <textarea
-              placeholder="Notes..."
+              placeholder="Add comments, issues found, or next steps..."
               value={notes}
               onChange={(e) => onNotesChange(e.target.value)}
               rows={2}

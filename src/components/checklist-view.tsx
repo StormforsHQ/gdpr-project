@@ -169,13 +169,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
           skipped++;
           continue;
         }
-        const findingSummary = check.findings
-          .map((f) => f.detail)
-          .join("; ");
         const status = check.status as CheckStatus;
-        const notes = findingSummary || check.summary;
-        next[check.checkKey] = { status, notes, source };
-        persistCheck(check.checkKey, status, notes, source);
+        next[check.checkKey] = { status, notes: "", source };
+        persistCheck(check.checkKey, status, "", source);
       }
       return next;
     });

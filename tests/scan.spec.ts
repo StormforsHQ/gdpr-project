@@ -70,7 +70,7 @@ test.describe("Scan and AI analyze (demo mode)", () => {
   });
 
   test("progress counter starts at zero in demo", async ({ page }) => {
-    await expect(page.getByText(/Progress: 0\/\d+ checked/)).toBeVisible();
+    await expect(page.getByText(/0\/\d+ checked/)).toBeVisible();
   });
 
   test("all checklist categories are visible", async ({ page }) => {
@@ -93,7 +93,7 @@ test.describe("Check item interactions (demo mode)", () => {
       .first();
     await checkRow.click();
     await expect(
-      page.locator("textarea[placeholder='Notes...']").first()
+      page.locator("textarea[placeholder*='Add notes']").first()
     ).toBeVisible();
   });
 

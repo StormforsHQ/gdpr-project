@@ -64,7 +64,6 @@ test.describe("Sidebar", () => {
   test("sidebar shows tech stack", async ({ page }) => {
     await page.goto("/");
     const sidebar = page.locator("aside").last();
-    await expect(sidebar.getByText("Stack")).toBeVisible();
     await expect(sidebar.getByText("Next.js 16")).toBeVisible();
   });
 

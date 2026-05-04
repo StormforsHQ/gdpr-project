@@ -139,17 +139,15 @@ export function ReportView({ report, siteId }: ReportViewProps) {
 
                 {cat.issues.map((check) => (
                   <div key={check.key} style={{ marginBottom: "16px", paddingLeft: "16px" }}>
-                    <p style={{ fontSize: "13px", color: "#333", marginBottom: "8px" }}>
-                      {check.notes || `Check ${check.key} (${check.label}) was flagged during audit.`}
+                    <p style={{ fontSize: "13px", fontWeight: 500, color: "#333", marginBottom: "4px" }}>
+                      {check.key}: {check.label}
                     </p>
-                    <ul style={{ listStyle: "disc", paddingLeft: "20px", fontSize: "13px", color: "#333" }}>
-                      <li style={{ marginBottom: "4px" }}>
-                        <strong>Findings:</strong> {check.notes || "Issue identified during audit review."}
-                      </li>
-                      <li>
-                        <strong>Action:</strong> Remediation required. See appendix for full check details.
-                      </li>
-                    </ul>
+                    <p style={{ fontSize: "13px", color: "#555", marginBottom: "8px" }}>
+                      {check.description}
+                    </p>
+                    <p style={{ fontSize: "12px", color: "#888" }}>
+                      Remediation required. See appendix for auditor notes.
+                    </p>
                   </div>
                 ))}
               </div>

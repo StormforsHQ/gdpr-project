@@ -193,26 +193,38 @@ export function CheckItem({
               )}
             </div>
           )}
-          {scanResult && scanResult.findings.length > 0 && (
-            <div className="space-y-1">
-              {scanResult.findings.slice(0, 3).map((f, i) => (
-                <p key={i} className={`text-xs ${f.severity === "error" ? "text-destructive" : f.severity === "warning" ? "text-amber-500" : "text-muted-foreground"}`}>
-                  {f.detail}
-                </p>
-              ))}
-              {scanResult.findings.length > 3 && (
-                <button
-                  className="text-xs text-primary hover:underline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewScanDetails?.(check.key);
-                  }}
-                >
-                  +{scanResult.findings.length - 3} more findings
-                </button>
-              )}
-            </div>
-          )}
+          {scanResult && scanResult.findings.length > 0 && (() => {
+            const grouped = new Map<string, { severity: string; count: number }>();
+            for (const f of scanResult.findings) {
+              const existing = grouped.get(f.detail);
+              if (existing) {
+                existing.count++;
+              } else {
+                grouped.set(f.detail, { severity: f.severity, count: 1 });
+              }
+            }
+            const entries = [...grouped.entries()];
+            return (
+              <div className="space-y-1">
+                {entries.map(([detail, { severity, count }], i) => (
+                  <p key={i} className={`text-xs ${severity === "error" ? "text-destructive" : severity === "warning" ? "text-amber-500" : "text-muted-foreground"}`}>
+                    {detail}{count > 1 && ` (${count})`}
+                  </p>
+                ))}
+                {onViewScanDetails && (
+                  <button
+                    className="text-xs text-primary hover:underline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewScanDetails(check.key);
+                    }}
+                  >
+                    View details
+                  </button>
+                )}
+              </div>
+            );
+          })()}
           <div className="flex items-center gap-3">
             {onRunCheck && (
               <Button

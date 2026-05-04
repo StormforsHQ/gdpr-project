@@ -160,9 +160,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
 
     const current = checkStates[key] ?? { status: "not_checked" as CheckStatus, notes: "", source: "manual" as const };
     const updated = { ...current, [field]: value };
-    if (updated.status !== "not_checked" || updated.notes.trim()) {
-      persistCheck(key, updated.status as CheckStatus, updated.notes, "manual");
-    }
+    persistCheck(key, updated.status as CheckStatus, updated.notes, "manual");
   };
 
   const applyCheckResults = (results: CheckResult[], source: "scan" | "ai"): number => {

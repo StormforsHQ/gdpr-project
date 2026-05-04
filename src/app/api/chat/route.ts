@@ -1,84 +1,132 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { CHECKLIST, type CheckCategory } from "@/lib/checklist";
+import { CHECKLIST } from "@/lib/checklist";
 import { CHECK_GUIDES } from "@/lib/check-guides";
 import { getEffectiveAPIKey, getAISettings } from "@/app/actions/ai-settings";
 
 export const dynamic = "force-dynamic";
 
-function buildCheckIndex(): string {
-  const lines: string[] = [];
-  for (const cat of CHECKLIST) {
-    const keys = cat.checks.map((c) => c.key).join(", ");
-    lines.push(`- **${cat.id}. ${cat.label}**: ${keys}`);
-  }
-  return lines.join("\n");
+const MAX_TOOL_ROUNDS = 5;
+
+const TOOLS = [
+  {
+    type: "function" as const,
+    function: {
+      name: "listCategories",
+      description:
+        "List all 11 audit categories with their IDs, names, and how many checks each has. Use this to get an overview of what the audit covers or to find which category a topic belongs to.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "getChecks",
+      description:
+        "Get all checks in a specific category. Returns each check's key, full name, description, and how it's automated. Use this when the user asks about a topic area (e.g. cookies, consent, forms, tracking) or when you need to find specific checks.",
+      parameters: {
+        type: "object",
+        properties: {
+          categoryId: {
+            type: "string",
+            description:
+              "The category ID letter (A through K). Call listCategories first if you don't know the ID.",
+          },
+        },
+        required: ["categoryId"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "getCheckGuide",
+      description:
+        "Get the detailed guide for a specific check: why it matters, step-by-step instructions, tools to use, and practical tips. Use this when the user asks how to check or fix something specific.",
+      parameters: {
+        type: "object",
+        properties: {
+          checkKey: {
+            type: "string",
+            description:
+              "The check key (e.g. 'A1', 'C3', 'G4'). Call getChecks first if you need to find the right key.",
+          },
+        },
+        required: ["checkKey"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "getSiteStatus",
+      description:
+        "Get the current audit status for the site the user is viewing: site info, configuration, audit progress, and which checks have issues. Use this when the user asks 'what should I fix?', 'how is this site doing?', or anything about the current site's results.",
+      parameters: {
+        type: "object",
+        properties: {
+          siteId: {
+            type: "string",
+            description: "The site ID. This is provided automatically from the user's current page.",
+          },
+        },
+        required: ["siteId"],
+      },
+    },
+  },
+];
+
+function executeListCategories(): string {
+  const categories = CHECKLIST.map((cat) => ({
+    id: cat.id,
+    name: cat.label,
+    checkCount: cat.checks.length,
+    checks: cat.checks.map((c) => `${c.key}: ${c.label}`),
+  }));
+  return JSON.stringify(categories);
 }
 
-function findRelevantChecks(userMessage: string): string {
-  const upper = userMessage.toUpperCase();
-  const relevant: string[] = [];
+function executeGetChecks(categoryId: string): string {
+  const cat = CHECKLIST.find((c) => c.id === categoryId.toUpperCase());
+  if (!cat) return JSON.stringify({ error: `Category '${categoryId}' not found. Use listCategories to see valid IDs.` });
 
-  for (const cat of CHECKLIST) {
-    const catMentioned = upper.includes(cat.id + ".") || upper.includes(cat.label.toUpperCase());
-
-    for (const check of cat.checks) {
-      const checkMentioned = upper.includes(check.key);
-      if (checkMentioned || catMentioned) {
-        let detail = `**${check.key}**: ${check.label} - ${check.description} [${check.automation}]`;
-        const guide = CHECK_GUIDES[check.key];
-        if (guide) {
-          detail += `\n  Why: ${guide.why}`;
-          detail += `\n  Steps: ${guide.steps.join(" -> ")}`;
-        }
-        relevant.push(detail);
-      }
-    }
-  }
-
-  return relevant.length > 0
-    ? `\n## Relevant check details\n${relevant.join("\n\n")}`
-    : "";
+  const checks = cat.checks.map((c) => ({
+    key: c.key,
+    name: c.label,
+    description: c.description,
+    automation: c.automation,
+    legalBasis: c.legalBasis || null,
+  }));
+  return JSON.stringify({ category: cat.label, checks });
 }
 
-function findTopicChecks(userMessage: string): string {
-  const lower = userMessage.toLowerCase();
-  const topicMap: Record<string, string[]> = {
-    cookiebot: ["C1", "C2", "C3", "C4", "C5", "C6", "G3"],
-    consent: ["G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9"],
-    gtm: ["A3", "A4", "A5", "B1", "B2", "B3", "B4"],
-    script: ["A1", "A2", "D1", "D3"],
-    privacy: ["I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8"],
-    form: ["F1", "F2", "F3", "F4", "F5", "F6"],
-    embed: ["E1", "E2", "E3", "E4", "E5", "E6"],
-    tracking: ["D1", "D2", "D3", "H6", "H8"],
-    cookie: ["C1", "C2", "C3", "C4", "C5", "C6", "H6"],
-    scan: ["A1", "A2", "B1", "B5", "D1", "D3", "E1", "E2", "E3", "E4", "E5", "F1", "F3", "F5", "G1", "G8", "I3", "I4"],
-    fix: ["A1", "A2", "B1", "D1", "D3", "E1", "I4", "A3", "A4", "A5", "B3", "B4"],
-  };
+function executeGetCheckGuide(checkKey: string): string {
+  const key = checkKey.toUpperCase();
+  const guide = CHECK_GUIDES[key];
+  const check = CHECKLIST.flatMap((cat) => cat.checks).find((c) => c.key === key);
 
-  const matchedKeys = new Set<string>();
-  for (const [topic, keys] of Object.entries(topicMap)) {
-    if (lower.includes(topic)) {
-      keys.forEach((k) => matchedKeys.add(k));
-    }
+  if (!guide && !check) {
+    return JSON.stringify({ error: `Check '${checkKey}' not found. Use getChecks to find valid keys.` });
   }
 
-  if (matchedKeys.size === 0) return "";
-
-  const allChecks = CHECKLIST.flatMap((cat) => cat.checks);
-  const details = [...matchedKeys].slice(0, 15).map((key) => {
-    const check = allChecks.find((c) => c.key === key);
-    if (!check) return "";
-    return `**${check.key}**: ${check.label} - ${check.description} [${check.automation}]`;
-  }).filter(Boolean);
-
-  return details.length > 0
-    ? `\n## Topic-related checks\n${details.join("\n")}`
-    : "";
+  const result: Record<string, unknown> = {};
+  if (check) {
+    result.key = check.key;
+    result.name = check.label;
+    result.description = check.description;
+    result.automation = check.automation;
+    result.legalBasis = check.legalBasis || null;
+  }
+  if (guide) {
+    result.why = guide.why;
+    result.steps = guide.steps;
+    result.tools = guide.tools || [];
+    result.tips = guide.tips || [];
+  }
+  return JSON.stringify(result);
 }
 
-async function buildSiteContext(siteId: string): Promise<string> {
+async function executeGetSiteStatus(siteId: string): Promise<string> {
   try {
     const site = await prisma.site.findUnique({
       where: { id: siteId },
@@ -90,76 +138,110 @@ async function buildSiteContext(siteId: string): Promise<string> {
         },
       },
     });
-    if (!site) return "";
+    if (!site) return JSON.stringify({ error: "Site not found" });
 
-    const lines: string[] = [
-      `\n## Current site context`,
-      `Site: ${site.name}`,
-      `URL: ${site.url}`,
-      `Platform: ${site.platform}`,
-      site.cookiebotId ? `Cookiebot ID: ${site.cookiebotId}` : "Cookiebot ID: not set",
-      site.gtmId ? `GTM Container ID: ${site.gtmId}` : "GTM Container ID: not set",
-    ];
+    const result: Record<string, unknown> = {
+      name: site.name,
+      url: site.url,
+      platform: site.platform,
+      cookiebotId: site.cookiebotId || "not set",
+      gtmId: site.gtmId || "not set",
+    };
 
     const audit = site.audits[0];
-    if (audit && audit.results.length > 0) {
-      const statusCounts = { ok: 0, issue: 0, na: 0, not_checked: 0 };
-      for (const r of audit.results) {
-        if (r.status in statusCounts) statusCounts[r.status as keyof typeof statusCounts]++;
-      }
-      lines.push(`\nAudit progress: ${statusCounts.ok} OK, ${statusCounts.issue} issues, ${statusCounts.na} N/A, ${statusCounts.not_checked} not checked`);
-
-      const issues = audit.results.filter((r) => r.status === "issue");
-      if (issues.length > 0) {
-        lines.push("\nChecks with issues:");
-        for (const r of issues) {
-          const check = CHECKLIST.flatMap((cat) => cat.checks).find((c) => c.key === r.checkKey);
-          lines.push(`- ${r.checkKey} (${check?.label ?? "unknown"}): ${r.notes || "(no notes)"}`);
-        }
-      }
+    if (!audit || audit.results.length === 0) {
+      result.auditStatus = "No audit results yet. The user should run a scan first.";
+      return JSON.stringify(result);
     }
-    return lines.join("\n");
+
+    const counts = { ok: 0, issue: 0, na: 0, not_checked: 0 };
+    for (const r of audit.results) {
+      if (r.status in counts) counts[r.status as keyof typeof counts]++;
+    }
+    result.progress = counts;
+
+    const issues = audit.results.filter((r) => r.status === "issue");
+    if (issues.length > 0) {
+      const allChecks = CHECKLIST.flatMap((cat) => cat.checks);
+      result.issues = issues.map((r) => {
+        const check = allChecks.find((c) => c.key === r.checkKey);
+        return {
+          key: r.checkKey,
+          name: check?.label ?? "Unknown",
+          automation: check?.automation ?? "unknown",
+          notes: r.notes || null,
+        };
+      });
+    }
+
+    return JSON.stringify(result);
   } catch {
-    return "";
+    return JSON.stringify({ error: "Failed to load site data" });
   }
 }
 
-function buildSystemPrompt(siteContext: string, relevantChecks: string, topicChecks: string): string {
-  const checkIndex = buildCheckIndex();
+async function executeTool(name: string, args: Record<string, string>, fallbackSiteId?: string): Promise<string> {
+  switch (name) {
+    case "listCategories":
+      return executeListCategories();
+    case "getChecks":
+      return executeGetChecks(args.categoryId);
+    case "getCheckGuide":
+      return executeGetCheckGuide(args.checkKey);
+    case "getSiteStatus":
+      return executeGetSiteStatus(args.siteId || fallbackSiteId || "");
+    default:
+      return JSON.stringify({ error: `Unknown tool: ${name}` });
+  }
+}
 
-  return `You are a GDPR compliance assistant built into the Stormfors audit app.
-Help users understand checks, scan results, and what actions to take.
+const SYSTEM_PROMPT = `You are a GDPR compliance assistant built into the Stormfors audit app.
+Help users understand checks, scan results, what actions to take, and how to use the app.
 Be concise and practical. Answer in the same language the user writes in.
 
-## App overview
-This app audits websites for GDPR and ePrivacy compliance. It has 69 checks across 11 categories, automated scanning, AI analysis, and report generation.
+## About this app
+This app audits websites for GDPR and ePrivacy compliance. It has 69 checks across 11 categories (A through K), covering script setup, consent banners, cookies, tracking, forms, embeds, privacy policies, and more.
 
-## App navigation
-- Sites list: add/edit/delete sites, each has URL + platform + optional Cookiebot/GTM IDs
-- Audit page: 69 checks in 11 categories, run scans, review results, set statuses
-- Reports: generate versioned PDF-ready reports with executive summary and findings
-- Settings: database backup, AI/LLM model settings, error log
-
-## How scans work
-- "Scan site" runs 18 page scan checks (HTML analysis)
-- "AI Analyze" runs 9 AI checks (costs OpenRouter credits)
-- Cookiebot checks run automatically if a Cookiebot ID is set
-- GTM API checks need a GTM Container ID and run individually
-- Individual checks can be re-run with the play button on each row
+## How to navigate the app
+- **Sites list** (left sidebar): All sites being audited. Click a site to open its audit page. Add new sites with the + button. Each site has a URL, platform, and optional Cookiebot ID and GTM Container ID.
+- **Audit page**: Shows all 69 checks grouped by category. Each check has a status (OK, Issue, N/A, or Not checked), notes field, and automation badge showing how it's tested.
+- **Running scans**: Click "Scan site" to run 18 automated page checks. Click "AI Analyze" to run 9 AI-powered checks (uses OpenRouter credits). Cookiebot checks run automatically if a Cookiebot ID is set. Individual checks can be re-run with the play button.
+- **Reports**: Generate versioned compliance reports with an executive summary and detailed findings. Click "New report" on the audit page.
+- **Settings**: Database backup/restore, AI model configuration, error log. Access from the sidebar.
+- **Guide drawer**: Click the book icon on any check to see detailed instructions for that specific check.
 
 ## Warning triangles
-Amber triangles appear when a check needs a Cookiebot ID or GTM Container ID that hasn't been added. Add IDs via Edit Site (pencil icon).
+Amber warning triangles appear on checks that need a Cookiebot ID or GTM Container ID that hasn't been added to the site yet. Go to Edit Site (pencil icon) to add the IDs.
 
-## Check index (69 checks, 11 categories)
-${checkIndex}
+## Getting started with a new audit
+1. Add the site (+ button in sidebar) with its URL and platform
+2. If the site uses Cookiebot, add the Cookiebot ID (found in the Cookiebot dashboard or in the page source)
+3. If the site uses GTM, add the GTM Container ID (starts with GTM-)
+4. Click "Scan site" to run automated checks
+5. Click "AI Analyze" for AI-powered checks
+6. Review results, set statuses, add notes for anything that needs attention
+7. Handle manual checks using the step-by-step guides (book icon)
+8. Generate a report when the audit is complete
 
-If the user asks about a specific check, use the detailed information below. If they ask a general question, use the index to orient your answer.
-${relevantChecks}${topicChecks}${siteContext}`;
-}
+## Your tools
+You have access to tools that let you look up check details, guides, and the current site's audit status. Use them to give specific, accurate answers. Don't guess about check details - look them up.
+
+When the user asks about a topic (cookies, consent, tracking, etc.), use listCategories and getChecks to find the relevant checks. When they ask "what should I fix first?", use getSiteStatus to see their current issues.`;
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+}
+
+interface OpenRouterMessage {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string | null;
+  tool_calls?: {
+    id: string;
+    type: "function";
+    function: { name: string; arguments: string };
+  }[];
+  tool_call_id?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -180,103 +262,101 @@ export async function POST(req: NextRequest) {
     }
 
     const settings = await getAISettings();
-    const lastUserMsg = messages.filter((m) => m.role === "user").at(-1)?.content ?? "";
-    const relevantChecks = findRelevantChecks(lastUserMsg);
-    const topicChecks = relevantChecks ? "" : findTopicChecks(lastUserMsg);
-    const siteContext = siteId ? await buildSiteContext(siteId) : "";
-    const systemPrompt = buildSystemPrompt(siteContext, relevantChecks, topicChecks);
 
-    const openRouterMessages = [
-      { role: "system", content: systemPrompt },
-      ...messages.map((m) => ({ role: m.role, content: m.content })),
+    const openRouterMessages: OpenRouterMessage[] = [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...messages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
     ];
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: settings.primaryModel,
-        messages: openRouterMessages,
-        stream: true,
-        temperature: 0.3,
-      }),
-    });
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: settings.primaryModel,
+          messages: openRouterMessages,
+          tools: TOOLS,
+          temperature: 0.3,
+        }),
+      });
 
-    if (!response.ok) {
-      const text = await response.text();
-      return new Response(
-        JSON.stringify({ error: `OpenRouter error ${response.status}: ${text.slice(0, 200)}` }),
-        { status: 502 },
-      );
+      if (!response.ok) {
+        const text = await response.text();
+        return new Response(
+          JSON.stringify({ error: `OpenRouter error ${response.status}: ${text.slice(0, 200)}` }),
+          { status: 502 },
+        );
+      }
+
+      const data = await response.json();
+      const choice = data.choices?.[0];
+      if (!choice) {
+        return new Response(JSON.stringify({ error: "No response from model" }), { status: 502 });
+      }
+
+      const assistantMessage = choice.message;
+
+      if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
+        return streamFinalResponse(assistantMessage.content || "", data.usage?.total_tokens || 0);
+      }
+
+      openRouterMessages.push({
+        role: "assistant",
+        content: assistantMessage.content || null,
+        tool_calls: assistantMessage.tool_calls,
+      });
+
+      for (const toolCall of assistantMessage.tool_calls) {
+        let args: Record<string, string> = {};
+        try {
+          args = JSON.parse(toolCall.function.arguments);
+        } catch {
+          args = {};
+        }
+
+        const result = await executeTool(toolCall.function.name, args, siteId);
+
+        openRouterMessages.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          content: result,
+        });
+      }
     }
 
-    const encoder = new TextEncoder();
-    const readable = new ReadableStream({
-      async start(controller) {
-        const reader = response.body?.getReader();
-        if (!reader) {
-          controller.close();
-          return;
-        }
-
-        const decoder = new TextDecoder();
-        let buffer = "";
-        let totalTokens = 0;
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() || "";
-
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed || !trimmed.startsWith("data: ")) continue;
-              const data = trimmed.slice(6);
-              if (data === "[DONE]") {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, usage: { totalTokens } })}\n\n`));
-                continue;
-              }
-
-              try {
-                const parsed = JSON.parse(data);
-                const delta = parsed.choices?.[0]?.delta?.content;
-                if (delta) {
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: delta })}\n\n`));
-                }
-                if (parsed.usage?.total_tokens) {
-                  totalTokens = parsed.usage.total_tokens;
-                }
-              } catch {
-                // skip malformed chunks
-              }
-            }
-          }
-        } catch (err) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: err instanceof Error ? err.message : "Stream error" })}\n\n`));
-        } finally {
-          controller.close();
-        }
-      },
-    });
-
-    return new Response(readable, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      },
-    });
+    return streamFinalResponse("I looked up several things but couldn't form a complete answer. Could you rephrase your question?", 0);
   } catch (err) {
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : "Internal error" }),
       { status: 500 },
     );
   }
+}
+
+function streamFinalResponse(content: string, totalTokens: number): Response {
+  const encoder = new TextEncoder();
+  const readable = new ReadableStream({
+    start(controller) {
+      const chunkSize = 12;
+      for (let i = 0; i < content.length; i += chunkSize) {
+        const chunk = content.slice(i, i + chunkSize);
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`));
+      }
+      controller.enqueue(
+        encoder.encode(`data: ${JSON.stringify({ done: true, usage: { totalTokens } })}\n\n`),
+      );
+      controller.close();
+    },
+  });
+
+  return new Response(readable, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
 }

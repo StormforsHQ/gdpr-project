@@ -132,11 +132,18 @@ export async function scanSite(url: string): Promise<ScanResult> {
       detectedCookiebotId: detectedCookiebotId || undefined,
     };
   } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    let userError = message;
+    if (/fetch failed|ENOTFOUND|getaddrinfo/i.test(message)) {
+      userError = `Could not reach ${normalizedUrl}. Check that the URL is correct and the site is online.`;
+    } else if (/timed? ?out|aborted/i.test(message)) {
+      userError = `The site at ${normalizedUrl} took too long to respond (15s timeout).`;
+    }
     return {
       url: normalizedUrl,
       scannedAt: new Date().toISOString(),
       checks: [],
-      error: err instanceof Error ? err.message : "Unknown error",
+      error: userError,
     };
   }
 }

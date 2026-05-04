@@ -111,7 +111,7 @@ export async function saveScanRun(
   auditId: string,
   scanType: "page-scan" | "ai-agent" | "cookiebot",
   url: string,
-  findings: { checkKey: string; status: string; summary: string }[],
+  findings: { checkKey: string; status: string; summary: string; findings?: { element: string; detail: string; severity: string }[] }[],
   error?: string
 ) {
   const run = await prisma.scanRun.create({

@@ -74,8 +74,36 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
   const [scanning, setScanning] = useState(false);
   const [aiScanning, setAiScanning] = useState(false);
   const [runningChecks, setRunningChecks] = useState<Set<string>>(new Set());
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-  const [lastScanType, setLastScanType] = useState<"page-scan" | "ai-agent" | null>(null);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(() => {
+    if (!initialScanRuns?.length) return null;
+    const completedRuns = initialScanRuns.filter((r) => r.status === "completed");
+    if (completedRuns.length === 0) return null;
+    const allChecks: CheckResult[] = [];
+    const seenKeys = new Set<string>();
+    for (const run of completedRuns) {
+      const findings = JSON.parse(run.findings) as CheckResult[];
+      for (const check of findings) {
+        if (!seenKeys.has(check.checkKey)) {
+          seenKeys.add(check.checkKey);
+          allChecks.push({
+            checkKey: check.checkKey,
+            status: check.status,
+            summary: check.summary,
+            findings: check.findings ?? [],
+          });
+        }
+      }
+    }
+    return allChecks.length > 0
+      ? { url: completedRuns[0].url, scannedAt: completedRuns[0].startedAt.toString(), checks: allChecks }
+      : null;
+  });
+  const [lastScanType, setLastScanType] = useState<"page-scan" | "ai-agent" | null>(() => {
+    if (!initialScanRuns?.length) return null;
+    const latest = initialScanRuns.find((r) => r.status === "completed");
+    if (!latest) return null;
+    return latest.scanType === "ai-agent" ? "ai-agent" : "page-scan";
+  });
   const [scanDrawerOpen, setScanDrawerOpen] = useState(false);
   const [scanDrawerCheckKey, setScanDrawerCheckKey] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<"scan" | "ai" | null>(null);
@@ -213,8 +241,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
           addError("scan", `Check ${check.checkKey} failed`, check.summary);
         }
         if (auditId) {
-          const findings = result.checks.map((c) => ({ checkKey: c.checkKey, status: c.status, summary: c.summary }));
-          const run = await saveScanRun(auditId, "page-scan", scanUrl, findings);
+          const run = await saveScanRun(auditId, "page-scan", scanUrl, result.checks);
           setScanRuns((prev) => [run, ...prev]);
         }
 
@@ -224,8 +251,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
             const cbResults = await runCookiebotScan(cbid);
             totalSkipped += applyCheckResults(cbResults, "scan");
             if (auditId) {
-              const cbFindings = cbResults.map((c) => ({ checkKey: c.checkKey, status: c.status, summary: c.summary }));
-              const cbRun = await saveScanRun(auditId, "cookiebot", scanUrl, cbFindings);
+              const cbRun = await saveScanRun(auditId, "cookiebot", scanUrl, cbResults);
               setScanRuns((prev) => [cbRun, ...prev]);
             }
           } catch (err) {
@@ -261,8 +287,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
         addError("ai", `AI check ${check.checkKey} failed`, check.summary);
       }
       if (auditId) {
-        const findings = results.map((c) => ({ checkKey: c.checkKey, status: c.status, summary: c.summary }));
-        const run = await saveScanRun(auditId, "ai-agent", scanUrl, findings);
+        const run = await saveScanRun(auditId, "ai-agent", scanUrl, results);
         setScanRuns((prev) => [run, ...prev]);
       }
     } catch (err) {

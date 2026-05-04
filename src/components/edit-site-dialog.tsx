@@ -139,10 +139,12 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
                   <TooltipTrigger className="cursor-help">
                     <Info className="h-3.5 w-3.5 text-muted-foreground" />
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[280px] text-xs leading-relaxed">
-                    <p>Each website that uses Cookiebot has its own ID - a long code that looks like 1a2b3c4d-5e6f-... (called a UUID).</p>
-                    <p className="mt-1.5">To find it: log in to cookiebot.com, select the website, and look under Settings. You'll need admin access to the Cookiebot account - ask the person who manages cookie consent for your clients.</p>
-                    <p className="mt-1.5 text-muted-foreground">Several cookie consent checks cannot run without this ID.</p>
+                  <TooltipContent side="top" className="max-w-[280px] text-xs leading-relaxed !block">
+                    <div>
+                      <p>Each website that uses Cookiebot has its own ID - a long code that looks like 1a2b3c4d-5e6f-... (called a UUID).</p>
+                      <p className="mt-1.5">To find it: log in to cookiebot.com, select the website, and look under Settings. You'll need admin access to the Cookiebot account - ask the person who manages cookie consent for your clients.</p>
+                      <p className="mt-1.5 opacity-60">Several cookie consent checks cannot run without this ID.</p>
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -160,10 +162,12 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
                   <TooltipTrigger className="cursor-help">
                     <Info className="h-3.5 w-3.5 text-muted-foreground" />
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[280px] text-xs leading-relaxed">
-                    <p>Google Tag Manager is a tool that manages all tracking scripts on a website. Each website has a container with an ID that starts with GTM- (e.g. GTM-ABC1234).</p>
-                    <p className="mt-1.5">To find it: go to tagmanager.google.com, open the website's container - the ID is shown at the top next to the container name. You'll need access to the GTM account - ask the developer or site admin.</p>
-                    <p className="mt-1.5 text-muted-foreground">Several GTM configuration checks cannot run without this ID.</p>
+                  <TooltipContent side="top" className="max-w-[280px] text-xs leading-relaxed !block">
+                    <div>
+                      <p>Google Tag Manager is a tool that manages all tracking scripts on a website. Each website has a container with an ID that starts with GTM- (e.g. GTM-ABC1234).</p>
+                      <p className="mt-1.5">To find it: go to tagmanager.google.com, open the website's container - the ID is shown at the top next to the container name. You'll need access to the GTM account - ask the developer or site admin.</p>
+                      <p className="mt-1.5 opacity-60">Several GTM configuration checks cannot run without this ID.</p>
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               </div>

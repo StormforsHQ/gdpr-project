@@ -118,13 +118,21 @@ export default async function SitesPage() {
                       <TableCell>
                         <Link
                           href={`/sites/${site.id}`}
-                          className="text-sm font-medium group-hover:underline after:absolute after:inset-0"
+                          className="text-sm font-medium after:absolute after:inset-0"
                         >
                           {site.name}
                         </Link>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {site.url}
+                        <a
+                          href={site.url.startsWith("http") ? site.url : `https://${site.url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative z-10 hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {site.url}
+                        </a>
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="text-xs capitalize">

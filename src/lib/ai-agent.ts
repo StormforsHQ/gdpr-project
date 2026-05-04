@@ -1,10 +1,9 @@
 import * as cheerio from "cheerio";
 import type { CheckResult } from "@/lib/scanner";
 import { normalizeUrl } from "@/lib/url";
+import { getAISettings, getEffectiveAPIKey } from "@/app/actions/ai-settings";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const PRIMARY_MODEL = "google/gemini-2.0-flash-001";
-const FALLBACK_MODEL = "google/gemini-2.0-flash-lite-001";
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1500;
 
@@ -17,12 +16,13 @@ function isRetryable(status: number): boolean {
 }
 
 async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise<string> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = await getEffectiveAPIKey();
   if (!apiKey) {
-    throw new Error("OPENROUTER_API_KEY not configured");
+    throw new Error("No OpenRouter API key configured. Add one in Settings or set OPENROUTER_API_KEY in environment.");
   }
 
-  const models = [PRIMARY_MODEL, FALLBACK_MODEL];
+  const settings = await getAISettings();
+  const models = [settings.primaryModel, settings.fallbackModel];
 
   for (const model of models) {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -54,7 +54,7 @@ async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise
             console.warn(`OpenRouter ${model} attempt ${attempt + 1} failed (${response.status}), retrying...`);
             continue;
           }
-          if (isRetryable(response.status) && model === PRIMARY_MODEL) {
+          if (isRetryable(response.status) && model === models[0]) {
             console.warn(`OpenRouter ${model} failed after ${attempt + 1} attempts, trying fallback model`);
             break;
           }
@@ -62,7 +62,7 @@ async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise
         }
 
         const data = await response.json();
-        if (model !== PRIMARY_MODEL) {
+        if (model !== models[0]) {
           console.info(`OpenRouter: used fallback model ${model}`);
         }
         return data.choices?.[0]?.message?.content || "";
@@ -71,7 +71,7 @@ async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise
           console.warn(`OpenRouter ${model} attempt ${attempt + 1} network error, retrying...`);
           continue;
         }
-        if (err instanceof TypeError && model === PRIMARY_MODEL) {
+        if (err instanceof TypeError && model === models[0]) {
           console.warn(`OpenRouter ${model} network error after ${attempt + 1} attempts, trying fallback model`);
           break;
         }

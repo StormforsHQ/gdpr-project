@@ -29,26 +29,19 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
-  const [thinking, setThinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tokenCount, setTokenCount] = useState(0);
   const { addError } = useErrorLog();
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const pathname = usePathname();
 
   const siteId = pathname.match(/\/sites\/([^/]+)/)?.[1] ?? undefined;
 
-  const scrollToBottom = useCallback(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, []);
-
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, streaming]);
 
   useEffect(() => {
     if (open) {
@@ -56,99 +49,127 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
     }
   }, [open]);
 
-  async function sendMessage(text: string) {
-    if (!text.trim() || streaming) return;
+  const sendMessage = useCallback(
+    async (text: string) => {
+      if (!text.trim() || streaming) return;
 
-    setError(null);
-    setInput("");
+      setError(null);
+      setInput("");
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: text.trim() };
-    const assistantMsg: Message = { id: crypto.randomUUID(), role: "assistant", content: "" };
+      const userMsg: Message = {
+        id: `user-${Date.now()}`,
+        role: "user",
+        content: text.trim(),
+      };
+      setMessages((prev) => [...prev, userMsg]);
+      setStreaming(true);
 
-    const updatedMessages = [...messages, userMsg];
-    setMessages([...updatedMessages, assistantMsg]);
-    setStreaming(true);
+      const controller = new AbortController();
+      abortRef.current = controller;
 
-    setThinking(false);
-    const controller = new AbortController();
-    abortRef.current = controller;
-    const timeout = setTimeout(() => controller.abort(), 120000);
+      try {
+        const chatHistory = [...messages, userMsg].map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
 
-    try {
-      const chatHistory = updatedMessages.map((m) => ({ role: m.role, content: m.content }));
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: chatHistory, siteId }),
-        signal: controller.signal,
-      });
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: chatHistory, siteId }),
+          signal: controller.signal,
+        });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(data.error || `HTTP ${res.status}`);
-      }
+        if (!res.ok || !res.body) {
+          const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+          throw new Error(data.error || `HTTP ${res.status}`);
+        }
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No response body");
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let fullContent = "";
 
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let fullContent = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop() ?? "";
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
+          for (const part of parts) {
+            if (!part.trim()) continue;
+            const dataMatch = part.match(/^data:\s*(.+)$/m);
+            if (!dataMatch) continue;
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+            try {
+              const data = JSON.parse(dataMatch[1]);
 
-          try {
-            const data = JSON.parse(trimmed.slice(6));
-            if (data.error) {
-              throw new Error(data.error);
-            }
-            if (data.thinking) {
-              setThinking(true);
-              continue;
-            }
-            if (data.content) {
-              setThinking(false);
-              fullContent += data.content;
-              setMessages((prev) =>
-                prev.map((m) => (m.id === assistantMsg.id ? { ...m, content: fullContent } : m))
-              );
-            }
-            if (data.done && data.usage?.totalTokens) {
-              setTokenCount((prev) => prev + data.usage.totalTokens);
-            }
-          } catch (e) {
-            if (e instanceof Error && e.message !== "Unexpected end of JSON input") {
-              throw e;
+              if (data.error) {
+                throw new Error(data.error);
+              }
+
+              if (data.content) {
+                fullContent += data.content;
+                setMessages((prev) => {
+                  const last = prev[prev.length - 1];
+                  if (last?.id === "streaming") {
+                    return [
+                      ...prev.slice(0, -1),
+                      { ...last, content: fullContent },
+                    ];
+                  }
+                  return [
+                    ...prev,
+                    {
+                      id: "streaming",
+                      role: "assistant" as const,
+                      content: fullContent,
+                    },
+                  ];
+                });
+              }
+
+              if (data.done && data.usage?.totalTokens) {
+                setTokenCount((prev) => prev + data.usage.totalTokens);
+              }
+            } catch (e) {
+              if (e instanceof Error && e.message !== "Unexpected end of JSON input") {
+                throw e;
+              }
             }
           }
         }
+
+        if (fullContent) {
+          setMessages((prev) => {
+            const withoutStreaming = prev.filter((m) => m.id !== "streaming");
+            return [
+              ...withoutStreaming,
+              {
+                id: `assistant-${Date.now()}`,
+                role: "assistant",
+                content: fullContent,
+              },
+            ];
+          });
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          return;
+        }
+        const errorMsg = err instanceof Error ? err.message : "Something went wrong";
+        setError(errorMsg);
+        addError("chat", errorMsg);
+        setMessages((prev) => prev.filter((m) => m.id !== "streaming"));
+      } finally {
+        setStreaming(false);
+        abortRef.current = null;
       }
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") {
-        setError("Request timed out. Try a shorter question.");
-        setMessages((prev) => prev.filter((m) => m.id !== assistantMsg.id));
-        return;
-      }
-      const errorMsg = err instanceof Error ? err.message : "Something went wrong";
-      setError(errorMsg);
-      addError("chat", errorMsg);
-      setMessages((prev) => prev.filter((m) => m.id !== assistantMsg.id));
-    } finally {
-      clearTimeout(timeout);
-      setStreaming(false);
-      abortRef.current = null;
-    }
-  }
+    },
+    [messages, streaming, siteId, addError],
+  );
 
   function handleClear() {
     if (streaming) {
@@ -170,7 +191,6 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
 
   return (
     <>
-      {/* Overlay for click-outside-to-close */}
       <div className="fixed inset-0 z-40 bg-black/20 sm:block" onClick={onClose} />
 
       <div className="fixed right-0 top-0 z-50 flex h-full w-full flex-col border-l bg-background shadow-xl sm:w-[420px]">
@@ -188,8 +208,8 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
         </div>
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4 scrollbar-subtle">
-          {messages.length === 0 && (
+        <div className="flex-1 space-y-3 overflow-y-auto p-4 scrollbar-subtle">
+          {messages.length === 0 && !streaming && (
             <div className="flex h-full flex-col items-center justify-center gap-4">
               <div className="text-center">
                 <p className="text-sm font-medium">Ask me anything</p>
@@ -218,26 +238,22 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
           {messages.map((msg) => (
             <ChatMessage key={msg.id} role={msg.role} content={msg.content} />
           ))}
-          {streaming && messages.at(-1)?.content === "" && (
+          {streaming && messages[messages.length - 1]?.role !== "assistant" && (
             <div className="flex justify-start">
               <div className="rounded-lg bg-muted px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  {thinking && <span className="text-xs text-muted-foreground">Looking up data...</span>}
-                </div>
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             </div>
           )}
+          {error && (
+            <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
+              <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+              <span>{error}</span>
+              <button onClick={() => setError(null)} className="ml-auto shrink-0 underline">dismiss</button>
+            </div>
+          )}
+          <div ref={bottomRef} />
         </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mx-4 mb-2 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
-            <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
-            <span>{error}</span>
-            <button onClick={() => setError(null)} className="ml-auto shrink-0 underline">dismiss</button>
-          </div>
-        )}
 
         {/* Footer */}
         <div className="border-t p-3">

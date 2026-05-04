@@ -102,32 +102,39 @@ export function ReportView({ report, siteId, showVersion = true }: ReportViewPro
         {/* === 1. EXECUTIVE SUMMARY === */}
         <h2 style={{ fontSize: "22px", fontWeight: 300, marginBottom: "12px" }}>1. Executive Summary</h2>
 
-        {editingSection === "summary" ? (
-          <div className="print:hidden" style={{ marginBottom: "40px" }}>
-            <textarea
-              style={{ width: "100%", minHeight: "120px", padding: "12px", border: "1px solid #ccc", borderRadius: "4px", fontSize: "14px", lineHeight: 1.6, fontFamily: "inherit", resize: "vertical" }}
-              value={summaryDraft}
-              onChange={(e) => setSummaryDraft(e.target.value)}
-            />
-            <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-              <button onClick={handleSaveText} disabled={saving} style={{ padding: "6px 16px", fontSize: "12px", background: "#1a1a1a", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>
-                {saving ? "Saving..." : "Save"}
-              </button>
-              <button onClick={() => setEditingSection(null)} style={{ padding: "6px 16px", fontSize: "12px", border: "1px solid #ccc", borderRadius: "4px", background: "white", cursor: "pointer" }}>Cancel</button>
+        <div style={{ marginBottom: "40px" }}>
+          {editingSection === "summary" ? (
+            <div className="print:hidden">
+              <textarea
+                style={{ width: "100%", minHeight: "120px", padding: "12px", border: "1px solid #ccc", borderRadius: "4px", fontSize: "14px", lineHeight: 1.6, fontFamily: "inherit", resize: "vertical" }}
+                value={summaryDraft}
+                onChange={(e) => setSummaryDraft(e.target.value)}
+              />
             </div>
+          ) : (
+            <div
+              onClick={() => setEditingSection("summary")}
+              style={{ cursor: "pointer", padding: "12px", borderRadius: "4px", border: "1px dashed #ccc" }}
+              className="print:border-0 print:p-0"
+            >
+              {report.executiveSummary.split("\n").map((p, i) => (
+                <p key={i} style={{ marginBottom: i < report.executiveSummary.split("\n").length - 1 ? "12px" : 0, color: "#333" }}>{p}</p>
+              ))}
+            </div>
+          )}
+          <div className="print:hidden" style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+            <button
+              onClick={() => editingSection === "summary" ? handleSaveText() : setEditingSection("summary")}
+              disabled={saving}
+              style={{ padding: "6px 16px", fontSize: "12px", background: "#1a1a1a", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
+            >
+              {saving && editingSection === "summary" ? "Saving..." : editingSection === "summary" ? "Save" : "Edit"}
+            </button>
+            {editingSection === "summary" && (
+              <button onClick={() => { setEditingSection(null); setSummaryDraft(report.executiveSummary); }} style={{ padding: "6px 16px", fontSize: "12px", border: "1px solid #ccc", borderRadius: "4px", background: "white", cursor: "pointer" }}>Cancel</button>
+            )}
           </div>
-        ) : (
-          <div
-            onClick={() => setEditingSection("summary")}
-            style={{ cursor: "pointer", padding: "8px", margin: "-8px -8px 40px -8px", borderRadius: "4px" }}
-            className="hover:bg-gray-50 print:hover:bg-transparent"
-            title="Click to edit"
-          >
-            {report.executiveSummary.split("\n").map((p, i) => (
-              <p key={i} style={{ marginBottom: i < report.executiveSummary.split("\n").length - 1 ? "12px" : 0, color: "#333" }}>{p}</p>
-            ))}
-          </div>
-        )}
+        </div>
 
         {/* === 2. KEY FINDINGS === */}
         {issueCategories.length > 0 && (
@@ -163,32 +170,39 @@ export function ReportView({ report, siteId, showVersion = true }: ReportViewPro
           {issueCategories.length > 0 ? "3" : "2"}. Audit Conclusion & Recommendations
         </h2>
 
-        {editingSection === "conclusion" ? (
-          <div className="print:hidden" style={{ marginBottom: "40px" }}>
-            <textarea
-              style={{ width: "100%", minHeight: "120px", padding: "12px", border: "1px solid #ccc", borderRadius: "4px", fontSize: "14px", lineHeight: 1.6, fontFamily: "inherit", resize: "vertical" }}
-              value={conclusionDraft}
-              onChange={(e) => setConclusionDraft(e.target.value)}
-            />
-            <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-              <button onClick={handleSaveText} disabled={saving} style={{ padding: "6px 16px", fontSize: "12px", background: "#1a1a1a", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>
-                {saving ? "Saving..." : "Save"}
-              </button>
-              <button onClick={() => setEditingSection(null)} style={{ padding: "6px 16px", fontSize: "12px", border: "1px solid #ccc", borderRadius: "4px", background: "white", cursor: "pointer" }}>Cancel</button>
+        <div style={{ marginBottom: "40px" }}>
+          {editingSection === "conclusion" ? (
+            <div className="print:hidden">
+              <textarea
+                style={{ width: "100%", minHeight: "120px", padding: "12px", border: "1px solid #ccc", borderRadius: "4px", fontSize: "14px", lineHeight: 1.6, fontFamily: "inherit", resize: "vertical" }}
+                value={conclusionDraft}
+                onChange={(e) => setConclusionDraft(e.target.value)}
+              />
             </div>
+          ) : (
+            <div
+              onClick={() => setEditingSection("conclusion")}
+              style={{ cursor: "pointer", padding: "12px", borderRadius: "4px", border: "1px dashed #ccc" }}
+              className="print:border-0 print:p-0"
+            >
+              {report.conclusion.split("\n").map((p, i) => (
+                <p key={i} style={{ marginBottom: i < report.conclusion.split("\n").length - 1 ? "12px" : 0, color: "#333" }}>{p}</p>
+              ))}
+            </div>
+          )}
+          <div className="print:hidden" style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+            <button
+              onClick={() => editingSection === "conclusion" ? handleSaveText() : setEditingSection("conclusion")}
+              disabled={saving}
+              style={{ padding: "6px 16px", fontSize: "12px", background: "#1a1a1a", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
+            >
+              {saving && editingSection === "conclusion" ? "Saving..." : editingSection === "conclusion" ? "Save" : "Edit"}
+            </button>
+            {editingSection === "conclusion" && (
+              <button onClick={() => { setEditingSection(null); setConclusionDraft(report.conclusion); }} style={{ padding: "6px 16px", fontSize: "12px", border: "1px solid #ccc", borderRadius: "4px", background: "white", cursor: "pointer" }}>Cancel</button>
+            )}
           </div>
-        ) : (
-          <div
-            onClick={() => setEditingSection("conclusion")}
-            style={{ cursor: "pointer", padding: "8px", margin: "-8px -8px 40px -8px", borderRadius: "4px" }}
-            className="hover:bg-gray-50 print:hover:bg-transparent"
-            title="Click to edit"
-          >
-            {report.conclusion.split("\n").map((p, i) => (
-              <p key={i} style={{ marginBottom: i < report.conclusion.split("\n").length - 1 ? "12px" : 0, color: "#333" }}>{p}</p>
-            ))}
-          </div>
-        )}
+        </div>
 
         {/* === APPENDIX === */}
         <div style={{ marginTop: "50px", paddingTop: "30px", borderTop: "1px solid #ddd" }}>

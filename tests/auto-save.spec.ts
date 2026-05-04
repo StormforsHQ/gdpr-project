@@ -15,7 +15,7 @@ test.describe("Check state management (demo mode)", () => {
       .first();
     await checkRow.click();
     await expect(
-      page.locator("textarea[placeholder*='Add notes']").first()
+      page.locator("textarea[placeholder='Add notes...']").first()
     ).toBeVisible();
     const statusSelect = page.getByRole("combobox").first();
     await expect(statusSelect).toBeVisible();
@@ -24,7 +24,7 @@ test.describe("Check state management (demo mode)", () => {
   test("changing check status to OK updates progress counter", async ({
     page,
   }) => {
-    await expect(page.getByText(/0\/\d+ checked/)).toBeVisible();
+    await expect(page.getByText(/Progress: 0\/\d+ checked/)).toBeVisible();
 
     const checkRow = page
       .locator("[class*='border-b']")
@@ -36,7 +36,7 @@ test.describe("Check state management (demo mode)", () => {
     await statusSelect.click();
     await page.getByRole("option", { name: "OK" }).click();
 
-    await expect(page.getByText(/1\/\d+ checked/)).toBeVisible();
+    await expect(page.getByText(/Progress: 1\/\d+ checked/)).toBeVisible();
   });
 
   test("changing check status to Issue updates progress and shows issue count", async ({
@@ -52,7 +52,7 @@ test.describe("Check state management (demo mode)", () => {
     await statusSelect.click();
     await page.getByRole("option", { name: "Issue" }).click();
 
-    await expect(page.getByText(/1\/\d+ checked/)).toBeVisible();
+    await expect(page.getByText(/Progress: 1\/\d+ checked/)).toBeVisible();
     await expect(page.getByText(/Issues \(1\)/).first()).toBeVisible();
   });
 
@@ -63,7 +63,7 @@ test.describe("Check state management (demo mode)", () => {
       .first();
     await checkRow.click();
 
-    const notesInput = page.locator("textarea[placeholder*='Add notes']").first();
+    const notesInput = page.locator("textarea[placeholder='Add notes...']").first();
     await notesInput.fill("Test note for A1 check");
     await expect(notesInput).toHaveValue("Test note for A1 check");
   });
@@ -89,7 +89,7 @@ test.describe("Check state management (demo mode)", () => {
     await statusSelect.click();
     await page.getByRole("option", { name: "OK" }).click();
 
-    await expect(page.getByText(/1\/\d+ checked/)).toBeVisible();
+    await expect(page.getByText(/Progress: 1\/\d+ checked/)).toBeVisible();
   });
 
   test("multiple checks can be set independently", async ({ page }) => {
@@ -112,7 +112,7 @@ test.describe("Check state management (demo mode)", () => {
     await a2Select.click();
     await page.getByRole("option", { name: "Issue" }).click();
 
-    await expect(page.getByText(/2\/\d+ checked/)).toBeVisible();
+    await expect(page.getByText(/Progress: 2\/\d+ checked/)).toBeVisible();
   });
 
   test("resetting check to Not checked decrements progress", async ({
@@ -127,10 +127,10 @@ test.describe("Check state management (demo mode)", () => {
     const statusSelect = page.getByRole("combobox").first();
     await statusSelect.click();
     await page.getByRole("option", { name: "OK" }).click();
-    await expect(page.getByText(/1\/\d+ checked/)).toBeVisible();
+    await expect(page.getByText(/Progress: 1\/\d+ checked/)).toBeVisible();
 
     await statusSelect.click();
     await page.getByRole("option", { name: "Not checked" }).click();
-    await expect(page.getByText(/0\/\d+ checked/)).toBeVisible();
+    await expect(page.getByText(/Progress: 0\/\d+ checked/)).toBeVisible();
   });
 });

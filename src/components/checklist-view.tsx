@@ -609,7 +609,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground text-xs mr-1">
-          {totalChecked}/{totalChecks} checked
+          Progress: {totalChecked}/{totalChecks} checked
         </span>
         <button onClick={() => toggleFilter("not_checked")}>
           <Badge

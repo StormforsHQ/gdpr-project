@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <circle cx="256" cy="256" r="256" fill="#4338ca"/>
+  <g transform="translate(256, 256)" fill="none" stroke="white" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Vertical post -->
+    <line x1="0" y1="-120" x2="0" y2="120"/>
+    <!-- Top crossbar -->
+    <line x1="-100" y1="-100" x2="100" y2="-100"/>
+    <!-- Left chain -->
+    <line x1="-100" y1="-100" x2="-100" y2="-20"/>
+    <!-- Right chain -->
+    <line x1="100" y1="-100" x2="100" y2="-20"/>
+    <!-- Left scale pan -->
+    <path d="M-140,-20 Q-100,40 -60,-20" fill="white" fill-opacity="0.25"/>
+    <!-- Right scale pan -->
+    <path d="M60,-20 Q100,40 140,-20" fill="white" fill-opacity="0.25"/>
+    <!-- Base -->
+    <line x1="-60" y1="120" x2="60" y2="120"/>
+  </g>
+</svg>

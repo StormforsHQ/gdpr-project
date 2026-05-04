@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { X, Trash2, Send, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useErrorLog } from "@/components/error-log";
 import { ChatMessage } from "./chat-message";
 
 interface Message {
@@ -23,6 +24,7 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tokenCount, setTokenCount] = useState(0);
+  const { addError } = useErrorLog();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -121,6 +123,7 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       const errorMsg = err instanceof Error ? err.message : "Something went wrong";
       setError(errorMsg);
+      addError("chat", errorMsg);
       setMessages((prev) => prev.filter((m) => m.id !== assistantMsg.id));
     } finally {
       setStreaming(false);

@@ -21,6 +21,7 @@ const SOURCE_LABELS: Record<ErrorEntry["source"], string> = {
   save: "Save",
   system: "System",
   fix: "Auto-fix",
+  chat: "Chat",
 };
 
 export default function SettingsPage() {

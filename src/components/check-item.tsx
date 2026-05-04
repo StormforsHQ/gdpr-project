@@ -299,7 +299,7 @@ export function CheckItem({
           </div>
           <div>
             <textarea
-              placeholder="Add comments, issues found, or next steps..."
+              placeholder="Add notes (included in the report appendix)..."
               value={notes}
               onChange={(e) => onNotesChange(e.target.value)}
               rows={2}

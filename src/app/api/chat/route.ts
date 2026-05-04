@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { prisma } from "@/lib/db";
 import { CHECKLIST } from "@/lib/checklist";
 import { CHECK_GUIDES } from "@/lib/check-guides";
+import { MCP_SERVERS } from "@/lib/mcp-servers";
 import { getEffectiveAPIKey, getAISettings } from "@/app/actions/ai-settings";
 
 export const dynamic = "force-dynamic";
@@ -155,6 +158,25 @@ const TOOLS = [
       description:
         "Get a compliance overview across all sites: each site's progress, issue count, and configuration status. Use when the user asks 'which sites have the most issues?', 'overall compliance status', or wants a portfolio view.",
       parameters: { type: "object", properties: {}, required: [] },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "getReferencePage",
+      description:
+        "Read the content of a reference page in the app. Available pages: 'technical-guide' (how Cookiebot, GTM, and consent work together), 'audit-protocol' (step-by-step audit procedure), 'cheat-sheet' (quick reference for common checks), 'mcp-servers' (MCP server details for automation). Use this when the user asks about any of these topics or pages.",
+      parameters: {
+        type: "object",
+        properties: {
+          page: {
+            type: "string",
+            enum: ["technical-guide", "audit-protocol", "cheat-sheet", "mcp-servers"],
+            description: "Which reference page to read",
+          },
+        },
+        required: ["page"],
+      },
     },
   },
 ];
@@ -508,6 +530,45 @@ async function executeGetComplianceOverview(): Promise<string> {
   return JSON.stringify({ totalSites: sites.length, sites: overview });
 }
 
+function executeGetReferencePage(page: string): string {
+  const docFiles: Record<string, string> = {
+    "technical-guide": "docs/technical-configuration-guide.md",
+    "audit-protocol": "docs/audit-protocol.md",
+    "cheat-sheet": "docs/audit-cheat-sheet.md",
+  };
+
+  if (page === "mcp-servers") {
+    const servers = MCP_SERVERS.map((s) => ({
+      name: s.name,
+      platform: s.platform,
+      official: s.official,
+      status: s.status,
+      auth: s.auth,
+      description: s.description,
+      capabilities: s.capabilities.map((c) => ({
+        name: c.name,
+        useful: c.useful,
+        detail: c.detail,
+      })),
+      notes: s.notes || [],
+    }));
+    return JSON.stringify({ page: "MCP Servers", servers });
+  }
+
+  const filePath = docFiles[page];
+  if (!filePath) {
+    return JSON.stringify({ error: `Unknown page '${page}'. Available: technical-guide, audit-protocol, cheat-sheet, mcp-servers` });
+  }
+
+  try {
+    const content = readFileSync(join(process.cwd(), filePath), "utf-8");
+    const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n\n[Content truncated - answer based on what's shown above]" : content;
+    return JSON.stringify({ page, content: truncated });
+  } catch {
+    return JSON.stringify({ error: `Could not read ${page}` });
+  }
+}
+
 async function executeTool(name: string, args: Record<string, string>, fallbackSiteId?: string): Promise<string> {
   switch (name) {
     case "listCategories":
@@ -530,68 +591,35 @@ async function executeTool(name: string, args: Record<string, string>, fallbackS
       return executeGetScanHistory(args.siteName, fallbackSiteId);
     case "getComplianceOverview":
       return executeGetComplianceOverview();
+    case "getReferencePage":
+      return executeGetReferencePage(args.page);
     default:
       return JSON.stringify({ error: `Unknown tool: ${name}` });
   }
 }
 
 const SYSTEM_PROMPT = `You are GDPR Help, the built-in assistant for this GDPR compliance audit app.
-The app is built by Stormfors, a Swedish web agency. "Stormfors" is the company name, NOT the name of this app and NOT a website being audited.
+The app is built by Stormfors (a Swedish web agency). "Stormfors" is the company, not a site being audited.
 Be concise and practical. Answer in the same language the user writes in.
 
-## CRITICAL RULE: Always use tools
-You MUST call at least one tool before answering ANY question about checks, sites, audits, scans, results, issues, compliance, or any data in the app. NEVER answer from memory alone. Even if you think you know the answer, verify with a tool first.
+## CRITICAL: Always use tools first
+You MUST call at least one tool before answering ANY question. NEVER answer from memory or from this system prompt alone.
 
-The ONLY questions you may answer without tools are simple navigation questions like "where is the settings page?" or "how do I add a site?".
+Examples:
+- User asks about checks, categories, compliance -> call searchChecks, listCategories, getChecks, or getCheckGuide
+- User asks about a site or its results -> call getSiteByName, getCurrentSiteStatus, or listSites
+- User asks about scans -> call getScanHistory
+- User asks about MCP servers, technical guide, audit protocol, or cheat sheet -> call getReferencePage
+- User mentions any name (company, site, project) -> call getSiteByName to check if it's in the database
+- User asks "what should I fix?" -> call getCurrentSiteStatus or getComplianceOverview
+- User asks about overall status -> call getComplianceOverview
 
-If the user mentions a company, site, or project name, ALWAYS call getSiteByName or listSites first to check if it exists as a site in the app. Do not assume it refers to the app itself.
+The ONLY exception: simple navigation like "where is settings?" or "how do I add a site?" - answer those directly.
 
-## About this app
-This app audits websites for GDPR and ePrivacy compliance. It has 69 checks across 11 categories (A through K).
-
-## App pages and navigation
-- **Dashboard**: Overview page, entry point
-- **Sites** (sidebar): All sites being audited. Click a site to open its audit. Add new sites with +. Each site has URL, platform, optional Cookiebot ID and GTM Container ID.
-- **Audit page** (click a site): All 69 checks grouped by category. Each has a status, notes field, and automation badge. Run scans from here.
-- **Scans**: "Scan site" runs 18 page checks. "AI Analyze" runs 9 AI checks (costs credits). Cookiebot checks run if Cookiebot ID is set. Re-run individual checks with the play button.
-- **Reports**: Generate versioned compliance reports with executive summary and findings. Click "New report" on the audit page.
-- **Settings** (sidebar): Database backup/restore, AI/LLM model config, error log.
-- **Guide drawer**: Book icon on any check opens step-by-step instructions.
-
-### Reference section (sidebar under "Reference")
-These are documentation pages built into the app:
-- **Technical Guide**: How Cookiebot, GTM, consent management, and script setup work together technically. Explains the architecture behind the audit checks.
-- **Audit Protocol**: Step-by-step protocol for conducting a complete GDPR audit from start to finish.
-- **Audit Cheat Sheet**: Quick reference with the most important checks and common issues.
-- **MCP Servers**: Overview of Model Context Protocol (MCP) servers for automation. Three servers:
-  - Webflow MCP (official): Read/write site headers, footers, custom code. Enables fixes for A1, A2, B1, D1, D3, E1, I4.
-  - GTM MCP (community): Read/write GTM tags, triggers, variables. Enables checks A3-A5, B2-B4.
-  - Cookiebot: No MCP needed, uses the public cc.js endpoint directly for checks C1-C6, G3.
-
-## Warning triangles
-Amber triangles = check needs a Cookiebot ID or GTM Container ID that isn't set. Add via Edit Site (pencil icon).
-
-## Getting started with a new audit
-1. Add site (+ in sidebar) with URL and platform
-2. Add Cookiebot ID if used (from Cookiebot dashboard or page source)
-3. Add GTM Container ID if used (starts with GTM-)
-4. "Scan site" for automated checks
-5. "AI Analyze" for AI checks
-6. Review results, set statuses, add notes
-7. Guide drawer (book icon) for manual checks
-8. Generate report when done
-
-## Tool reference
-- **searchChecks(query)**: Search all 69 checks by keyword
-- **listCategories()**: List all 11 categories with check names
-- **getChecks(categoryId)**: All checks in a category with details
-- **getCheckGuide(checkKey)**: Step-by-step guide for a check
-- **listSites()**: All sites with audit summaries
-- **getSiteByName(name)**: Look up any site by name
-- **getCurrentSiteStatus()**: Audit data for the page the user is on
-- **getCheckResult(siteName, checkKey)**: Specific check result for a site
-- **getScanHistory(siteName)**: Scan history for a site
-- **getComplianceOverview()**: Compare compliance across all sites`;
+## App structure (for navigation questions only)
+Pages in the sidebar: Dashboard, Sites (click to see audit), Reference (Technical Guide, Audit Protocol, Cheat Sheet, MCP Servers), Settings.
+On a site's audit page: 69 checks in 11 categories, "Scan site" button, "AI Analyze" button, report generation, guide drawer (book icon).
+Warning triangles = missing Cookiebot ID or GTM Container ID. Add via Edit Site (pencil icon).`;
 
 interface ChatMessage {
   role: "user" | "assistant";

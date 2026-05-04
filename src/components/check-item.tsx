@@ -273,7 +273,9 @@ export function CheckItem({
               onValueChange={(v) => onStatusChange(v as CheckStatus)}
             >
               <SelectTrigger className="w-36 h-8 text-xs">
-                <SelectValue />
+                <SelectValue placeholder="Not checked">
+                  {{ not_checked: "Not checked", ok: "OK", issue: "Issue", na: "N/A" }[status] ?? status}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="not_checked">Not checked</SelectItem>

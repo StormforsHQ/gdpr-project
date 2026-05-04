@@ -1,36 +1,9 @@
-import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-
-export const dynamic = "force-dynamic";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
 import { AddSiteDialog } from "@/components/add-site-dialog";
-import { DeleteSiteButton } from "@/components/delete-site-button";
+import { SiteList, type SiteWithAudit } from "@/components/site-list";
 import { getSites } from "@/app/actions/sites";
 
-type SiteWithAudit = {
-  id: string;
-  name: string;
-  url: string;
-  platform: string;
-  status: string;
-  checkCount: number;
-  issueCount: number;
-};
-
-const STATUS_BADGES: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
-  not_started: { label: "Not started", variant: "secondary" },
-  in_progress: { label: "In progress", variant: "default" },
-  issues_found: { label: "Issues found", variant: "destructive" },
-  compliant: { label: "Compliant", variant: "secondary" },
-};
+export const dynamic = "force-dynamic";
 
 function getAuditStatus(results: { status: string }[]): string {
   if (results.length === 0) return "not_started";
@@ -91,77 +64,7 @@ export default async function SitesPage() {
         </Card>
       )}
 
-      {sites.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">
-              {sites.length} site{sites.length !== 1 ? "s" : ""}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>URL</TableHead>
-                  <TableHead>Platform</TableHead>
-                  <TableHead>Progress</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sites.map((site) => {
-                  const badge = STATUS_BADGES[site.status] ?? STATUS_BADGES.not_started;
-                  return (
-                    <TableRow key={site.id} className="group relative cursor-pointer">
-                      <TableCell>
-                        <Link
-                          href={`/sites/${site.id}`}
-                          className="text-sm font-medium after:absolute after:inset-0"
-                        >
-                          {site.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        <a
-                          href={site.url.startsWith("http") ? site.url : `https://${site.url}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="relative z-10 hover:underline"
-                        >
-                          {site.url}
-                        </a>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="text-xs capitalize">
-                          {site.platform}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {site.checkCount > 0 ? `${site.checkCount} checked` : "-"}
-                        {site.issueCount > 0 && (
-                          <Badge variant="destructive" className="text-xs ml-2">
-                            {site.issueCount}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={badge.variant} className="text-xs">
-                          {badge.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <DeleteSiteButton siteId={site.id} siteName={site.name} />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+      {sites.length > 0 && <SiteList sites={sites} />}
 
       {dbConnected && sites.length === 0 && (
         <Card>

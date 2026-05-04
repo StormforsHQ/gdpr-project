@@ -61,16 +61,11 @@ const TOOLS = [
     function: {
       name: "getSiteStatus",
       description:
-        "Get the current audit status for the site the user is viewing: site info, configuration, audit progress, and which checks have issues. Use this when the user asks 'what should I fix?', 'how is this site doing?', or anything about the current site's results.",
+        "Get the current audit status for the site the user is viewing: site info, configuration, audit progress, and which checks have issues. The site is identified automatically from the page the user is on - you do not need to provide any ID. Use this when the user asks 'what should I fix?', 'how is this site doing?', or anything about the current site's results.",
       parameters: {
         type: "object",
-        properties: {
-          siteId: {
-            type: "string",
-            description: "The site ID. This is provided automatically from the user's current page.",
-          },
-        },
-        required: ["siteId"],
+        properties: {},
+        required: [],
       },
     },
   },
@@ -226,7 +221,7 @@ Amber warning triangles appear on checks that need a Cookiebot ID or GTM Contain
 ## Your tools
 You have access to tools that let you look up check details, guides, and the current site's audit status. Use them to give specific, accurate answers. Don't guess about check details - look them up.
 
-When the user asks about a topic (cookies, consent, tracking, etc.), use listCategories and getChecks to find the relevant checks. When they ask "what should I fix first?", use getSiteStatus to see their current issues.`;
+When the user asks about a topic (cookies, consent, tracking, etc.), use listCategories and getChecks to find the relevant checks. When they ask "what should I fix first?" or about a specific site's results, use getSiteStatus - it automatically knows which site the user is viewing (no ID needed). If the user mentions a site by name, still use getSiteStatus - it reads the site from the current page context.`;
 
 interface ChatMessage {
   role: "user" | "assistant";

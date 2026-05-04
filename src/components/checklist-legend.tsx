@@ -23,11 +23,11 @@ export function ChecklistLegend() {
             <div className="space-y-1.5">
               <div className="flex items-start gap-2">
                 <Scan className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <p><span className="text-foreground">Scan site</span> - Fetches the page HTML and runs automated checks: script setup, cookie detection, form structure, meta tags. Also runs Cookiebot API checks if a Cookiebot ID is configured.</p>
+                <p><span className="text-foreground">Scan site button</span> - Fetches the page HTML and runs automated checks: script setup, cookie detection, form structure, meta tags. Also runs Cookiebot API checks if a Cookiebot ID is configured.</p>
               </div>
               <div className="flex items-start gap-2">
                 <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <p><span className="text-foreground">AI Analyze</span> - Sends page content to an LLM to evaluate things automated scanning can't catch: consent language, dark patterns, privacy policy completeness, data minimization. Uses OpenRouter credits.</p>
+                <p><span className="text-foreground">AI Analyze button</span> - Sends page content to an LLM to evaluate things automated scanning can't catch: consent language, dark patterns, privacy policy completeness, data minimization. Uses OpenRouter credits.</p>
               </div>
             </div>
           </div>
@@ -59,19 +59,19 @@ export function ChecklistLegend() {
             <div className="space-y-1.5">
               <div className="flex items-start gap-2">
                 <span className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 bg-green-500/15 text-green-600 dark:text-green-400 mt-0.5">Auto</span>
-                <p>Runs automatically with Scan site. Analyzes page HTML directly.</p>
+                <p>Runs automatically with the Scan site button. Analyzes page HTML directly.</p>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 bg-amber-500/15 text-amber-600 dark:text-amber-400 mt-0.5">Cookiebot</span>
-                <p>Runs automatically with Scan site if a Cookiebot ID is set. Queries the Cookiebot API.</p>
+                <p>Runs automatically with the Scan site button if a Cookiebot ID is set. Queries the Cookiebot API.</p>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 bg-amber-500/15 text-amber-600 dark:text-amber-400 mt-0.5">GTM API</span>
-                <p>Queries the Google Tag Manager API. Requires a GTM container ID on the site.</p>
+                <p>Run individually per check using the Run check button. Queries the Google Tag Manager API. Requires a GTM container ID on the site.</p>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 bg-purple-500/15 text-purple-600 dark:text-purple-400 mt-0.5">AI</span>
-                <p>Runs with AI Analyze. An LLM reviews the page content and evaluates compliance.</p>
+                <p>Runs automatically with the AI Analyze button. An LLM reviews the page content and evaluates compliance. Uses OpenRouter credits.</p>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 bg-muted text-muted-foreground mt-0.5">Manual</span>

@@ -60,7 +60,7 @@ test.describe("Checklist view (demo mode)", () => {
   test("check item expands with status and notes", async ({ page }) => {
     const checkRow = page.locator("[class*='border-b']").filter({ hasText: "A1" }).first();
     await checkRow.click();
-    await expect(page.locator("textarea[placeholder='Add notes...']").first()).toBeVisible();
+    await expect(page.locator("textarea[placeholder*='Add notes']").first()).toBeVisible();
   });
 
   test("check guide drawer opens from info button", async ({ page }) => {

@@ -29,6 +29,7 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tokenCount, setTokenCount] = useState(0);
   const { addError } = useErrorLog();
@@ -68,9 +69,10 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
     setMessages([...updatedMessages, assistantMsg]);
     setStreaming(true);
 
+    setThinking(false);
     const controller = new AbortController();
     abortRef.current = controller;
-    const timeout = setTimeout(() => controller.abort(), 60000);
+    const timeout = setTimeout(() => controller.abort(), 120000);
 
     try {
       const chatHistory = updatedMessages.map((m) => ({ role: m.role, content: m.content }));
@@ -110,7 +112,12 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
             if (data.error) {
               throw new Error(data.error);
             }
+            if (data.thinking) {
+              setThinking(true);
+              continue;
+            }
             if (data.content) {
+              setThinking(false);
               fullContent += data.content;
               setMessages((prev) =>
                 prev.map((m) => (m.id === assistantMsg.id ? { ...m, content: fullContent } : m))
@@ -214,7 +221,10 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
           {streaming && messages.at(-1)?.content === "" && (
             <div className="flex justify-start">
               <div className="rounded-lg bg-muted px-3 py-2">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  {thinking && <span className="text-xs text-muted-foreground">Looking up data...</span>}
+                </div>
               </div>
             </div>
           )}

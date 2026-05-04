@@ -24,10 +24,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useErrorLog } from "@/components/error-log";
+import { useErrorLog, ErrorLogDrawer } from "@/components/error-log";
 import { ChecklistLegend } from "@/components/checklist-legend";
 import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X } from "lucide-react";
-import Link from "next/link";
+
 
 type CheckEntry = { status: CheckStatus; notes: string; source: "manual" | "scan" | "ai" };
 type CheckState = Record<string, CheckEntry>;
@@ -115,6 +115,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
   const [fixAvailability, setFixAvailability] = useState<Record<string, FixAvailability>>({});
   const [fixingChecks, setFixingChecks] = useState<Set<string>>(new Set());
   const [lastSkippedCount, setLastSkippedCount] = useState(0);
+  const [errorDrawerOpen, setErrorDrawerOpen] = useState(false);
 
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -657,13 +658,13 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
           </button>
         )}
         {errors.length > 0 && (
-          <Link
-            href="/settings"
+          <button
+            onClick={() => setErrorDrawerOpen(true)}
             className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 hover:underline ml-auto"
           >
             <AlertCircle className="h-3.5 w-3.5" />
-            {errors.length} error{errors.length !== 1 ? "s" : ""} - view in Settings
-          </Link>
+            {errors.length} error{errors.length !== 1 ? "s" : ""}
+          </button>
         )}
       </div>
 
@@ -817,6 +818,11 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
         scanResult={scanResult}
         open={scanDrawerOpen}
         onOpenChange={setScanDrawerOpen}
+      />
+
+      <ErrorLogDrawer
+        open={errorDrawerOpen}
+        onOpenChange={setErrorDrawerOpen}
       />
 
       <AlertDialog open={confirmAction !== null} onOpenChange={(open) => !open && setConfirmAction(null)}>

@@ -22,6 +22,7 @@ export type SiteWithAudit = {
   url: string;
   platform: string;
   status: string;
+  auditType: "basic" | "full" | null;
   checkCount: number;
   issueCount: number;
 };
@@ -206,6 +207,7 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
                     {sortField === "platform" && <ArrowUpDown className="h-3 w-3" />}
                   </button>
                 </TableHead>
+                <TableHead>Audit</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>
                   <button className="flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort("status")}>
@@ -250,6 +252,15 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
                       <Badge variant="secondary" className="text-xs capitalize">
                         {PLATFORM_LABELS[site.platform] || site.platform}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {site.auditType ? (
+                        <Badge variant="secondary" className={`text-[10px] ${site.auditType === "basic" ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" : "bg-purple-500/15 text-purple-600 dark:text-purple-400"}`}>
+                          {site.auditType === "basic" ? "Basic" : "Full"}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {site.checkCount > 0 ? `${site.checkCount} checked` : "-"}

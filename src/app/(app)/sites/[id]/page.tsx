@@ -88,6 +88,7 @@ export default async function SitePage({ params }: SitePageProps) {
         siteUrl={site.url}
         siteId={site.id}
         auditId={audit.id}
+        auditType={(audit as Record<string, unknown>).auditType as "basic" | "full" ?? "full"}
         initialStates={initialStates}
         initialScanRuns={scanRuns}
         siteFields={{ cookiebotId: site.cookiebotId, gtmId: site.gtmId }}

@@ -26,6 +26,7 @@ async function loadSites(): Promise<SiteWithAudit[]> {
         url: site.url,
         platform: site.platform,
         status: getAuditStatus(results),
+        auditType: ((latestAudit as Record<string, unknown>)?.auditType as "basic" | "full") ?? null,
         checkCount: results.filter((r) => r.status !== "not_checked").length,
         issueCount: results.filter((r) => r.status === "issue").length,
       };

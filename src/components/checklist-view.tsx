@@ -11,7 +11,7 @@ import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
-import { saveCheckResult, saveScanRun, deleteScanRun, deleteAllScanRuns } from "@/app/actions/audits";
+import { saveCheckResult, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType } from "@/app/actions/audits";
 import { getFixAvailability, applyFix, type FixAvailability } from "@/app/actions/fixes";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
 import {
@@ -46,13 +46,15 @@ interface ChecklistViewProps {
   siteUrl?: string;
   siteId?: string;
   auditId?: string;
+  auditType?: "basic" | "full";
   initialStates?: Record<string, { status: string; notes: string; source: string }>;
   initialScanRuns?: ScanRunEntry[];
   siteFields?: { cookiebotId?: string | null; gtmId?: string | null };
 }
 
-export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initialScanRuns, siteFields }: ChecklistViewProps) {
+export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", initialStates, initialScanRuns, siteFields }: ChecklistViewProps) {
   const { errors, addError, clearErrors } = useErrorLog();
+  const [auditType, setAuditType] = useState<"basic" | "full">(initialAuditType);
   const [scanRuns, setScanRuns] = useState<ScanRunEntry[]>(initialScanRuns ?? []);
   const [checkStates, setCheckStates] = useState<CheckState>(() => {
     if (!initialStates) return {};
@@ -212,8 +214,12 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
     });
   };
 
+  const filteredChecklist = auditType === "basic"
+    ? CHECKLIST.map((cat) => ({ ...cat, checks: cat.checks.filter((c) => c.tier === "basic") })).filter((cat) => cat.checks.length > 0)
+    : CHECKLIST;
+
   const getCategoryStats = (categoryId: string) => {
-    const category = CHECKLIST.find((c) => c.id === categoryId);
+    const category = filteredChecklist.find((c) => c.id === categoryId);
     if (!category) return { total: 0, checked: 0, issues: 0 };
     const total = category.checks.length;
     let checked = 0;
@@ -431,7 +437,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
     setScanDrawerOpen(true);
   };
 
-  const totalChecks = CHECKLIST.reduce((sum, c) => sum + c.checks.length, 0);
+  const totalChecks = filteredChecklist.reduce((sum, c) => sum + c.checks.length, 0);
   const totalChecked = Object.values(checkStates).filter(
     (s) => s.status !== "not_checked"
   ).length;
@@ -607,6 +613,22 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
 
       <ChecklistLegend />
 
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <button
+          onClick={async () => {
+            const next = auditType === "basic" ? "full" : "basic";
+            setAuditType(next);
+            if (auditId) await updateAuditType(auditId, next);
+          }}
+          title="Click to switch between Basic and Full audit"
+        >
+          <Badge variant="secondary" className={`text-[10px] cursor-pointer hover:ring-1 hover:ring-ring ${auditType === "basic" ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" : "bg-purple-500/15 text-purple-600 dark:text-purple-400"}`}>
+            {auditType === "basic" ? `Basic audit (${filteredChecklist.reduce((s, c) => s + c.checks.length, 0)} checks)` : `Full audit (${filteredChecklist.reduce((s, c) => s + c.checks.length, 0)} checks)`}
+          </Badge>
+        </button>
+        <span>Website compliance (consent, cookies, tracking, privacy information, third-party integrations)</span>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground text-xs mr-1">
           Progress: {totalChecked}/{totalChecks} checked
@@ -667,7 +689,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, initialStates, initial
         )}
       </div>
 
-      {CHECKLIST.map((category) => {
+      {filteredChecklist.map((category) => {
         const isExpanded = expandedCategories.has(category.id);
         const stats = getCategoryStats(category.id);
 

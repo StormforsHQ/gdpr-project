@@ -28,18 +28,18 @@ import {
 } from "recharts";
 import type { DashboardData } from "@/app/actions/dashboard";
 
-const STATUS_COLORS = {
-  ok: "hsl(142, 55%, 37%)",
-  issues: "hsl(0, 60%, 50%)",
-  na: "hsl(220, 10%, 60%)",
-  notChecked: "hsl(220, 10%, 85%)",
+const LEGEND_COLORS: Record<string, string> = {
+  Compliant: "bg-[var(--chart-3)]",
+  Issues: "bg-[var(--chart-5)]",
+  "Not applicable": "bg-[var(--chart-4)]",
+  "Not checked": "bg-[var(--muted-foreground)]",
 };
 
 const chartConfig = {
-  ok: { label: "Compliant", color: STATUS_COLORS.ok },
-  issues: { label: "Issues", color: STATUS_COLORS.issues },
-  na: { label: "Not applicable", color: STATUS_COLORS.na },
-  notChecked: { label: "Not checked", color: STATUS_COLORS.notChecked },
+  ok: { label: "Compliant", color: "var(--chart-3)" },
+  issues: { label: "Issues", color: "var(--chart-5)" },
+  na: { label: "Not applicable", color: "var(--chart-4)" },
+  notChecked: { label: "Not checked", color: "var(--muted-foreground)" },
 } satisfies ChartConfig;
 
 export function ComplianceDashboard({ data }: { data: DashboardData }) {
@@ -49,10 +49,10 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
   const compliancePct = checkedCount > 0 ? Math.round((current.ok / checkedCount) * 100) : 0;
 
   const pieData = [
-    { name: "Compliant", value: current.ok, fill: STATUS_COLORS.ok },
-    { name: "Issues", value: current.issues, fill: STATUS_COLORS.issues },
-    { name: "Not applicable", value: current.na, fill: STATUS_COLORS.na },
-    { name: "Not checked", value: current.notChecked, fill: STATUS_COLORS.notChecked },
+    { name: "Compliant", value: current.ok, fill: "var(--color-ok)" },
+    { name: "Issues", value: current.issues, fill: "var(--color-issues)" },
+    { name: "Not applicable", value: current.na, fill: "var(--color-na)" },
+    { name: "Not checked", value: current.notChecked, fill: "var(--color-notChecked)" },
   ].filter((d) => d.value > 0);
 
   const categoryBarData = current.categories.map((cat) => ({
@@ -133,7 +133,7 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
             <div className="flex flex-wrap justify-center gap-3 mt-2">
               {pieData.map((d) => (
                 <div key={d.name} className="flex items-center gap-1.5 text-xs">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: d.fill }} />
+                  <span className={`h-2.5 w-2.5 rounded-full ${LEGEND_COLORS[d.name] || "bg-muted"}`} />
                   {d.name} ({d.value})
                 </div>
               ))}
@@ -170,7 +170,7 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
                     type="monotone"
                     dataKey="ok"
                     name="Compliant"
-                    stroke={STATUS_COLORS.ok}
+                    stroke="var(--color-ok)"
                     strokeWidth={2}
                     dot={{ r: 3 }}
                   />
@@ -178,7 +178,7 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
                     type="monotone"
                     dataKey="issues"
                     name="Issues"
-                    stroke={STATUS_COLORS.issues}
+                    stroke="var(--color-issues)"
                     strokeWidth={2}
                     dot={{ r: 3 }}
                   />
@@ -186,7 +186,7 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
                     type="monotone"
                     dataKey="notChecked"
                     name="Not checked"
-                    stroke={STATUS_COLORS.notChecked}
+                    stroke="var(--color-notChecked)"
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     strokeDasharray="4 4"
@@ -242,10 +242,10 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
                 width={140}
               />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="ok" name="Compliant" stackId="a" fill={STATUS_COLORS.ok} radius={[0, 0, 0, 0]} />
-              <Bar dataKey="issues" name="Issues" stackId="a" fill={STATUS_COLORS.issues} />
-              <Bar dataKey="na" name="N/A" stackId="a" fill={STATUS_COLORS.na} />
-              <Bar dataKey="notChecked" name="Not checked" stackId="a" fill={STATUS_COLORS.notChecked} radius={[0, 4, 4, 0]} />
+              <Bar dataKey="ok" name="Compliant" stackId="a" fill="var(--color-ok)" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="issues" name="Issues" stackId="a" fill="var(--color-issues)" />
+              <Bar dataKey="na" name="N/A" stackId="a" fill="var(--color-na)" />
+              <Bar dataKey="notChecked" name="Not checked" stackId="a" fill="var(--color-notChecked)" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ChartContainer>
         </CardContent>

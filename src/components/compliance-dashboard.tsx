@@ -15,9 +15,6 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import {
-  PieChart,
-  Pie,
-  Cell,
   LineChart,
   Line,
   XAxis,
@@ -28,17 +25,10 @@ import {
 } from "recharts";
 import type { DashboardData } from "@/app/actions/dashboard";
 
-const LEGEND_COLORS: Record<string, string> = {
-  Compliant: "bg-green-500",
-  Issues: "bg-destructive",
-  "Not applicable": "bg-[var(--primary)]",
-  "Not checked": "bg-[var(--accent)]",
-};
-
 const chartConfig = {
-  ok: { label: "Compliant", color: "oklch(72.3% 0.219 149.579)" },
-  issues: { label: "Issues", color: "var(--destructive)" },
-  na: { label: "Not applicable", color: "var(--primary)" },
+  ok: { label: "Compliant", color: "#86efac" },
+  issues: { label: "Issues", color: "#fca5a5" },
+  na: { label: "Not applicable", color: "#fde68a" },
   notChecked: { label: "Not checked", color: "var(--accent)" },
 } satisfies ChartConfig;
 
@@ -47,13 +37,6 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
   const checkedCount = current.total - current.notChecked;
   const completionPct = current.total > 0 ? Math.round((checkedCount / current.total) * 100) : 0;
   const compliancePct = checkedCount > 0 ? Math.round((current.ok / checkedCount) * 100) : 0;
-
-  const pieData = [
-    { name: "Compliant", value: current.ok, fill: "var(--color-ok)" },
-    { name: "Issues", value: current.issues, fill: "var(--color-issues)" },
-    { name: "Not applicable", value: current.na, fill: "var(--color-na)" },
-    { name: "Not checked", value: current.notChecked, fill: "var(--color-notChecked)" },
-  ].filter((d) => d.value > 0);
 
   const categoryBarData = current.categories.map((cat) => ({
     name: cat.label,
@@ -101,46 +84,8 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
         </Card>
       </div>
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Donut chart */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Overall Compliance</CardTitle>
-            <CardDescription>Current status breakdown</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px]">
-              <PieChart>
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  strokeWidth={2}
-                  stroke="hsl(var(--background))"
-                >
-                  {pieData.map((entry, i) => (
-                    <Cell key={i} fill={entry.fill} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ChartContainer>
-            <div className="flex flex-wrap justify-center gap-3 mt-2">
-              {pieData.map((d) => (
-                <div key={d.name} className="flex items-center gap-1.5 text-xs">
-                  <span className={`h-2.5 w-2.5 rounded-full ${LEGEND_COLORS[d.name] || "bg-muted"}`} />
-                  {d.name} ({d.value})
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
+      {/* Charts */}
+      <div className="grid grid-cols-1 gap-6">
         {/* Trend line chart */}
         <Card>
           <CardHeader className="pb-2">

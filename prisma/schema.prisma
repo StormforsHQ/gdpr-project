@@ -26,6 +26,7 @@ model Audit {
   id           String   @id @default(cuid())
   siteId       String   @map("site_id")
   status       String   @default("in_progress")
+  auditType    String   @default("full") @map("audit_type")
   notes        String   @default("")
   auditorName  String?  @map("auditor_name")
   createdAt    DateTime @default(now()) @map("created_at")

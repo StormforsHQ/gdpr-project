@@ -24,13 +24,9 @@ export async function getLatestAudit(siteId: string) {
   });
 }
 
-export async function createAudit(siteId: string, revalidate = true) {
-  const audit = await prisma.audit.create({
-    data: {
-      siteId,
-      status: "in_progress",
-    },
-  });
+export async function createAudit(siteId: string, revalidate = true, auditType: "basic" | "full" = "full") {
+  const data = { siteId, status: "in_progress", auditType };
+  const audit = await (prisma.audit.create as Function)({ data });
 
   if (revalidate) {
     revalidatePath(`/sites/${siteId}`);
@@ -48,6 +44,16 @@ export async function updateAuditStatus(id: string, status: string, notes?: stri
     include: { site: true },
   });
 
+  revalidatePath(`/sites/${audit.site.id}`);
+  return audit;
+}
+
+export async function updateAuditType(id: string, auditType: "basic" | "full") {
+  const audit = await (prisma.audit.update as Function)({
+    data: { auditType },
+    where: { id },
+    include: { site: true },
+  });
   revalidatePath(`/sites/${audit.site.id}`);
   return audit;
 }

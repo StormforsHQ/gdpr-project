@@ -21,6 +21,7 @@ export interface ReportData {
   statsIssues: number;
   statsNa: number;
   statsNotChecked: number;
+  auditType: "basic" | "full";
   site: {
     name: string;
     url: string;
@@ -155,7 +156,7 @@ export async function getOrCreateReport(auditId: string): Promise<string | null>
 
 function buildReportData(
   report: { id: string; version: number; executiveSummary: string; conclusion: string; createdAt: Date; statsOk: number; statsIssues: number; statsNa: number; statsNotChecked: number },
-  audit: { auditorName: string | null; site: { name: string; url: string; platform: string; cookiebotId: string | null; gtmId: string | null } },
+  audit: { auditorName: string | null; auditType?: string; site: { name: string; url: string; platform: string; cookiebotId: string | null; gtmId: string | null } },
   categories: CategoryData[],
 ): ReportData {
   return {
@@ -168,6 +169,7 @@ function buildReportData(
     statsIssues: report.statsIssues,
     statsNa: report.statsNa,
     statsNotChecked: report.statsNotChecked,
+    auditType: (audit.auditType as "basic" | "full") || "full",
     site: {
       name: audit.site.name,
       url: audit.site.url,

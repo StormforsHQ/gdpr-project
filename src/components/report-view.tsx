@@ -67,7 +67,7 @@ export function ReportView({ report, siteId, showVersion = true }: ReportViewPro
           <span style={{ fontSize: "22px", fontWeight: 300, color: "#2d8a4e" }}>GDPR Compliance Audit</span>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: showVersion ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", borderTop: "1px solid #ccc", borderBottom: "1px solid #ccc", padding: "10px 0", fontSize: "12px", marginBottom: "40px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: showVersion ? "1fr 1fr 1fr 1fr 1fr" : "1fr 1fr 1fr 1fr", borderTop: "1px solid #ccc", borderBottom: "1px solid #ccc", padding: "10px 0", fontSize: "12px", marginBottom: "40px" }}>
           <div>
             <div style={{ color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "10px", marginBottom: "2px" }}>Company</div>
             <div style={{ fontWeight: 500 }}>{report.site.name}</div>
@@ -75,6 +75,10 @@ export function ReportView({ report, siteId, showVersion = true }: ReportViewPro
           <div>
             <div style={{ color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "10px", marginBottom: "2px" }}>Project</div>
             <div style={{ fontWeight: 500 }}>GDPR ePR Audit</div>
+          </div>
+          <div>
+            <div style={{ color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "10px", marginBottom: "2px" }}>Type</div>
+            <div style={{ fontWeight: 500 }}>{report.auditType === "basic" ? "Basic (34 checks)" : "Full (69 checks)"}</div>
           </div>
           {showVersion && (
             <div>
@@ -87,6 +91,11 @@ export function ReportView({ report, siteId, showVersion = true }: ReportViewPro
             <div style={{ fontWeight: 500 }}>{date}</div>
           </div>
         </div>
+
+        {/* === SCOPE === */}
+        <p style={{ fontSize: "12px", color: "#666", marginBottom: "40px", borderLeft: "2px solid #ccc", paddingLeft: "12px" }}>
+          Scope: Website compliance - consent management, cookie/tracking behavior, privacy information, and third-party integrations. Other processing activities (email marketing, backend data handling, internal systems) are not covered by this audit.
+        </p>
 
         {/* === COMPLIANCE STATUS === */}
         <h2 style={{ fontSize: "26px", fontWeight: 300, marginBottom: "8px" }}>Compliance Audit Summary</h2>

@@ -26,10 +26,10 @@ import {
 import type { DashboardData } from "@/app/actions/dashboard";
 
 const chartConfig = {
-  ok: { label: "Compliant", color: "rgba(34, 197, 94, 0.55)" },
-  issues: { label: "Issues", color: "rgba(221, 51, 51, 0.55)" },
-  na: { label: "Not applicable", color: "rgba(224, 120, 0, 0.5)" },
-  notChecked: { label: "Not checked", color: "rgba(236, 72, 153, 0.5)" },
+  ok: { label: "Compliant", color: "#22c55e" },
+  issues: { label: "Issues", color: "#dd3333" },
+  na: { label: "Not applicable", color: "#e07800" },
+  notChecked: { label: "Not checked", color: "#60a5fa99" },
 } satisfies ChartConfig;
 
 export function ComplianceDashboard({ data }: { data: DashboardData }) {
@@ -196,19 +196,19 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
           </ChartContainer>
           <div className="flex flex-wrap justify-center gap-4 mt-3 pt-3 border-t">
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="h-2.5 w-2.5 rounded-sm bg-green-500/55" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-green-500" />
               Compliant
             </div>
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="h-2.5 w-2.5 rounded-sm bg-red-500/55" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-destructive" />
               Issues
             </div>
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="h-2.5 w-2.5 rounded-sm bg-orange-500/50" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-[var(--primary)]" />
               Not applicable
             </div>
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="h-2.5 w-2.5 rounded-sm bg-pink-500/50" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-blue-400/60" />
               Not checked
             </div>
           </div>

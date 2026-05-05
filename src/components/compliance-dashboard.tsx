@@ -29,17 +29,17 @@ import {
 import type { DashboardData } from "@/app/actions/dashboard";
 
 const LEGEND_COLORS: Record<string, string> = {
-  Compliant: "bg-[var(--chart-3)]",
-  Issues: "bg-[var(--chart-5)]",
-  "Not applicable": "bg-[var(--chart-4)]",
-  "Not checked": "bg-[var(--muted-foreground)]",
+  Compliant: "bg-green-500",
+  Issues: "bg-destructive",
+  "Not applicable": "bg-muted-foreground/50",
+  "Not checked": "bg-blue-400/60",
 };
 
 const chartConfig = {
-  ok: { label: "Compliant", color: "var(--chart-3)" },
-  issues: { label: "Issues", color: "var(--chart-5)" },
-  na: { label: "Not applicable", color: "var(--chart-4)" },
-  notChecked: { label: "Not checked", color: "var(--muted-foreground)" },
+  ok: { label: "Compliant", color: "oklch(72.3% 0.219 149.579)" },
+  issues: { label: "Issues", color: "var(--destructive)" },
+  na: { label: "Not applicable", color: "var(--muted-foreground)" },
+  notChecked: { label: "Not checked", color: "oklch(70.7% 0.165 254.624)" },
 } satisfies ChartConfig;
 
 export function ComplianceDashboard({ data }: { data: DashboardData }) {

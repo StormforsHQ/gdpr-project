@@ -26,9 +26,9 @@ import {
 import type { DashboardData } from "@/app/actions/dashboard";
 
 const chartConfig = {
-  ok: { label: "Compliant", color: "rgba(34, 197, 94, 0.25)" },
-  issues: { label: "Issues", color: "rgba(221, 51, 51, 0.25)" },
-  na: { label: "Not applicable", color: "rgba(224, 120, 0, 0.2)" },
+  ok: { label: "Compliant", color: "rgba(34, 197, 94, 0.4)" },
+  issues: { label: "Issues", color: "rgba(221, 51, 51, 0.4)" },
+  na: { label: "Not applicable", color: "rgba(224, 120, 0, 0.35)" },
   notChecked: { label: "Not checked", color: "var(--accent)" },
 } satisfies ChartConfig;
 
@@ -176,6 +176,7 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
             <BarChart
               data={categoryBarData}
               margin={{ top: 10, right: 10, left: 10, bottom: 60 }}
+              barSize={24}
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
               <XAxis

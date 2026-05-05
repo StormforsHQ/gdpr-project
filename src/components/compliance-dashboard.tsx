@@ -29,7 +29,7 @@ const chartConfig = {
   ok: { label: "Compliant", color: "rgba(34, 197, 94, 0.55)" },
   issues: { label: "Issues", color: "rgba(221, 51, 51, 0.55)" },
   na: { label: "Not applicable", color: "rgba(224, 120, 0, 0.5)" },
-  notChecked: { label: "Not checked", color: "var(--accent)" },
+  notChecked: { label: "Not checked", color: "rgba(153, 68, 187, 0.35)" },
 } satisfies ChartConfig;
 
 export function ComplianceDashboard({ data }: { data: DashboardData }) {
@@ -194,6 +194,24 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
               <Bar dataKey="notChecked" name="Not checked" stackId="a" fill="var(--color-notChecked)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ChartContainer>
+          <div className="flex flex-wrap justify-center gap-4 mt-3 pt-3 border-t">
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="h-2.5 w-2.5 rounded-sm bg-green-500/55" />
+              Compliant
+            </div>
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="h-2.5 w-2.5 rounded-sm bg-red-500/55" />
+              Issues
+            </div>
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="h-2.5 w-2.5 rounded-sm bg-orange-500/50" />
+              Not applicable
+            </div>
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="h-2.5 w-2.5 rounded-sm bg-purple-500/35" />
+              Not checked
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

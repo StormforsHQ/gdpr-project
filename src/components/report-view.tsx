@@ -17,10 +17,10 @@ function ComplianceBar({ ok, issues, na, notChecked }: { ok: number; issues: num
 
   return (
     <div style={{ display: "flex", height: "8px", borderRadius: "4px", overflow: "hidden", background: "#f0f0f0" }}>
-      {ok > 0 && <div style={{ width: pct(ok), background: "#22c55e" }} />}
-      {issues > 0 && <div style={{ width: pct(issues), background: "#dd3333" }} />}
-      {na > 0 && <div style={{ width: pct(na), background: "#e07800" }} />}
-      {notChecked > 0 && <div style={{ width: pct(notChecked), background: "#60a5fa99" }} />}
+      {ok > 0 && <div style={{ width: pct(ok), background: "#16a34a" }} />}
+      {issues > 0 && <div style={{ width: pct(issues), background: "#dc2626" }} />}
+      {na > 0 && <div style={{ width: pct(na), background: "#ea580c" }} />}
+      {notChecked > 0 && <div style={{ width: pct(notChecked), background: "#3b82f6" }} />}
     </div>
   );
 }
@@ -145,10 +145,10 @@ export function ReportView({ report, siteId, showVersion = true }: ReportViewPro
           <ComplianceBar ok={report.statsOk} issues={report.statsIssues} na={report.statsNa} notChecked={report.statsNotChecked} />
         </div>
         <div style={{ display: "flex", gap: "16px", fontSize: "10px", color: "#888", marginBottom: "40px" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#22c55e" }} />Compliant</span>
-          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#dd3333" }} />Issues</span>
-          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#e07800" }} />N/A</span>
-          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#60a5fa99" }} />Not checked</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#16a34a" }} />Compliant</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#dc2626" }} />Issues</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#ea580c" }} />N/A</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#3b82f6" }} />Not checked</span>
         </div>
 
         {/* === 1. EXECUTIVE SUMMARY === */}

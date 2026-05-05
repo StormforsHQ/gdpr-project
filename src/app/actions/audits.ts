@@ -132,6 +132,11 @@ export async function saveScanRun(
     },
   });
 
+  if (!error) {
+    const { createSnapshot } = await import("@/app/actions/dashboard");
+    await createSnapshot(auditId, "scan").catch(() => {});
+  }
+
   return run;
 }
 

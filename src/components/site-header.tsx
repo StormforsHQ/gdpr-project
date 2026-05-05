@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EditSiteDialog } from "@/components/edit-site-dialog";
 import { CHECK_REQUIREMENTS, type CheckRequirement } from "@/lib/glossary";
-import { Settings, ExternalLink, AlertTriangle, FileText, ChevronDown, Trash2 } from "lucide-react";
+import { Settings, ExternalLink, AlertTriangle, FileText, ChevronDown, Trash2, BarChart3 } from "lucide-react";
+import Link from "next/link";
 import type { ReportListItem } from "@/app/actions/report";
 import { deleteReport, deleteAllReports } from "@/app/actions/report";
 
@@ -89,6 +90,12 @@ export function SiteHeader({ site, auditId, reportVersions }: SiteHeaderProps) {
             </Badge>
           </div>
           <div className="flex items-center gap-2">
+            <Link href={`/sites/${site.id}/dashboard`}>
+              <Button variant="outline" size="sm" className="gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Dashboard
+              </Button>
+            </Link>
             <div className="relative" ref={menuRef}>
               <div className="flex">
                 <a href={reportUrl} target="_blank" rel="noopener noreferrer">

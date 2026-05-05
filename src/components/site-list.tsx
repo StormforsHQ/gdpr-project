@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DeleteSiteButton } from "@/components/delete-site-button";
-import { Search, ArrowUpDown } from "lucide-react";
+import { Search, ArrowUpDown, BarChart3 } from "lucide-react";
 
 export type SiteWithAudit = {
   id: string;
@@ -276,7 +276,18 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <DeleteSiteButton siteId={site.id} siteName={site.name} />
+                      <div className="flex items-center gap-1">
+                        {site.checkCount > 0 && (
+                          <Link
+                            href={`/sites/${site.id}/dashboard`}
+                            className="relative z-10 text-muted-foreground hover:text-foreground p-1 rounded"
+                            title="Compliance dashboard"
+                          >
+                            <BarChart3 className="h-3.5 w-3.5" />
+                          </Link>
+                        )}
+                        <DeleteSiteButton siteId={site.id} siteName={site.name} />
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

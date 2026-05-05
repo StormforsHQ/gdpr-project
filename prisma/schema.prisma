@@ -32,10 +32,11 @@ model Audit {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  site    Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  results CheckResult[]
-  scans   ScanRun[]
-  reports Report[]
+  site      Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  results   CheckResult[]
+  scans     ScanRun[]
+  reports   Report[]
+  snapshots AuditSnapshot[]
 
   @@map("audits")
 }
@@ -80,6 +81,24 @@ model AppSetting {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("app_settings")
+}
+
+model AuditSnapshot {
+  id             String   @id @default(cuid())
+  auditId        String   @map("audit_id")
+  auditType      String   @default("full") @map("audit_type")
+  statsOk        Int      @default(0) @map("stats_ok")
+  statsIssues    Int      @default(0) @map("stats_issues")
+  statsNa        Int      @default(0) @map("stats_na")
+  statsNotChecked Int     @default(0) @map("stats_not_checked")
+  categoryData   String   @default("[]") @map("category_data")
+  trigger        String   @default("scan")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  audit Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  @@index([auditId, createdAt])
+  @@map("audit_snapshots")
 }
 
 model ScanRun {

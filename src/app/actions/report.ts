@@ -31,6 +31,7 @@ export interface ReportData {
   };
   auditorName: string | null;
   categories: CategoryData[];
+  categoryComments: Record<string, string>;
 }
 
 export interface CategoryData {
@@ -56,6 +57,34 @@ export interface ReportListItem {
   statsNa: number;
   statsNotChecked: number;
   createdAt: Date;
+}
+
+function generateCategoryComment(cat: CategoryData): string {
+  const total = cat.checks.length;
+  const issues = cat.checks.filter((c) => c.status === "issue");
+  const ok = cat.checks.filter((c) => c.status === "ok");
+  const na = cat.checks.filter((c) => c.status === "na");
+
+  if (issues.length === 0 && ok.length === total) {
+    return `All ${total} checks in this category are compliant. No issues identified.`;
+  }
+  if (issues.length === 0 && ok.length + na.length === total) {
+    return `${ok.length} of ${total} checks are compliant, ${na.length} not applicable. No issues identified.`;
+  }
+  if (issues.length === 0) {
+    return `${ok.length} of ${total} checks completed so far. No issues identified. ${total - ok.length - na.length} checks remain.`;
+  }
+
+  const issueLabels = issues.map((c) => c.label).join(", ");
+  return `${issues.length} of ${total} checks flagged as non-compliant: ${issueLabels}. Remediation is recommended before the next audit cycle.`;
+}
+
+function generateAllCategoryComments(categories: CategoryData[]): Record<string, string> {
+  const comments: Record<string, string> = {};
+  for (const cat of categories) {
+    comments[cat.id] = generateCategoryComment(cat);
+  }
+  return comments;
 }
 
 const DEFAULT_EXECUTIVE_SUMMARY = `Following a comprehensive internal audit of the site's digital privacy infrastructure, Stormfors has conducted a rigorous review of cookie consent mechanisms, script management, and third-party integrations. This report documents the current compliance status and identifies areas requiring attention to ensure full alignment with EU GDPR and ePrivacy Directive standards.`;
@@ -136,8 +165,9 @@ export async function getOrCreateReport(auditId: string): Promise<string | null>
   const version = (lastReport?.version ?? 0) + 1;
   const summary = lastReport?.executiveSummary || DEFAULT_EXECUTIVE_SUMMARY;
   const concl = lastReport?.conclusion || DEFAULT_CONCLUSION;
+  const catComments = generateAllCategoryComments(data.categories);
 
-  const report = await prisma.report.create({
+  const report = await (prisma.report.create as Function)({
     data: {
       auditId,
       version,
@@ -148,6 +178,7 @@ export async function getOrCreateReport(auditId: string): Promise<string | null>
       statsIssues: data.statsIssues,
       statsNa: data.statsNa,
       statsNotChecked: data.statsNotChecked,
+      categoryComments: JSON.stringify(catComments),
     },
   });
 
@@ -155,10 +186,15 @@ export async function getOrCreateReport(auditId: string): Promise<string | null>
 }
 
 function buildReportData(
-  report: { id: string; version: number; executiveSummary: string; conclusion: string; createdAt: Date; statsOk: number; statsIssues: number; statsNa: number; statsNotChecked: number },
+  report: { id: string; version: number; executiveSummary: string; conclusion: string; createdAt: Date; statsOk: number; statsIssues: number; statsNa: number; statsNotChecked: number; categoryComments?: string },
   audit: { auditorName: string | null; auditType?: string; site: { name: string; url: string; platform: string; cookiebotId: string | null; gtmId: string | null } },
   categories: CategoryData[],
 ): ReportData {
+  let categoryComments: Record<string, string> = {};
+  try {
+    categoryComments = JSON.parse(report.categoryComments || "{}");
+  } catch { /* use empty */ }
+
   return {
     id: report.id,
     version: report.version,
@@ -179,6 +215,7 @@ function buildReportData(
     },
     auditorName: audit.auditorName,
     categories,
+    categoryComments,
   };
 }
 
@@ -236,4 +273,24 @@ export async function updateReportText(reportId: string, executiveSummary: strin
     include: { audit: { include: { site: true } } },
   });
   revalidatePath(`/report/${report.audit.site.id}`);
+}
+
+export async function updateCategoryComment(reportId: string, categoryId: string, comment: string) {
+  const existing = await (prisma.report.findUnique as Function)({
+    where: { id: reportId },
+    include: { audit: { include: { site: true } } },
+  }) as { categoryComments?: string; audit: { site: { id: string } } } | null;
+  if (!existing) return;
+
+  let comments: Record<string, string> = {};
+  try {
+    comments = JSON.parse(existing.categoryComments || "{}");
+  } catch { /* use empty */ }
+  comments[categoryId] = comment;
+
+  await (prisma.report.update as Function)({
+    where: { id: reportId },
+    data: { categoryComments: JSON.stringify(comments) },
+  });
+  revalidatePath(`/report/${existing.audit.site.id}`);
 }

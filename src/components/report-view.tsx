@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { updateReportText, type ReportData } from "@/app/actions/report";
+import { updateReportText, updateCategoryComment, type ReportData } from "@/app/actions/report";
 
 interface ReportViewProps {
   report: ReportData;
@@ -10,11 +10,35 @@ interface ReportViewProps {
   showVersion?: boolean;
 }
 
+function ComplianceBar({ ok, issues, na, notChecked }: { ok: number; issues: number; na: number; notChecked: number }) {
+  const total = ok + issues + na + notChecked;
+  if (total === 0) return null;
+  const pct = (n: number) => `${(n / total) * 100}%`;
+
+  return (
+    <div style={{ display: "flex", height: "8px", borderRadius: "4px", overflow: "hidden", background: "#f0f0f0" }}>
+      {ok > 0 && <div style={{ width: pct(ok), background: "#22c55e" }} />}
+      {issues > 0 && <div style={{ width: pct(issues), background: "#dd3333" }} />}
+      {na > 0 && <div style={{ width: pct(na), background: "#e07800" }} />}
+      {notChecked > 0 && <div style={{ width: pct(notChecked), background: "#60a5fa99" }} />}
+    </div>
+  );
+}
+
+function CategoryBar({ checks }: { checks: { status: string }[] }) {
+  const ok = checks.filter((c) => c.status === "ok").length;
+  const issues = checks.filter((c) => c.status === "issue").length;
+  const na = checks.filter((c) => c.status === "na").length;
+  const notChecked = checks.filter((c) => c.status === "not_checked" || !c.status).length;
+  return <ComplianceBar ok={ok} issues={issues} na={na} notChecked={notChecked} />;
+}
+
 export function ReportView({ report, siteId, showVersion = true }: ReportViewProps) {
   const router = useRouter();
-  const [editingSection, setEditingSection] = useState<"summary" | "conclusion" | null>(null);
+  const [editingSection, setEditingSection] = useState<string | null>(null);
   const [summaryDraft, setSummaryDraft] = useState(report.executiveSummary);
   const [conclusionDraft, setConclusionDraft] = useState(report.conclusion);
+  const [catCommentDrafts, setCatCommentDrafts] = useState<Record<string, string>>(report.categoryComments);
   const [saving, setSaving] = useState(false);
 
   const totalChecks = report.statsOk + report.statsIssues + report.statsNa + report.statsNotChecked;
@@ -37,6 +61,14 @@ export function ReportView({ report, siteId, showVersion = true }: ReportViewPro
   async function handleSaveText() {
     setSaving(true);
     await updateReportText(report.id, summaryDraft, conclusionDraft);
+    setEditingSection(null);
+    setSaving(false);
+    router.refresh();
+  }
+
+  async function handleSaveCategoryComment(categoryId: string) {
+    setSaving(true);
+    await updateCategoryComment(report.id, categoryId, catCommentDrafts[categoryId] || "");
     setEditingSection(null);
     setSaving(false);
     router.refresh();
@@ -97,16 +129,27 @@ export function ReportView({ report, siteId, showVersion = true }: ReportViewPro
           Scope: Website compliance - consent management, cookie/tracking behavior, privacy information, and third-party integrations. Other processing activities (email marketing, backend data handling, internal systems) are not covered by this audit.
         </p>
 
-        {/* === COMPLIANCE STATUS === */}
+        {/* === COMPLIANCE STATUS WITH VISUAL BAR === */}
         <h2 style={{ fontSize: "26px", fontWeight: 300, marginBottom: "8px" }}>Compliance Audit Summary</h2>
         <h3 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "12px" }}>GDPR & ePR Performance</h3>
 
         <p style={{ fontSize: "13px", color: "#555", marginBottom: "4px" }}>
           Current Compliance Status: <strong style={{ color: report.statsIssues === 0 && report.statsNotChecked === 0 ? "#2d8a4e" : "#1a1a1a" }}>{complianceStatus}</strong>
         </p>
-        <p style={{ fontSize: "13px", color: "#555", marginBottom: "40px" }}>
+        <p style={{ fontSize: "13px", color: "#555", marginBottom: "12px" }}>
           {report.statsOk} compliant, {report.statsIssues} issues, {report.statsNa} not applicable, {report.statsNotChecked} not checked ({checkedCount}/{totalChecks} completed)
         </p>
+
+        {/* Visual compliance bar */}
+        <div style={{ marginBottom: "8px" }}>
+          <ComplianceBar ok={report.statsOk} issues={report.statsIssues} na={report.statsNa} notChecked={report.statsNotChecked} />
+        </div>
+        <div style={{ display: "flex", gap: "16px", fontSize: "10px", color: "#888", marginBottom: "40px" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#22c55e" }} />Compliant</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#dd3333" }} />Issues</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#e07800" }} />N/A</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#60a5fa99" }} />Not checked</span>
+        </div>
 
         {/* === 1. EXECUTIVE SUMMARY === */}
         <h2 style={{ fontSize: "22px", fontWeight: 300, marginBottom: "12px" }}>1. Executive Summary</h2>
@@ -145,32 +188,73 @@ export function ReportView({ report, siteId, showVersion = true }: ReportViewPro
           </div>
         </div>
 
-        {/* === 2. KEY FINDINGS === */}
+        {/* === 2. KEY FINDINGS WITH PER-CATEGORY COMMENTS === */}
         {issueCategories.length > 0 && (
           <div style={{ marginBottom: "40px" }}>
             <h2 style={{ fontSize: "22px", fontWeight: 300, marginBottom: "16px" }}>2. Technical Audit & Findings</h2>
 
-            {issueCategories.map((cat, catIndex) => (
-              <div key={cat.id} style={{ marginBottom: "28px" }}>
-                <h3 style={{ fontSize: "15px", fontWeight: 600, marginBottom: "12px" }}>
-                  2.{catIndex + 1} {cat.label}
-                </h3>
+            {issueCategories.map((cat, catIndex) => {
+              const catComment = catCommentDrafts[cat.id] || "";
+              const isEditingCat = editingSection === `cat-${cat.id}`;
 
-                {cat.issues.map((check) => (
-                  <div key={check.key} style={{ marginBottom: "16px", paddingLeft: "16px" }}>
-                    <p style={{ fontSize: "13px", fontWeight: 500, color: "#333", marginBottom: "4px" }}>
-                      {check.key}: {check.label}
-                    </p>
-                    <p style={{ fontSize: "13px", color: "#555", marginBottom: "8px" }}>
-                      {check.description}
-                    </p>
-                    <p style={{ fontSize: "12px", color: "#888" }}>
-                      Remediation required. See appendix for auditor notes.
-                    </p>
+              return (
+                <div key={cat.id} style={{ marginBottom: "28px" }}>
+                  <h3 style={{ fontSize: "15px", fontWeight: 600, marginBottom: "8px" }}>
+                    2.{catIndex + 1} {cat.label}
+                  </h3>
+
+                  {/* Per-category comment */}
+                  <div style={{ marginBottom: "12px" }}>
+                    {isEditingCat ? (
+                      <div className="print:hidden">
+                        <textarea
+                          style={{ width: "100%", minHeight: "60px", padding: "8px", border: "1px solid #ccc", borderRadius: "4px", fontSize: "13px", lineHeight: 1.5, fontFamily: "inherit", resize: "vertical" }}
+                          value={catComment}
+                          onChange={(e) => setCatCommentDrafts((prev) => ({ ...prev, [cat.id]: e.target.value }))}
+                        />
+                        <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+                          <button
+                            onClick={() => handleSaveCategoryComment(cat.id)}
+                            disabled={saving}
+                            style={{ padding: "4px 12px", fontSize: "11px", background: "#1a1a1a", color: "white", border: "none", borderRadius: "3px", cursor: "pointer" }}
+                          >
+                            {saving ? "Saving..." : "Save"}
+                          </button>
+                          <button
+                            onClick={() => { setEditingSection(null); setCatCommentDrafts((prev) => ({ ...prev, [cat.id]: report.categoryComments[cat.id] || "" })); }}
+                            style={{ padding: "4px 12px", fontSize: "11px", border: "1px solid #ccc", borderRadius: "3px", background: "white", cursor: "pointer" }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => setEditingSection(`cat-${cat.id}`)}
+                        style={{ cursor: "pointer", padding: "8px", borderRadius: "4px", border: "1px dashed #e0e0e0", fontSize: "13px", color: "#555", fontStyle: "italic" }}
+                        className="print:border-0 print:p-0"
+                      >
+                        {catComment || "Click to add a comment for this category..."}
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            ))}
+
+                  {cat.issues.map((check) => (
+                    <div key={check.key} style={{ marginBottom: "16px", paddingLeft: "16px" }}>
+                      <p style={{ fontSize: "13px", fontWeight: 500, color: "#333", marginBottom: "4px" }}>
+                        {check.key}: {check.label}
+                      </p>
+                      <p style={{ fontSize: "13px", color: "#555", marginBottom: "8px" }}>
+                        {check.description}
+                      </p>
+                      <p style={{ fontSize: "12px", color: "#888" }}>
+                        Remediation required. See appendix for auditor notes.
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -219,9 +303,14 @@ export function ReportView({ report, siteId, showVersion = true }: ReportViewPro
 
           {report.categories.map((cat) => (
             <div key={cat.id} style={{ marginBottom: "24px", pageBreakInside: "avoid" }}>
-              <h3 style={{ fontSize: "13px", fontWeight: 600, borderBottom: "1px solid #ddd", paddingBottom: "4px", marginBottom: "0" }}>
-                {cat.id}. {cat.label}
-              </h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", borderBottom: "1px solid #ddd", paddingBottom: "4px", marginBottom: "0" }}>
+                <h3 style={{ fontSize: "13px", fontWeight: 600, margin: 0 }}>
+                  {cat.id}. {cat.label}
+                </h3>
+                <div style={{ flex: 1, maxWidth: "120px" }}>
+                  <CategoryBar checks={cat.checks} />
+                </div>
+              </div>
 
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                 <thead>
@@ -238,7 +327,7 @@ export function ReportView({ report, siteId, showVersion = true }: ReportViewPro
                       <td style={{ padding: "5px 8px", borderBottom: "1px solid #f5f5f5", color: "#888", fontWeight: 500 }}>{check.key}</td>
                       <td style={{ padding: "5px 8px", borderBottom: "1px solid #f5f5f5", color: "#333" }}>{check.label}</td>
                       <td style={{ padding: "5px 8px", borderBottom: "1px solid #f5f5f5", textAlign: "center", fontWeight: 500, fontSize: "11px", color: check.status === "ok" ? "#2d8a4e" : check.status === "issue" ? "#c0392b" : "#999" }}>
-                        {check.status === "ok" ? "✓ OK" : check.status === "issue" ? "✗ Issue" : check.status === "na" ? "- N/A" : ""}
+                        {check.status === "ok" ? "OK" : check.status === "issue" ? "Issue" : check.status === "na" ? "N/A" : ""}
                       </td>
                       <td style={{ padding: "5px 8px", borderBottom: "1px solid #f5f5f5", color: "#666", fontSize: "11px" }}>
                         {check.notes || "-"}

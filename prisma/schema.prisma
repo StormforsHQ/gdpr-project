@@ -52,6 +52,7 @@ model Report {
   statsIssues      Int      @default(0) @map("stats_issues")
   statsNa          Int      @default(0) @map("stats_na")
   statsNotChecked  Int      @default(0) @map("stats_not_checked")
+  categoryComments String   @default("{}") @map("category_comments")
   createdAt        DateTime @default(now()) @map("created_at")
 
   audit Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)

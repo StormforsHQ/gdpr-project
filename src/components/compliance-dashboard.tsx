@@ -26,9 +26,9 @@ import {
 import type { DashboardData } from "@/app/actions/dashboard";
 
 const chartConfig = {
-  ok: { label: "Compliant", color: "#86efac" },
-  issues: { label: "Issues", color: "#fca5a5" },
-  na: { label: "Not applicable", color: "#fde68a" },
+  ok: { label: "Compliant", color: "rgba(34, 197, 94, 0.25)" },
+  issues: { label: "Issues", color: "rgba(221, 51, 51, 0.25)" },
+  na: { label: "Not applicable", color: "rgba(224, 120, 0, 0.2)" },
   notChecked: { label: "Not checked", color: "var(--accent)" },
 } satisfies ChartConfig;
 
@@ -175,22 +175,22 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
             <BarChart
               data={categoryBarData}
-              layout="vertical"
-              margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+              margin={{ top: 10, right: 10, left: 10, bottom: 60 }}
             >
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11 }} />
-              <YAxis
-                type="category"
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+              <XAxis
                 dataKey="name"
-                tick={{ fontSize: 11 }}
-                width={140}
+                tick={{ fontSize: 10 }}
+                angle={-35}
+                textAnchor="end"
+                height={60}
               />
+              <YAxis tick={{ fontSize: 11 }} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Bar dataKey="ok" name="Compliant" stackId="a" fill="var(--color-ok)" radius={[0, 0, 0, 0]} />
               <Bar dataKey="issues" name="Issues" stackId="a" fill="var(--color-issues)" />
               <Bar dataKey="na" name="N/A" stackId="a" fill="var(--color-na)" />
-              <Bar dataKey="notChecked" name="Not checked" stackId="a" fill="var(--color-notChecked)" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="notChecked" name="Not checked" stackId="a" fill="var(--color-notChecked)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ChartContainer>
         </CardContent>

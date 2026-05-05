@@ -25,7 +25,6 @@ import {
   CartesianGrid,
   BarChart,
   Bar,
-  ResponsiveContainer,
 } from "recharts";
 import type { DashboardData } from "@/app/actions/dashboard";
 

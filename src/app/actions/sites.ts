@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { normalizeUrl } from "@/lib/url";
 import { detectGtmId, detectCookiebotId } from "@/lib/scanner";
 import { isGtmConfigured, findCookiebotIdInContainer } from "@/lib/api/gtm";
+import { isWebflowConfigured, findWebflowSiteByDomain } from "@/lib/api/webflow";
 import * as cheerio from "cheerio";
 
 export async function getSites() {
@@ -130,6 +131,8 @@ export async function bulkCreateSites(
 }
 
 export interface DetectIdsResult {
+  webflowId: string | null;
+  webflowSource: string | null;
   gtmId: string | null;
   cookiebotId: string | null;
   gtmSource: string | null;
@@ -139,6 +142,7 @@ export interface DetectIdsResult {
 
 export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
   const result: DetectIdsResult = {
+    webflowId: null, webflowSource: null,
     gtmId: null, cookiebotId: null,
     gtmSource: null, cookiebotSource: null,
     error: null,
@@ -175,6 +179,19 @@ export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
         }
       } catch {
         // GTM API not available - not an error for the user
+      }
+    }
+
+    if (isWebflowConfigured()) {
+      try {
+        const domain = new URL(normalizedUrl).hostname.replace(/^www\./, "");
+        const wfSite = await findWebflowSiteByDomain(domain);
+        if (wfSite) {
+          result.webflowId = wfSite.id;
+          result.webflowSource = `Matched Webflow site "${wfSite.displayName}"`;
+        }
+      } catch {
+        // Webflow API lookup failed - not critical
       }
     }
   } catch (err) {

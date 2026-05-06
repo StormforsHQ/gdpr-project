@@ -66,3 +66,41 @@ export async function getSiteInfo(siteId: string): Promise<{
 }> {
   return webflowFetch(`/sites/${siteId}`);
 }
+
+export interface WebflowSite {
+  id: string;
+  displayName: string;
+  shortName: string;
+  defaultDomain: string;
+  customDomains?: Array<{ url: string }>;
+}
+
+export async function listAllSites(): Promise<WebflowSite[]> {
+  const sites: WebflowSite[] = [];
+  let offset = 0;
+  const limit = 100;
+
+  while (true) {
+    const data = await webflowFetch(`/sites?offset=${offset}&limit=${limit}`);
+    const batch = data.sites || data;
+    if (!Array.isArray(batch) || batch.length === 0) break;
+    sites.push(...batch);
+    if (batch.length < limit) break;
+    offset += limit;
+  }
+
+  return sites;
+}
+
+export async function findWebflowSiteByDomain(domain: string): Promise<WebflowSite | null> {
+  const sites = await listAllSites();
+  const normalizedDomain = domain.replace(/^www\./, "").toLowerCase();
+
+  for (const site of sites) {
+    if (site.defaultDomain?.toLowerCase().includes(normalizedDomain)) return site;
+    if (site.customDomains?.some((d) => d.url.replace(/^www\./, "").toLowerCase().includes(normalizedDomain))) return site;
+    if (site.shortName?.toLowerCase() === normalizedDomain.split(".")[0]) return site;
+  }
+
+  return null;
+}

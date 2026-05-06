@@ -13,7 +13,7 @@ import { CHECKLIST } from "@/lib/checklist";
 import type { ScanResult } from "@/lib/scanner";
 import { REMEDIATION } from "@/lib/remediation";
 import type { FixAnalysisResult, ScriptAnalysis } from "@/app/actions/fixes";
-import { AlertCircle, CheckCircle2, ExternalLink, Info, Wrench, AlertTriangle } from "lucide-react";
+import { AlertCircle, CheckCircle2, ExternalLink, Info, Wrench, AlertTriangle, Search } from "lucide-react";
 
 interface ScanResultsDrawerProps {
   checkKey: string | null;
@@ -169,30 +169,37 @@ export function ScanResultsDrawer({
               </div>
             )}
 
-            {analysisResult && analysisResult.checkKey === checkKey && (
+            {hasAnalysis && (
               <>
                 <Separator />
-                <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
-                    <Wrench className="h-3 w-3" />
-                    Script Analysis
-                  </h3>
-                  <p className="text-sm mb-3">{analysisResult.message}</p>
-                  {analysisResult.warning && (
-                    <div className="flex items-start gap-2 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-md mb-3">
+                <div className="rounded-lg border bg-card p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Search className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <h3 className="text-sm font-semibold">Analysis Results</h3>
+                  </div>
+                  <p className="text-sm leading-relaxed">{analysisResult!.message}</p>
+                  {analysisResult!.warning && (
+                    <div className="flex items-start gap-2 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-md">
                       <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
-                      <p className="text-xs text-amber-700 dark:text-amber-400">{analysisResult.warning}</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-400">{analysisResult!.warning}</p>
                     </div>
                   )}
-                  {analysisResult.scripts && <ScriptAnalysisSection scripts={analysisResult.scripts} />}
-                  {analysisResult.existingGtmSnippet && (
-                    <div className="mt-3 p-2.5 bg-muted rounded-md">
+                  {analysisResult!.scripts && <ScriptAnalysisSection scripts={analysisResult!.scripts} />}
+                  {analysisResult!.existingGtmSnippet && (
+                    <div className="p-2.5 bg-muted rounded-md">
                       <p className="text-xs font-medium">Existing GTM snippet</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{analysisResult.existingGtmSnippet.detail}</p>
-                      <Badge variant={analysisResult.existingGtmSnippet.apiManaged ? "secondary" : "outline"} className="mt-1.5 text-[10px]">
-                        {analysisResult.existingGtmSnippet.apiManaged ? "API-managed" : "Manually added"}
+                      <p className="text-xs text-muted-foreground mt-0.5">{analysisResult!.existingGtmSnippet.detail}</p>
+                      <Badge variant={analysisResult!.existingGtmSnippet.apiManaged ? "secondary" : "outline"} className="mt-1.5 text-[10px]">
+                        {analysisResult!.existingGtmSnippet.apiManaged ? "API-managed" : "Manually added"}
                       </Badge>
                     </div>
+                  )}
+                  {!analysisResult!.scripts && !analysisResult!.existingGtmSnippet && !analysisResult!.canAutoFix && (
+                    <p className="text-xs text-muted-foreground">
+                      No automated action available. Follow the steps below to resolve this manually.
+                    </p>
                   )}
                 </div>
               </>

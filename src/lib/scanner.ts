@@ -20,6 +20,7 @@ export interface ScanResult {
   checks: CheckResult[];
   error?: string;
   detectedCookiebotId?: string;
+  detectedGtmId?: string;
 }
 
 const KNOWN_TRACKING_SCRIPTS = [
@@ -103,6 +104,7 @@ export async function scanSite(url: string): Promise<ScanResult> {
     const $ = cheerio.load(html);
 
     const detectedCookiebotId = detectCookiebotId($);
+    const detectedGtmId = detectGtmId($, html);
 
     const checks: CheckResult[] = [
       checkA1($, html),
@@ -130,6 +132,7 @@ export async function scanSite(url: string): Promise<ScanResult> {
       scannedAt: new Date().toISOString(),
       checks,
       detectedCookiebotId: detectedCookiebotId || undefined,
+      detectedGtmId: detectedGtmId || undefined,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -833,6 +836,28 @@ function checkB5($: cheerio.CheerioAPI, html: string): CheckResult {
     severity: "info",
   });
   return { checkKey: "B5", status: "na", findings, summary: "Cannot determine Consent Mode V2 from HTML alone - verify in GTM" };
+}
+
+function detectGtmId($: cheerio.CheerioAPI, html: string): string | null {
+  let gtmId: string | null = null;
+
+  $("script[src]").each((_, el) => {
+    const src = $(el).attr("src") || "";
+    const match = src.match(/googletagmanager\.com\/gtm\.js\?[^'"]*id=(GTM-[A-Z0-9]+)/i);
+    if (match) gtmId = match[1].toUpperCase();
+  });
+
+  if (!gtmId) {
+    const inlineMatch = html.match(/['"](?:https?:\/\/)?(?:www\.)?googletagmanager\.com\/gtm\.js\?[^'"]*id=(GTM-[A-Z0-9]+)/i);
+    if (inlineMatch) gtmId = inlineMatch[1].toUpperCase();
+  }
+
+  if (!gtmId) {
+    const noscriptMatch = html.match(/googletagmanager\.com\/ns\.html\?id=(GTM-[A-Z0-9]+)/i);
+    if (noscriptMatch) gtmId = noscriptMatch[1].toUpperCase();
+  }
+
+  return gtmId;
 }
 
 function detectCookiebotId($: cheerio.CheerioAPI): string | null {

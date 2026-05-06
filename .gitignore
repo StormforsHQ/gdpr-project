@@ -1,6 +1,7 @@
 # claude code (personal per-developer)
 CLAUDE.md
 .claude/
+.mcp.json
 
 # personal reference docs (not team-facing)
 docs/nextjs-standard.md

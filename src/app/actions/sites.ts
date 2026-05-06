@@ -197,8 +197,10 @@ export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
           result.webflowSource = "Webflow API missing 'sites:read' scope - re-authorize the app with this scope enabled";
         } else if (/401|unauthorized/i.test(wfMsg)) {
           result.webflowSource = "Webflow API token expired or invalid - re-authorize the app";
+        } else if (/403|forbidden/i.test(wfMsg)) {
+          result.webflowSource = "Webflow API access denied - check app permissions and re-authorize";
         } else {
-          result.webflowSource = "Webflow lookup failed - check server logs for details";
+          result.webflowSource = `Webflow lookup failed: ${wfMsg.slice(0, 100)}`;
         }
       }
     }

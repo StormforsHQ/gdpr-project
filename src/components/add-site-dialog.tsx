@@ -186,7 +186,7 @@ export function AddSiteDialog() {
                 {detecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
                 {detecting ? "Scanning site..." : "Detect IDs from site"}
               </Button>
-              <span className="text-xs text-muted-foreground">Scans the URL to find GTM and Cookiebot IDs</span>
+              <span className="text-xs text-muted-foreground">Scans the URL to find IDs automatically</span>
             </div>
             {detectResult && (
               <p className={`text-xs leading-relaxed ${detectResult.startsWith("Found:") ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>

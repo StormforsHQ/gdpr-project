@@ -16,7 +16,7 @@ import { AUTOMATION_CONFIG } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { GlossaryText } from "@/components/glossary-text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, FileSearch, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench } from "lucide-react";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, FileSearch, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench, Search } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -31,6 +31,8 @@ export interface FixInfo {
   ready: boolean;
   missingServices: string[];
   requires: string[];
+  safetyLevel: "safe" | "confirm" | "guided";
+  warning?: string;
 }
 
 interface CheckItemProps {
@@ -48,6 +50,7 @@ interface CheckItemProps {
   onViewScanDetails?: (key: string) => void;
   onRunCheck?: (key: string) => void;
   onApplyFix?: (key: string) => void;
+  onAnalyzeFix?: (key: string) => void;
 }
 
 export function CheckItem({
@@ -65,6 +68,7 @@ export function CheckItem({
   fixInfo,
   isFixing,
   onApplyFix,
+  onAnalyzeFix,
 }: CheckItemProps) {
   const [expanded, setExpanded] = useState(false);
   const automationInfo = AUTOMATION_CONFIG[check.automation];
@@ -246,7 +250,44 @@ export function CheckItem({
                 {isRunning ? "Running..." : status !== "not_checked" ? "Re-run" : "Run check"}
               </Button>
             )}
-            {fixInfo && status === "issue" && (
+            {fixInfo && status === "issue" && fixInfo.safetyLevel === "guided" && (
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    variant={fixInfo.ready ? "secondary" : "outline"}
+                    size="sm"
+                    className="h-8 text-xs gap-1.5"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (fixInfo.ready && onAnalyzeFix) onAnalyzeFix(check.key);
+                    }}
+                    disabled={!fixInfo.ready || isFixing}
+                  >
+                    {isFixing ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Search className="h-3 w-3" />
+                    )}
+                    {isFixing ? "Analyzing..." : "Analyze"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs text-xs text-black dark:text-black">
+                  <div>
+                    <p className="font-medium">{fixInfo.label}</p>
+                    <p className="opacity-60 mt-0.5">{fixInfo.description}</p>
+                    {fixInfo.warning && (
+                      <p className="text-amber-700 mt-1">{fixInfo.warning}</p>
+                    )}
+                    {!fixInfo.ready && (
+                      <p className="text-amber-700 mt-1">
+                        Needs: {fixInfo.missingServices.join(", ")}
+                      </p>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {fixInfo && status === "issue" && fixInfo.safetyLevel !== "guided" && (
               <Tooltip>
                 <TooltipTrigger>
                   <Button
@@ -271,6 +312,9 @@ export function CheckItem({
                   <div>
                     <p className="font-medium">{fixInfo.label}</p>
                     <p className="opacity-60 mt-0.5">{fixInfo.description}</p>
+                    {fixInfo.warning && (
+                      <p className="text-amber-700 mt-1">{fixInfo.warning}</p>
+                    )}
                     {!fixInfo.ready && (
                       <p className="text-amber-700 mt-1">
                         Needs: {fixInfo.missingServices.join(", ")}

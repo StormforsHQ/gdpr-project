@@ -64,7 +64,9 @@ export async function runPageScan(url: string, siteId?: string): Promise<ScanRes
             await prisma.site.update({ where: { id: siteId }, data: updates });
           }
         }
-      } catch {}
+      } catch (dbErr) {
+        console.error("Failed to auto-save detected IDs:", dbErr);
+      }
     }
 
     return result;

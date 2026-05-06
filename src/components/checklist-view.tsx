@@ -52,9 +52,10 @@ interface ChecklistViewProps {
   siteFields?: { cookiebotId?: string | null; gtmId?: string | null };
 }
 
-export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", initialStates, initialScanRuns, siteFields }: ChecklistViewProps) {
+export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", initialStates, initialScanRuns, siteFields: initialSiteFields }: ChecklistViewProps) {
   const { errors, addError, clearErrors } = useErrorLog();
   const [auditType, setAuditType] = useState<"basic" | "full">(initialAuditType);
+  const [siteFields, setSiteFields] = useState(initialSiteFields);
   const [scanRuns, setScanRuns] = useState<ScanRunEntry[]>(initialScanRuns ?? []);
   const [checkStates, setCheckStates] = useState<CheckState>(() => {
     if (!initialStates) return {};
@@ -255,6 +256,14 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           setScanRuns((prev) => [run, ...prev]);
         }
 
+        if (result.detectedCookiebotId || result.detectedGtmId) {
+          setSiteFields((prev) => ({
+            ...prev,
+            cookiebotId: result.detectedCookiebotId || prev?.cookiebotId,
+            gtmId: result.detectedGtmId || prev?.gtmId,
+          }));
+        }
+
         const cbid = result.detectedCookiebotId || siteFields?.cookiebotId;
         if (cbid) {
           try {
@@ -403,6 +412,13 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       } else if (automation === "page-scan") {
         const result = await runPageScan(scanUrl, siteId);
         if (!result.error) {
+          if (result.detectedCookiebotId || result.detectedGtmId) {
+            setSiteFields((prev) => ({
+              ...prev,
+              cookiebotId: result.detectedCookiebotId || prev?.cookiebotId,
+              gtmId: result.detectedGtmId || prev?.gtmId,
+            }));
+          }
           const checkResult = result.checks.find((c) => c.checkKey === checkKey);
           if (checkResult) {
             applyCheckResults([checkResult], "scan");

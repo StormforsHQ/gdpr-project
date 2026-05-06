@@ -22,6 +22,12 @@
   .tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 3px; vertical-align: middle; margin-left: 4px; }
   .tag-auto { background: #d4edda; color: #166534; }
   .tag-manual { background: #fde8cd; color: #8a5a00; }
+  .cap-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: #ddd; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; margin: 12px 0; font-size: 12px; }
+  .cap-grid > div { background: #fff; padding: 8px 10px; }
+  .cap-grid > div:nth-child(-n+3) { background: #f0f0f0; font-weight: 600; font-size: 11px; }
+  .cap-yes { color: #166534; }
+  .cap-no { color: #b91c1c; }
+  .cap-api { color: #92400e; }
   @media print { body { font-size: 11px; padding: 8px; } }
 </style>
 </head>
@@ -41,7 +47,7 @@
 
 <div class="concept">
   <strong>Cookiebot</strong>
-  Shows the cookie consent banner. Lives inside the GTM container as a special tag that runs first (before anything else). When a visitor accepts or declines, Cookiebot tells GTM which categories are allowed, and GTM only fires the matching tags.
+  Shows the cookie consent banner. Lives inside the GTM container as a special tag. When a visitor accepts or declines, Cookiebot tells GTM which categories are allowed (statistics, marketing, preferences), and GTM only fires the matching tags.
 </div>
 
 <p>The only script in the Webflow site header should be the GTM snippet. Cookiebot loads through GTM, and all tracking loads through GTM. One script controls everything.</p>
@@ -57,6 +63,32 @@
   <span class="flow-arrow">&rarr;</span>
   <span class="flow-step">GTM fires allowed tags</span>
 </div>
+
+<p>Cookiebot fires first not because of its position in a list, but because GTM has built-in trigger priorities. The "Consent Initialization" trigger is guaranteed to run before "Initialization", "All Pages", and all other triggers. That's what makes the consent flow work.</p>
+
+<h2>What we can do automatically vs manually</h2>
+
+<div class="cap-grid">
+  <div>Action</div><div>Needs API?</div><div>How</div>
+  <div>Detect GTM container ID</div><div class="cap-yes">No</div><div>Scan the site HTML</div>
+  <div>Detect Cookiebot ID</div><div class="cap-yes">No</div><div>Scan HTML, or look inside GTM container (needs GTM API)</div>
+  <div>Get cookie categories + details</div><div class="cap-yes">No</div><div>Public Cookiebot endpoint using just the Cookiebot ID</div>
+  <div>See what tags are inside GTM</div><div class="cap-api">GTM API</div><div>Lists all tags, triggers, and their configuration</div>
+  <div>Verify Cookiebot is in GTM</div><div class="cap-api">GTM API</div><div>Checks if a Cookiebot CMP tag exists with correct trigger</div>
+  <div>Add/edit tags in GTM</div><div class="cap-no">Manual</div><div>Done in tagmanager.google.com - too risky to automate</div>
+  <div>Create a GTM container</div><div class="cap-no">Manual</div><div>Done in tagmanager.google.com</div>
+  <div>Configure Cookiebot settings</div><div class="cap-no">Manual</div><div>Done in cookiebot.com - we never need to write to Cookiebot</div>
+  <div>Read manually-added Webflow scripts</div><div class="cap-no">Not possible</div><div>Scripts pasted in Designer are invisible to the API</div>
+  <div>Remove manually-added Webflow scripts</div><div class="cap-no">Manual</div><div>Must be done in Webflow Designer by hand</div>
+  <div>Add scripts to Webflow via API</div><div class="cap-yes">No extra auth</div><div>Webflow MCP / Data API - these scripts are manageable</div>
+  <div>Remove API-added Webflow scripts</div><div class="cap-yes">No extra auth</div><div>Webflow MCP / Data API</div>
+</div>
+
+<h2>What the audit app pushes to Webflow</h2>
+
+<p>Only the <strong>GTM snippet</strong> - a standard script tag with the client's container ID (e.g. GTM-ABC1234). We don't create GTM containers, we don't generate Cookiebot configs. Both of those already exist for the client. We just push the GTM snippet to Webflow's head via the API so it's manageable.</p>
+
+<p>If a client has no GTM container or no Cookiebot subscription, that's flagged as an issue in the audit. Setting those up is a separate task done in tagmanager.google.com and cookiebot.com.</p>
 
 <h2>Why we use the Webflow API (not the Designer)</h2>
 
@@ -90,7 +122,8 @@
 <ol>
   <li><strong>Designer custom code boxes:</strong> empty (nothing in head or footer)</li>
   <li><strong>API-registered scripts:</strong> GTM snippet in header (+ JSON-LD if applicable)</li>
-  <li><strong>GTM container:</strong> Cookiebot CMP tag + all tracking tags with consent triggers</li>
+  <li><strong>GTM container:</strong> Cookiebot CMP tag (on Consent Initialization trigger) + all tracking tags with consent triggers</li>
+  <li><strong>Cookiebot:</strong> manages itself - scans the site monthly, categorizes cookies, shows the banner</li>
 </ol>
 
 </body>

@@ -122,7 +122,7 @@ export async function scanSite(url: string): Promise<ScanResult> {
       checkF5($),
       checkI3($),
       checkI4($),
-      checkG1($, html),
+      checkG1($, html, detectedGtmId),
       checkG8($, html),
       checkB5($, html),
     ];
@@ -713,7 +713,7 @@ function checkI4($: cheerio.CheerioAPI): CheckResult {
   };
 }
 
-function checkG1($: cheerio.CheerioAPI, html: string): CheckResult {
+function checkG1($: cheerio.CheerioAPI, html: string, detectedGtmId: string | null): CheckResult {
   const findings: ScanFinding[] = [];
 
   const hasCookiebotScript = $("script[src*='consent.cookiebot.com'], script[src*='consentcdn.cookiebot.com']").length > 0;
@@ -738,12 +738,30 @@ function checkG1($: cheerio.CheerioAPI, html: string): CheckResult {
     return { checkKey: "G1", status: "ok", findings, summary: "Consent management platform detected" };
   }
 
+  const checked = ["site HTML head"];
+  if (detectedGtmId) checked.push(`GTM container (${detectedGtmId})`);
+
   findings.push({
     element: "page",
-    detail: "No consent management script detected. Consent banner will not appear.",
+    detail: `No Cookiebot found in: ${checked.join(", ")}. Visitors will not see a cookie consent banner, which means tracking may run without permission.`,
     severity: "error",
   });
-  return { checkKey: "G1", status: "issue", findings, summary: "No consent banner/CMP detected" };
+
+  if (detectedGtmId) {
+    findings.push({
+      element: "page",
+      detail: "Tip: Open the site in an incognito window to verify - if no banner appears, consent is missing. Check if this client has a Cookiebot subscription at cookiebot.com.",
+      severity: "warning",
+    });
+  } else {
+    findings.push({
+      element: "page",
+      detail: "Tip: No GTM container found either. This site may need both GTM and Cookiebot set up. Check if the client has a Cookiebot subscription at cookiebot.com.",
+      severity: "warning",
+    });
+  }
+
+  return { checkKey: "G1", status: "issue", findings, summary: "No cookie consent banner found" };
 }
 
 function checkG8($: cheerio.CheerioAPI, html: string): CheckResult {

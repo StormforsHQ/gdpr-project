@@ -91,7 +91,7 @@ export default async function SitePage({ params }: SitePageProps) {
         auditType={(audit as Record<string, unknown>).auditType as "basic" | "full" ?? "full"}
         initialStates={initialStates}
         initialScanRuns={scanRuns}
-        siteFields={{ cookiebotId: site.cookiebotId, gtmId: site.gtmId }}
+        siteFields={{ webflowId: site.webflowId, cookiebotId: site.cookiebotId, gtmId: site.gtmId }}
       />
     </div>
   );

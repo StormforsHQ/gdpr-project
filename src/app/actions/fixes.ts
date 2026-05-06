@@ -113,6 +113,9 @@ export async function analyzeFix(
   if (fix.requires.includes("gtm") && !isGtmConfigured()) {
     return { checkKey, canAutoFix: false, message: "GTM API token not configured" };
   }
+  if (fix.requires.includes("webflow") && !siteWebflowId) {
+    return { checkKey, canAutoFix: false, message: "This site has no Webflow ID. Add it in site settings (Edit Site)." };
+  }
 
   switch (checkKey) {
     case "A1":

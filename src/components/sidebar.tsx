@@ -204,6 +204,13 @@ export function Sidebar({ sites }: SidebarProps) {
                 Audit Protocol
               </Link>
               <Link
+                href="/reference/fix-flow"
+                onClick={() => setMobileOpen(false)}
+                className={subLinkClass(isActive("/reference/fix-flow"))}
+              >
+                Fix Flow Guide
+              </Link>
+              <Link
                 href="/reference/mcp-servers"
                 onClick={() => setMobileOpen(false)}
                 className={subLinkClass(isActive("/reference/mcp-servers"))}

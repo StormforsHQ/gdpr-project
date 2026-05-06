@@ -274,6 +274,19 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
     ],
   },
 
+  G1: {
+    plainExplanation: "No cookie consent banner was found on this site. Without one, tracking scripts (like Google Analytics) may collect visitor data without asking for permission first, which violates GDPR.",
+    steps: [
+      { instruction: "Open the site in an incognito/private browser window and check if a cookie banner appears", platform: "all" },
+      { instruction: "If no banner appears, check whether the client has a Cookiebot subscription at cookiebot.com", platform: "all" },
+      { instruction: "If they have Cookiebot: add the Cookiebot CMP tag inside GTM with trigger 'Consent Initialization - All Pages'", platform: "all" },
+      { instruction: "If they don't have Cookiebot: flag this to the client - they need a consent solution before tracking is compliant", platform: "all" },
+    ],
+    docLinks: [
+      { label: "Cookiebot: Getting started", url: "https://www.cookiebot.com/en/help/" },
+    ],
+  },
+
   I8: {
     plainExplanation: "A privacy policy that is hard to read defeats its purpose. GDPR requires that privacy information is provided in 'clear and plain language'. Long walls of legal text with no structure or headings make it practically impossible for a normal person to understand their rights.",
     steps: [

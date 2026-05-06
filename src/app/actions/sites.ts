@@ -3,6 +3,9 @@
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { normalizeUrl } from "@/lib/url";
+import { detectGtmId, detectCookiebotId } from "@/lib/scanner";
+import { isGtmConfigured, findCookiebotIdInContainer } from "@/lib/api/gtm";
+import * as cheerio from "cheerio";
 
 export async function getSites() {
   return prisma.site.findMany({
@@ -124,4 +127,66 @@ export async function bulkCreateSites(
   revalidatePath("/sites");
   revalidatePath("/");
   return created;
+}
+
+export interface DetectIdsResult {
+  gtmId: string | null;
+  cookiebotId: string | null;
+  gtmSource: string | null;
+  cookiebotSource: string | null;
+  error: string | null;
+}
+
+export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
+  const result: DetectIdsResult = {
+    gtmId: null, cookiebotId: null,
+    gtmSource: null, cookiebotSource: null,
+    error: null,
+  };
+
+  try {
+    const normalizedUrl = normalizeUrl(url);
+    const response = await fetch(normalizedUrl, {
+      headers: { "User-Agent": "StormforsGDPRAudit/1.0" },
+      redirect: "follow",
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!response.ok) {
+      result.error = `Could not reach the site (HTTP ${response.status}). Check the URL.`;
+      return result;
+    }
+
+    const html = await response.text();
+    const $ = cheerio.load(html);
+
+    result.gtmId = detectGtmId($, html);
+    if (result.gtmId) result.gtmSource = "Found in site HTML";
+
+    result.cookiebotId = detectCookiebotId($);
+    if (result.cookiebotId) result.cookiebotSource = "Found in site HTML";
+
+    if (result.gtmId && !result.cookiebotId && isGtmConfigured()) {
+      try {
+        const cbid = await findCookiebotIdInContainer(result.gtmId);
+        if (cbid) {
+          result.cookiebotId = cbid;
+          result.cookiebotSource = `Found inside GTM container (${result.gtmId})`;
+        }
+      } catch {
+        // GTM API not available - not an error for the user
+      }
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    if (/fetch failed|ENOTFOUND|getaddrinfo/i.test(msg)) {
+      result.error = "Could not reach the site. Check the URL and make sure it's online.";
+    } else if (/timed? ?out|aborted/i.test(msg)) {
+      result.error = "The site took too long to respond. Try again later.";
+    } else {
+      result.error = `Detection failed: ${msg}`;
+    }
+  }
+
+  return result;
 }

@@ -17,13 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Loader2, Info } from "lucide-react";
+import { Plus, Loader2, Info, Search } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { createSite } from "@/app/actions/sites";
+import { createSite, detectSiteIds } from "@/app/actions/sites";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -31,6 +31,8 @@ export function AddSiteDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [detecting, setDetecting] = useState(false);
+  const [detectResult, setDetectResult] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [platform, setPlatform] = useState("webflow");
@@ -67,12 +69,44 @@ export function AddSiteDialog() {
     }
   };
 
+  const handleDetect = async () => {
+    if (!url.trim()) return;
+    setDetecting(true);
+    setDetectResult(null);
+    try {
+      const result = await detectSiteIds(url.trim());
+      if (result.error) {
+        setDetectResult(result.error);
+        return;
+      }
+      const messages: string[] = [];
+      if (result.gtmId) {
+        setGtmId(result.gtmId);
+        messages.push(`GTM: ${result.gtmId}`);
+      }
+      if (result.cookiebotId) {
+        setCookiebotId(result.cookiebotId);
+        messages.push(`Cookiebot: ${result.cookiebotId}`);
+      }
+      if (messages.length > 0) {
+        setDetectResult(`Found: ${messages.join(", ")}`);
+      } else {
+        setDetectResult("No GTM or Cookiebot found on this site. You can enter them manually if you know the IDs - check GTM at tagmanager.google.com and Cookiebot at cookiebot.com.");
+      }
+    } catch {
+      setDetectResult("Detection failed. Try entering the IDs manually.");
+    } finally {
+      setDetecting(false);
+    }
+  };
+
   const resetForm = () => {
     setName("");
     setUrl("");
     setPlatform("webflow");
     setCookiebotId("");
     setGtmId("");
+    setDetectResult(null);
   };
 
   return (
@@ -121,6 +155,27 @@ export function AddSiteDialog() {
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={detecting || !url.trim()}
+                onClick={handleDetect}
+                className="gap-1.5"
+              >
+                {detecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                {detecting ? "Scanning site..." : "Detect IDs from site"}
+              </Button>
+              <span className="text-xs text-muted-foreground">Scans the URL to find GTM and Cookiebot IDs</span>
+            </div>
+            {detectResult && (
+              <p className={`text-xs leading-relaxed ${detectResult.startsWith("Found:") ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
+                {detectResult}
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

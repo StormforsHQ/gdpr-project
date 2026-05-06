@@ -17,13 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Info } from "lucide-react";
+import { Loader2, Info, Search } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { updateSite, deleteSite } from "@/app/actions/sites";
+import { updateSite, deleteSite, detectSiteIds } from "@/app/actions/sites";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -43,6 +43,8 @@ interface EditSiteDialogProps {
 export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [detecting, setDetecting] = useState(false);
+  const [detectResult, setDetectResult] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [name, setName] = useState(site.name);
@@ -50,6 +52,37 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
   const [platform, setPlatform] = useState(site.platform);
   const [cookiebotId, setCookiebotId] = useState(site.cookiebotId || "");
   const [gtmId, setGtmId] = useState(site.gtmId || "");
+
+  const handleDetect = async () => {
+    if (!url.trim()) return;
+    setDetecting(true);
+    setDetectResult(null);
+    try {
+      const result = await detectSiteIds(url.trim());
+      if (result.error) {
+        setDetectResult(result.error);
+        return;
+      }
+      const messages: string[] = [];
+      if (result.gtmId) {
+        setGtmId(result.gtmId);
+        messages.push(`GTM: ${result.gtmId}`);
+      }
+      if (result.cookiebotId) {
+        setCookiebotId(result.cookiebotId);
+        messages.push(`Cookiebot: ${result.cookiebotId}`);
+      }
+      if (messages.length > 0) {
+        setDetectResult(`Found: ${messages.join(", ")}`);
+      } else {
+        setDetectResult("No GTM or Cookiebot found on this site. You can enter them manually if you know the IDs - check GTM at tagmanager.google.com and Cookiebot at cookiebot.com.");
+      }
+    } catch {
+      setDetectResult("Detection failed. Try entering the IDs manually.");
+    } finally {
+      setDetecting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,6 +163,27 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={detecting || !url.trim()}
+                onClick={handleDetect}
+                className="gap-1.5"
+              >
+                {detecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                {detecting ? "Scanning site..." : "Detect IDs from site"}
+              </Button>
+              <span className="text-xs text-muted-foreground">Scans the URL to find GTM and Cookiebot IDs</span>
+            </div>
+            {detectResult && (
+              <p className={`text-xs leading-relaxed ${detectResult.startsWith("Found:") ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
+                {detectResult}
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

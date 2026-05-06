@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Webflow Script Management - Process Guide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 860px; margin: 0 auto; padding: 32px 20px; font-size: 14px; line-height: 1.7; color: #1a1a1a; }
+  h1 { font-size: 22px; margin-bottom: 6px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 32px; }
+  h2 { font-size: 16px; margin: 32px 0 12px 0; padding-bottom: 4px; border-bottom: 2px solid #111; }
+  h3 { font-size: 14px; margin: 20px 0 8px 0; }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0 8px 20px; }
+  li { margin: 4px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13px; }
+  th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; }
+  th { background: #f5f5f5; font-weight: 600; }
+  .flow-step { background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 6px; padding: 14px 16px; margin: 10px 0; }
+  .flow-step .step-num { font-weight: 700; font-size: 13px; color: #555; margin-bottom: 4px; }
+  .flow-step .step-title { font-weight: 600; }
+  .flow-step .step-detail { font-size: 13px; color: #444; margin-top: 4px; }
+  .flow-step .step-who { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 3px; margin-left: 8px; }
+  .automated { background: #d4edda; color: #155724; }
+  .manual { background: #fff3cd; color: #856404; }
+  .rule-box { background: #fff0f0; border-left: 3px solid #d32f2f; padding: 12px 16px; margin: 16px 0; font-size: 13px; }
+  .rule-box strong { color: #d32f2f; }
+  .info-box { background: #e8f4fd; border-left: 3px solid #1976d2; padding: 12px 16px; margin: 16px 0; font-size: 13px; }
+  code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+  .section-divider { border: none; border-top: 1px solid #ddd; margin: 40px 0; }
+  @media print {
+    body { font-size: 11px; padding: 10px; }
+    .flow-step { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Webflow Script Management</h1>
+<p class="subtitle">Process guide for the GDPR audit team - how to handle scripts on Webflow client sites</p>
+
+<!-- ============================================================ -->
+<h2>Background: Two Ways Scripts End Up on a Webflow Site</h2>
+
+<table>
+  <tr>
+    <th></th>
+    <th>Designer custom code boxes</th>
+    <th>API/MCP registered scripts</th>
+  </tr>
+  <tr>
+    <td><strong>How added</strong></td>
+    <td>Someone pastes code into the Webflow Designer's head/body custom code fields</td>
+    <td>A developer or tool registers and applies a script via the Webflow Data API or MCP server</td>
+  </tr>
+  <tr>
+    <td><strong>Read via API</strong></td>
+    <td>No</td>
+    <td>Yes - <code>list_registered_scripts</code>, <code>list_applied_scripts</code></td>
+  </tr>
+  <tr>
+    <td><strong>Edit/delete via API</strong></td>
+    <td>No</td>
+    <td>Yes - <code>delete_all_site_scripts</code>, re-register with new version</td>
+  </tr>
+  <tr>
+    <td><strong>Looks different in HTML?</strong></td>
+    <td colspan="2">No - both produce identical <code>&lt;script&gt;</code> tags. You cannot tell them apart from the outside.</td>
+  </tr>
+</table>
+
+<div class="info-box">
+  <strong>Key takeaway:</strong> All scripts on our existing client sites were pasted manually in the Designer. The API has zero access to those. To gain programmatic control, we need to remove the manual scripts and re-add them through the API/MCP.
+</div>
+
+<!-- ============================================================ -->
+<h2>What Goes Where</h2>
+
+<table>
+  <tr>
+    <th>Script type</th>
+    <th>Where it belongs</th>
+    <th>Examples</th>
+  </tr>
+  <tr>
+    <td>Tracking / analytics / pixels</td>
+    <td><strong>Inside the GTM container</strong> as tags with consent triggers</td>
+    <td>Google Analytics, Meta Pixel, LinkedIn Insight, HotJar, Microsoft Clarity, TikTok Pixel, HubSpot tracking</td>
+  </tr>
+  <tr>
+    <td>Consent management</td>
+    <td><strong>Webflow head</strong> (via API/MCP) - must load before GTM</td>
+    <td>Cookiebot consent script</td>
+  </tr>
+  <tr>
+    <td>Tag management</td>
+    <td><strong>Webflow head</strong> (via API/MCP) - loads after Cookiebot</td>
+    <td>GTM container snippet</td>
+  </tr>
+  <tr>
+    <td>Structured data</td>
+    <td><strong>Webflow head</strong> (via API/MCP or Designer)</td>
+    <td>JSON-LD schema markup</td>
+  </tr>
+  <tr>
+    <td>Framework / platform scripts</td>
+    <td><strong>Left alone</strong> - managed by Webflow automatically</td>
+    <td>webflow.js, webfont loader</td>
+  </tr>
+  <tr>
+    <td>CSS overrides for consent banner</td>
+    <td><strong>Webflow head</strong> (via API/MCP or Designer)</td>
+    <td>Cookiebot banner styling</td>
+  </tr>
+</table>
+
+<div class="rule-box">
+  <strong>Rule:</strong> Never paste tracking scripts into Webflow's custom code boxes. They always go into GTM as tags with proper consent triggers. The only scripts in Webflow's head should be the Cookiebot snippet, the GTM snippet, JSON-LD, and framework scripts.
+</div>
+
+<!-- ============================================================ -->
+<h2>Flow: One-Time Cleanup (Existing Sites)</h2>
+
+<p>Every existing Webflow client site needs this process once to move from manual script management to the auditable, programmatic setup.</p>
+
+<div class="flow-step">
+  <div class="step-num">Step 1</div>
+  <div class="step-title">Scan the site <span class="step-who automated">Automated</span></div>
+  <div class="step-detail">Run a scan in the GDPR audit app. It detects the GTM container ID and Cookiebot ID, flags any tracking scripts hardcoded outside GTM (checks A1, A2, B1, D1, D3), and identifies what needs to move.</div>
+</div>
+
+<div class="flow-step">
+  <div class="step-num">Step 2</div>
+  <div class="step-title">Verify/set up GTM container <span class="step-who automated">Automated</span> <span class="step-who manual">+ Manual review</span></div>
+  <div class="step-detail">Check the GTM container has: Cookiebot tag with correct cbid, consent triggers for each cookie category, Consent Mode V2 defaults. If the site has no GTM container yet, create one.</div>
+</div>
+
+<div class="flow-step">
+  <div class="step-num">Step 3</div>
+  <div class="step-title">Move tracking scripts into GTM <span class="step-who automated">Automated</span> <span class="step-who manual">+ Manual review</span></div>
+  <div class="step-detail">For each tracking script the scan flagged (Meta Pixel, LinkedIn, etc.), create a corresponding tag in the GTM container with the correct consent trigger. Verify the tag fires correctly.</div>
+</div>
+
+<div class="flow-step">
+  <div class="step-num">Step 4</div>
+  <div class="step-title">Clean up Webflow Designer <span class="step-who manual">Manual</span></div>
+  <div class="step-detail">Open the site in the Webflow Designer. Remove all tracking scripts from the head and body custom code boxes. Leave only: the GTM snippet, the Cookiebot snippet, JSON-LD structured data, and any Cookiebot CSS styling. This is the only step that cannot be automated.</div>
+</div>
+
+<div class="flow-step">
+  <div class="step-num">Step 5</div>
+  <div class="step-title">Migrate remaining scripts to API-registered <span class="step-who automated">Automated</span></div>
+  <div class="step-detail">Use the Webflow MCP (<code>add_inline_site_script</code>) to register the GTM snippet, Cookiebot snippet, and any other non-tracking head scripts as API-managed scripts. Then remove them from the Designer custom code boxes. From this point on, these scripts are fully manageable via the API.</div>
+</div>
+
+<div class="flow-step">
+  <div class="step-num">Step 6</div>
+  <div class="step-title">Re-scan and verify <span class="step-who automated">Automated</span></div>
+  <div class="step-detail">Run another scan to confirm: no tracking scripts outside GTM, Cookiebot consent banner loads, GTM container loads, Consent Mode V2 is active. All checks should pass.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2>Flow: New Client Sites</h2>
+
+<p>When onboarding a new Webflow site, start clean from day one.</p>
+
+<div class="flow-step">
+  <div class="step-num">Step 1</div>
+  <div class="step-title">Set up GTM container</div>
+  <div class="step-detail">Create a GTM container for the client (or use an existing one). Add the Cookiebot tag with consent triggers and Consent Mode V2 defaults.</div>
+</div>
+
+<div class="flow-step">
+  <div class="step-num">Step 2</div>
+  <div class="step-title">Push scripts via Webflow MCP <span class="step-who automated">Automated</span></div>
+  <div class="step-detail">Use <code>add_inline_site_script</code> to register and apply the Cookiebot snippet and GTM snippet to the site. These are now API-managed from the start - no need to touch the Designer's custom code boxes.</div>
+</div>
+
+<div class="flow-step">
+  <div class="step-num">Step 3</div>
+  <div class="step-title">Add tracking via GTM only</div>
+  <div class="step-detail">All analytics, pixels, and tracking scripts go into the GTM container as tags with consent triggers. Nothing is ever pasted into Webflow's custom code.</div>
+</div>
+
+<div class="flow-step">
+  <div class="step-num">Step 4</div>
+  <div class="step-title">Scan and verify <span class="step-who automated">Automated</span></div>
+  <div class="step-detail">Run the GDPR audit scan to confirm compliance from the start.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2>For Colleagues: How to Add Scripts Going Forward</h2>
+
+<div class="rule-box">
+  <strong>Do not paste scripts into Webflow's Designer custom code boxes.</strong> Scripts added there cannot be read, updated, or deleted through our tools. We lose all visibility and control.
+</div>
+
+<h3>If it's a tracking/analytics script:</h3>
+<ol>
+  <li>Log in to <a href="https://tagmanager.google.com">Google Tag Manager</a></li>
+  <li>Open the client's GTM container</li>
+  <li>Create a new tag for the script</li>
+  <li>Set the appropriate consent trigger (statistics, marketing, etc.)</li>
+  <li>Test in GTM's preview mode, then publish</li>
+</ol>
+
+<h3>If it's a non-tracking script (JSON-LD, CSS, structural):</h3>
+<ol>
+  <li>Ask a developer to add it via the Webflow API or MCP server using <code>add_inline_site_script</code></li>
+  <li>This registers the script so we can manage, update, and audit it programmatically</li>
+  <li>Specify whether it goes in the <code>header</code> or <code>footer</code></li>
+</ol>
+
+<h3>If you're unsure:</h3>
+<p>Ask before adding. The GDPR audit app will flag anything that's not compliant, but it's easier to do it right the first time.</p>
+
+<!-- ============================================================ -->
+<h2>End State Per Site</h2>
+
+<table>
+  <tr>
+    <th>Location</th>
+    <th>What should be there</th>
+  </tr>
+  <tr>
+    <td>Webflow Designer custom code boxes</td>
+    <td>Empty</td>
+  </tr>
+  <tr>
+    <td>Webflow API-registered scripts</td>
+    <td>GTM snippet, Cookiebot snippet, JSON-LD, Cookiebot CSS overrides</td>
+  </tr>
+  <tr>
+    <td>GTM container</td>
+    <td>All tracking: analytics, pixels, chat widgets - each with consent triggers</td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>Tools We Use</h2>
+
+<table>
+  <tr>
+    <th>Tool</th>
+    <th>What it does for us</th>
+  </tr>
+  <tr>
+    <td>GDPR Audit App (scanner)</td>
+    <td>Scans live sites, detects GTM/Cookiebot IDs, flags non-compliant scripts, generates reports</td>
+  </tr>
+  <tr>
+    <td>Webflow MCP Server</td>
+    <td>Lists all Webflow sites, registers/manages scripts via API, reads site metadata</td>
+  </tr>
+  <tr>
+    <td>GTM API (via OAuth2)</td>
+    <td>Inspects GTM containers, lists tags, creates tags with consent triggers, looks up Cookiebot IDs</td>
+  </tr>
+  <tr>
+    <td>Cookiebot API</td>
+    <td>Fetches cookie categorization data for a site using its Cookiebot ID</td>
+  </tr>
+</table>
+
+</body>
+</html>

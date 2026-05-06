@@ -35,6 +35,7 @@ interface EditSiteDialogProps {
     platform: string;
     cookiebotId?: string | null;
     gtmId?: string | null;
+    webflowId?: string | null;
   };
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -52,6 +53,7 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
   const [platform, setPlatform] = useState(site.platform);
   const [cookiebotId, setCookiebotId] = useState(site.cookiebotId || "");
   const [gtmId, setGtmId] = useState(site.gtmId || "");
+  const [webflowId, setWebflowId] = useState(site.webflowId || "");
 
   const handleDetect = async () => {
     if (!url.trim()) return;
@@ -64,6 +66,10 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
         return;
       }
       const messages: string[] = [];
+      if (result.webflowId) {
+        setWebflowId(result.webflowId);
+        messages.push(`Webflow: ${result.webflowSource || result.webflowId}`);
+      }
       if (result.gtmId) {
         setGtmId(result.gtmId);
         messages.push(`GTM: ${result.gtmId}`);
@@ -100,6 +106,7 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
         platform,
         cookiebotId: cookiebotId.trim() || null,
         gtmId: gtmId.trim() || null,
+        webflowId: webflowId.trim() || null,
       });
 
       toast.success("Site updated");
@@ -237,6 +244,30 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
               />
             </div>
           </div>
+          {platform === "webflow" && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="edit-webflowId">Webflow Site ID</Label>
+                <Tooltip>
+                  <TooltipTrigger className="cursor-help">
+                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[280px] text-xs leading-relaxed !block">
+                    <div>
+                      <p>The Webflow Site ID is needed to read and manage scripts via the Webflow API (e.g. adding GTM snippets or auditing custom code).</p>
+                      <p className="mt-1.5">Click "Detect IDs from site" to find it automatically. You can also find it in the Webflow dashboard under Site Settings &gt; General &gt; Site ID.</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Input
+                id="edit-webflowId"
+                placeholder="Auto-detected or paste from Webflow"
+                value={webflowId}
+                onChange={(e) => setWebflowId(e.target.value)}
+              />
+            </div>
+          )}
           {confirmDelete && (
             <div className="flex items-center gap-3 pt-2 border-t border-destructive/20">
               <span className="text-xs text-destructive">Delete this site and all its audits?</span>

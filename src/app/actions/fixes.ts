@@ -337,7 +337,7 @@ async function applyB1Fix(webflowId: string, gtmId: string | null | undefined) {
   return { success: true, message: `Pushed API-managed GTM snippet for container ${gtmId}` };
 }
 
-export function generateGtmSnippet(gtmId: string): string {
+function generateGtmSnippet(gtmId: string): string {
   return `<!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],

@@ -165,13 +165,13 @@ const TOOLS = [
     function: {
       name: "getReferencePage",
       description:
-        "Read the content of a reference page in the app. Available pages: 'technical-guide' (how Cookiebot, GTM, and consent work together), 'audit-protocol' (step-by-step audit procedure), 'cheat-sheet' (quick reference for common checks), 'mcp-servers' (MCP server details for automation). Use this when the user asks about any of these topics or pages.",
+        "Read the content of a reference page in the app. Available pages: 'technical-guide' (how Cookiebot, GTM, and consent work together), 'audit-protocol' (step-by-step audit procedure), 'cheat-sheet' (quick reference for common checks), 'mcp-servers' (MCP server details for automation), 'fix-flow' (how to fix issues found during scans - the complete guided flow for cleaning up scripts, what's automated vs manual, warnings and safety). Use this when the user asks about fixing issues, the fix flow, cleanup steps, or how to remediate problems.",
       parameters: {
         type: "object",
         properties: {
           page: {
             type: "string",
-            enum: ["technical-guide", "audit-protocol", "cheat-sheet", "mcp-servers"],
+            enum: ["technical-guide", "audit-protocol", "cheat-sheet", "mcp-servers", "fix-flow"],
             description: "Which reference page to read",
           },
         },
@@ -535,6 +535,7 @@ function executeGetReferencePage(page: string): string {
     "technical-guide": "docs/technical-configuration-guide.md",
     "audit-protocol": "docs/audit-protocol.md",
     "cheat-sheet": "docs/audit-cheat-sheet.md",
+    "fix-flow": "docs/fix-flow-guide.md",
   };
 
   if (page === "mcp-servers") {
@@ -557,7 +558,7 @@ function executeGetReferencePage(page: string): string {
 
   const filePath = docFiles[page];
   if (!filePath) {
-    return JSON.stringify({ error: `Unknown page '${page}'. Available: technical-guide, audit-protocol, cheat-sheet, mcp-servers` });
+    return JSON.stringify({ error: `Unknown page '${page}'. Available: technical-guide, audit-protocol, cheat-sheet, mcp-servers, fix-flow` });
   }
 
   try {
@@ -609,7 +610,7 @@ Examples:
 - User asks about checks, categories, compliance -> call searchChecks, listCategories, getChecks, or getCheckGuide
 - User asks about a site or its results -> call getSiteByName, getCurrentSiteStatus, or listSites
 - User asks about scans -> call getScanHistory
-- User asks about MCP servers, technical guide, audit protocol, or cheat sheet -> call getReferencePage
+- User asks about MCP servers, technical guide, audit protocol, cheat sheet, or how to fix issues -> call getReferencePage
 - User mentions any name (company, site, project) -> call getSiteByName to check if it's in the database
 - User asks "what should I fix?" -> call getCurrentSiteStatus or getComplianceOverview
 - User asks about overall status -> call getComplianceOverview
@@ -617,7 +618,7 @@ Examples:
 The ONLY exception: simple navigation like "where is settings?" or "how do I add a site?" - answer those directly.
 
 ## App structure (for navigation questions only)
-Pages in the sidebar: Dashboard, Sites (click to see audit), Reference (Technical Guide, Audit Protocol, Cheat Sheet, MCP Servers), Settings.
+Pages in the sidebar: Dashboard, Sites (click to see audit), Reference (Technical Guide, Audit Protocol, Cheat Sheet, Fix Flow Guide, MCP Servers), Settings.
 On a site's audit page: 69 checks in 11 categories, "Scan site" button, "AI Analyze" button, report generation, guide drawer (book icon).
 Warning triangles = missing Cookiebot ID or GTM Container ID. Add via Edit Site (pencil icon).`;
 

@@ -73,9 +73,13 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
         messages.push(`Cookiebot: ${result.cookiebotId}`);
       }
       if (messages.length > 0) {
-        setDetectResult(`Found: ${messages.join(", ")}`);
+        let msg = `Found: ${messages.join(", ")}`;
+        if (result.gtmId && !result.cookiebotId) {
+          msg += ". Cookiebot not found in HTML - it may be loaded through GTM (the recommended setup). Connect the GTM API to check automatically.";
+        }
+        setDetectResult(msg);
       } else {
-        setDetectResult("No GTM or Cookiebot found on this site. You can enter them manually if you know the IDs - check GTM at tagmanager.google.com and Cookiebot at cookiebot.com.");
+        setDetectResult("No GTM or Cookiebot found in the site HTML. Note: Cookiebot may be loaded through GTM (which is the recommended setup) - we can't check inside GTM until the GTM API is connected. You can also enter the IDs manually if you know them.");
       }
     } catch {
       setDetectResult("Detection failed. Try entering the IDs manually.");

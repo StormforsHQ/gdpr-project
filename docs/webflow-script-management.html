@@ -65,17 +65,16 @@
 
 <p>Webflow has two ways to add scripts, and the difference matters a lot:</p>
 
-<p><strong>Designer custom code</strong> (the text boxes in Site Settings > Custom Code) is completely invisible to the API. If someone pasted a GTM snippet or a tracking script there manually, we cannot see it, edit it, or remove it through code. The only way to deal with those is to open the Webflow Designer and handle them by hand.</p>
+<p>Both manually-pasted and API-registered scripts end up in the same place - the custom code boxes in the Designer. They look the same on the live site too. The difference is on our side: the API can only read and manage scripts that were added through the API. Scripts that someone pasted in manually are invisible to the API, even though they're sitting right next to API-added scripts in the same box.</p>
 
-<p><strong>API-registered scripts</strong> (added through the Webflow Data API or our MCP connection) produce identical HTML on the live site, but we can read, update, and remove them from the audit app. This is why we want all scripts managed through the API going forward.</p>
+<p>That's why we want all scripts added through the API going forward. They're all in the same custom code box either way, but the API-added ones we can manage from the audit app.</p>
 
 <h2>How a correctly set up site looks</h2>
 
 <p>Whether it's a new site or an existing one after cleanup, the end state is the same:</p>
 
 <ol>
-  <li><strong>Designer custom code boxes:</strong> completely empty. The GTM snippet is NOT here - it's managed through the Webflow API instead (same result on the live site, but we can manage it through code).</li>
-  <li><strong>API-registered scripts:</strong> the GTM snippet in the header. This is the only script the audit app pushes to Webflow - a standard script tag with the client's container ID. Optionally JSON-LD structured data as well.</li>
+  <li><strong>Custom code boxes in the Designer:</strong> contain only the GTM snippet (and optionally JSON-LD structured data). No tracking scripts, no loose analytics or pixel code. The GTM snippet was added via the API so we can manage it from the audit app - but it shows up in the custom code box just like any manually-pasted script would.</li>
   <li><strong>GTM container:</strong> Cookiebot CMP tag (on Consent Initialization trigger) + all tracking tags with consent triggers.</li>
   <li><strong>Cookiebot:</strong> manages itself - scans the site monthly, categorizes cookies, shows the banner.</li>
 </ol>

@@ -35,6 +35,14 @@
 
 <p>Cookiebot fires first not because of its position in a list, but because GTM has built-in trigger priorities. The "Consent Initialization" trigger is guaranteed to run before "Initialization", "All Pages", and all other triggers. That's what makes the consent flow work.</p>
 
+<h2>Tracking scripts vs other scripts</h2>
+
+<p>Not everything in Webflow's custom code boxes is a tracking script. They're handled differently:</p>
+
+<p><strong>Tracking scripts</strong> collect data about visitors - analytics, advertising pixels, chat widgets that log behavior, heatmaps. These need consent and must live inside GTM. Examples: Google Analytics (gtag.js), Meta Pixel (fbevents.js), HotJar, LinkedIn Insight Tag, Google Ads conversion tracking.</p>
+
+<p><strong>Non-tracking scripts</strong> don't collect visitor data. These do NOT go into GTM - they stay in Webflow, ideally managed via the API. Examples: CSS fixes (like the font smoothing snippet on Väst Förvaltning), custom fonts, JSON-LD structured data, accessibility tools, Webflow's own framework scripts.</p>
+
 <h2>What the audit app can do (and what needs to be done by hand)</h2>
 
 <h3>Cookiebot</h3>
@@ -57,57 +65,61 @@
 
 <p>Webflow has two ways to add scripts, and the difference matters a lot:</p>
 
-<p><strong>Designer custom code</strong> (the text boxes in Site Settings > Custom Code) is completely invisible to the API. If someone pasted a GTM snippet or a tracking script there manually, we cannot see it, edit it, or remove it through code. The only way to clean those up is to open the Webflow Designer and delete them by hand.</p>
+<p><strong>Designer custom code</strong> (the text boxes in Site Settings > Custom Code) is completely invisible to the API. If someone pasted a GTM snippet or a tracking script there manually, we cannot see it, edit it, or remove it through code. The only way to deal with those is to open the Webflow Designer and handle them by hand.</p>
 
-<p><strong>API-registered scripts</strong> (added through the Webflow Data API or our MCP connection) produce identical HTML on the live site, but we can read, update, and remove them from the audit app. This is why we want all scripts managed through the API after cleanup.</p>
+<p><strong>API-registered scripts</strong> (added through the Webflow Data API or our MCP connection) produce identical HTML on the live site, but we can read, update, and remove them from the audit app. This is why we want all scripts managed through the API going forward.</p>
 
-<p>The only script the audit app pushes to Webflow is the GTM snippet - a standard script tag with the client's container ID. We don't create GTM containers or generate Cookiebot configs. Both of those already exist for the client (or need to be set up by hand at tagmanager.google.com and cookiebot.com). If a client has neither, the audit flags it as an issue.</p>
+<h2>How a correctly set up site looks</h2>
 
-<h2>Tracking scripts vs other scripts</h2>
+<p>Whether it's a new site or an existing one after cleanup, the end state is the same:</p>
 
-<p>Not everything in Webflow's custom code boxes is a tracking script. Before touching anything, you need to know which is which, because they're handled differently:</p>
+<ol>
+  <li><strong>Designer custom code boxes:</strong> completely empty. The GTM snippet is NOT here - it's managed through the Webflow API instead (same result on the live site, but we can manage it through code).</li>
+  <li><strong>API-registered scripts:</strong> the GTM snippet in the header. This is the only script the audit app pushes to Webflow - a standard script tag with the client's container ID. Optionally JSON-LD structured data as well.</li>
+  <li><strong>GTM container:</strong> Cookiebot CMP tag (on Consent Initialization trigger) + all tracking tags with consent triggers.</li>
+  <li><strong>Cookiebot:</strong> manages itself - scans the site monthly, categorizes cookies, shows the banner.</li>
+</ol>
 
-<p><strong>Tracking scripts</strong> collect data about visitors - analytics, advertising pixels, chat widgets that log behavior, heatmaps. These are the ones that need consent and must live inside GTM. Examples: Google Analytics (gtag.js), Meta Pixel (fbevents.js), HotJar, LinkedIn Insight Tag, Google Ads conversion tracking.</p>
+<h2>New sites</h2>
 
-<p><strong>Non-tracking scripts</strong> don't collect visitor data. These do NOT go into GTM - they stay in Webflow, ideally managed via the API. Examples: CSS fixes (like the font smoothing snippet on Väst Förvaltning), custom fonts, JSON-LD structured data, accessibility tools, Webflow's own framework scripts.</p>
+<p>For a brand new client site, the setup is straightforward because there's nothing to clean up:</p>
 
-<p>The scan flags tracking scripts as issues. Non-tracking scripts are left alone (or noted for later API migration).</p>
+<ol>
+  <li>Make sure the client has a GTM container (at tagmanager.google.com) and a Cookiebot subscription (at cookiebot.com). If not, that needs to happen first.</li>
+  <li>Inside the GTM container, set up the Cookiebot CMP tag on the "Consent Initialization - All Pages" trigger, with Consent Mode V2 enabled.</li>
+  <li>Add any tracking tags (GA4, etc.) to the GTM container with proper consent triggers.</li>
+  <li>Push the GTM snippet to the Webflow site header via the audit app / MCP.</li>
+  <li>Never paste anything into the Designer custom code boxes. All tracking goes into GTM, all other scripts go via the API.</li>
+  <li>Scan in the audit app to verify everything is detected and compliant.</li>
+</ol>
 
-<h2>Cleaning up an existing site</h2>
+<h2>Existing sites (cleanup)</h2>
 
-<p>The order matters here. You can't remove tracking scripts from Webflow until they're set up in GTM - otherwise you'd delete the client's analytics with nothing to replace it.</p>
+<p>Most of our sites already have scripts pasted manually into the Designer custom code boxes. This is the messy part, because we can't touch those scripts through code - it's all manual work in the Webflow Designer.</p>
+
+<p>The order matters. You can't remove tracking scripts from Webflow until they're set up in GTM, otherwise you'd delete the client's analytics with nothing to replace it.</p>
 
 <ol>
   <li><strong>Scan the site</strong> in the audit app. This identifies every script in the head and footer, flags which ones are tracking scripts, and detects the GTM/Cookiebot IDs.</li>
 
-  <li><strong>Sort out what's what.</strong> Look at the scan results. For each script found, decide: is this a tracking script (goes into GTM) or a non-tracking script (stays in Webflow, ideally via API)?</li>
+  <li><strong>Sort out what's what.</strong> Look at the scan results. For each script found, decide: is this a tracking script (needs to move into GTM) or a non-tracking script (stays in Webflow, ideally via API later)?</li>
 
-  <li><strong>Recreate each tracking script as a GTM tag.</strong> Open tagmanager.google.com, go to the client's container, and for each tracking script found in Webflow, create a new tag with the right consent trigger. For example: if there's a loose GA4 script in the head, create a Google Tag in GTM with the same measurement ID. This is done manually in the GTM web UI.</li>
+  <li><strong>Recreate each tracking script as a GTM tag.</strong> Open tagmanager.google.com, go to the client's container, and for each tracking script found in Webflow, create a new tag with the right consent trigger. For example: if there's a loose GA4 script in the head, create a Google Tag in GTM with the same measurement ID.</li>
 
   <li><strong>Verify in GTM Preview mode</strong> that the new tags fire correctly. Don't skip this - if a tag is misconfigured, you'll lose the client's data after the next step.</li>
 
-  <li><strong>Remove tracking scripts from Webflow Designer.</strong> Open Site Settings > Custom Code, and remove only the tracking scripts you've already moved to GTM. Leave non-tracking scripts (CSS, fonts, JSON-LD) alone. Also check per-page custom code settings. This is done manually in the Webflow Designer.</li>
+  <li><strong>Comment out tracking scripts in Webflow Designer.</strong> Open Site Settings > Custom Code. Don't delete the tracking scripts yet - wrap them in <code>&lt;!-- --&gt;</code> HTML comments instead. This way they stop running but you can restore them quickly if something goes wrong. Leave non-tracking scripts (CSS, fonts, JSON-LD) as they are.</li>
 
-  <li><strong>Handle the GTM snippet itself.</strong> If there's already a manually-added GTM snippet in the Designer custom code, remove it too - otherwise you'll end up with two GTM snippets when we push the API-managed one.</li>
+  <li><strong>Comment out the GTM snippet too</strong> if there's a manually-added one in the Designer custom code. We'll push an API-managed one in the next step, and having two would cause double-tracking.</li>
 
-  <li><strong>Push the GTM snippet via the audit app / MCP.</strong> This adds a single, API-managed GTM snippet to the site header. Since we removed the manual one in the previous step, there's exactly one.</li>
+  <li><strong>Push the GTM snippet via the audit app / MCP.</strong> This adds a single, API-managed GTM snippet to the site header.</li>
 
-  <li><strong>Re-scan to verify</strong> everything is clean - no loose tracking scripts, GTM snippet present, Cookiebot detected.</li>
+  <li><strong>Re-scan and verify</strong> everything works - no loose tracking scripts firing, GTM snippet present, Cookiebot detected, all tracking coming through GTM.</li>
+
+  <li><strong>After a few weeks</strong>, once you've confirmed everything works correctly, go back and delete the commented-out scripts from the Designer custom code boxes.</li>
 </ol>
-
-<p><strong>Important:</strong> Never paste tracking scripts into Webflow's custom code boxes. They bypass consent and we can't manage them from the audit app. All tracking goes into GTM.</p>
 
 <p><strong>Important:</strong> Don't remove scripts from Webflow until they exist in GTM. If you delete a tracking script before recreating it as a GTM tag, the client loses that tracking data with no way to recover it.</p>
-
-<h2>End state for each site</h2>
-
-<p>After cleanup, a properly configured site has:</p>
-<ol>
-  <li><strong>Designer custom code boxes:</strong> empty (or only non-tracking scripts like CSS fixes)</li>
-  <li><strong>API-registered scripts:</strong> GTM snippet in header (+ JSON-LD if applicable)</li>
-  <li><strong>GTM container:</strong> Cookiebot CMP tag (on Consent Initialization trigger) + all tracking tags with consent triggers</li>
-  <li><strong>Cookiebot:</strong> manages itself - scans the site monthly, categorizes cookies, shows the banner</li>
-</ol>
 
 </body>
 </html>

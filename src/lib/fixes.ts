@@ -89,8 +89,8 @@ export function getMissingServices(fix: FixDefinition): string[] {
   if (fix.requires.includes("webflow") && !process.env.WEBFLOW_API_TOKEN) {
     missing.push("Webflow API token");
   }
-  if (fix.requires.includes("gtm") && !process.env.GTM_API_TOKEN) {
-    missing.push("GTM API token");
+  if (fix.requires.includes("gtm") && !process.env.GOOGLE_REFRESH_TOKEN) {
+    missing.push("Google OAuth credentials (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN)");
   }
   return missing;
 }

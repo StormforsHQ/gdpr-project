@@ -190,8 +190,10 @@ export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
           result.webflowId = wfSite.id;
           result.webflowSource = `Matched Webflow site "${wfSite.displayName}"`;
         }
-      } catch {
-        // Webflow API lookup failed - not critical
+      } catch (wfErr) {
+        const wfMsg = wfErr instanceof Error ? wfErr.message : "Unknown error";
+        console.error("Webflow lookup failed:", wfMsg);
+        result.webflowSource = `Webflow lookup failed: ${wfMsg}`;
       }
     }
   } catch (err) {

@@ -81,27 +81,33 @@ export function AddSiteDialog() {
         setDetectResult(result.error);
         return;
       }
-      const messages: string[] = [];
+      const found: string[] = [];
+      const warnings: string[] = [];
       if (result.webflowId) {
         setWebflowId(result.webflowId);
-        messages.push(`Webflow: ${result.webflowSource || result.webflowId}`);
+        found.push(`Webflow: ${result.webflowSource || result.webflowId}`);
+      } else if (result.webflowSource) {
+        warnings.push(result.webflowSource);
       }
       if (result.gtmId) {
         setGtmId(result.gtmId);
-        messages.push(`GTM: ${result.gtmId}`);
+        found.push(`GTM: ${result.gtmId}`);
       }
       if (result.cookiebotId) {
         setCookiebotId(result.cookiebotId);
-        messages.push(`Cookiebot: ${result.cookiebotId}`);
+        found.push(`Cookiebot: ${result.cookiebotId}`);
       }
-      if (messages.length > 0) {
-        let msg = `Found: ${messages.join(", ")}`;
+      if (found.length > 0) {
+        let msg = `Found: ${found.join(", ")}`;
         if (result.gtmId && !result.cookiebotId) {
           msg += ". Cookiebot not found in HTML - it may be loaded through GTM (the recommended setup). Connect the GTM API to check automatically.";
         }
+        if (warnings.length > 0) msg += ` | ${warnings.join(", ")}`;
         setDetectResult(msg);
       } else {
-        setDetectResult("No GTM or Cookiebot found in the site HTML. Note: Cookiebot may be loaded through GTM (which is the recommended setup) - we can't check inside GTM until the GTM API is connected. You can also enter the IDs manually if you know them.");
+        let msg = "No GTM or Cookiebot found in the site HTML. Note: Cookiebot may be loaded through GTM (which is the recommended setup) - we can't check inside GTM until the GTM API is connected. You can also enter the IDs manually if you know them.";
+        if (warnings.length > 0) msg += ` | ${warnings.join(", ")}`;
+        setDetectResult(msg);
       }
     } catch {
       setDetectResult("Detection failed. Try entering the IDs manually.");

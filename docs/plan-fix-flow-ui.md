@@ -1,7 +1,7 @@
 # Plan: Fix Flow UI
 
-Status: APPROVED BY USER - ready to implement in order
-Branch: feat/fix-flow-ui
+Status: IN PROGRESS - Phases 1-2 done, Phase 2.5 (Webflow ID) partially done
+Branch: main (merged after each phase)
 
 ## Context
 
@@ -19,53 +19,53 @@ Problems with current fixes:
 - Fixes run immediately on button click with no user guidance
 - Chatbot has hardcoded reference pages, no web search, can't explain fix flow
 
-## Phase 1: Update HTML doc + write reference content
+---
 
-Update docs/webflow-script-management.html with:
-- The Q&A section (how GTM snippet is generated, what's automated vs manual, etc.)
-- The numbered step-by-step flow for both new sites and existing sites
-- All in the current plain prose style
+## Phase 1: Update HTML doc + write reference content - DONE
 
-Add a new reference page the chatbot can read:
-- docs/fix-flow-guide.md - explains the fix flow, what's automated vs manual, warnings, when to use which approach
-- Add it to the chatbot's getReferencePage tool (enum + file mapping)
+Completed:
+- Added Q&A section to docs/webflow-script-management.html (7 common questions)
+- Created docs/fix-flow-guide.md (complete fix flow reference for chatbot)
+- Added "fix-flow" to chatbot's getReferencePage tool
+- Created reference page at /reference/fix-flow with sidebar link
 
-Files to change:
-- docs/webflow-script-management.html
-- docs/fix-flow-guide.md (new)
-- src/app/api/chat/route.ts (add reference page)
+## Phase 2: Rework existing auto-fixes with safety - DONE
 
-## Phase 2: Rework existing auto-fixes with safety
+Completed:
+- Added FixSafetyLevel type: "safe" | "confirm" | "guided"
+- All 12 fixes categorized: A1/A2/D1/D3 = guided, A3/A4/A5/B1/B3/B4 = confirm, E1/I4 = safe
+- Added `analyzeFix` server action for pre-flight analysis without changes
+- Script categorization: TRACKING_PATTERNS (12) and NON_TRACKING_PATTERNS (6)
+- A1/A2/D1/D3 applyFix now refuses and redirects to guided flow
+- B1 checks for existing GTM snippet before pushing
+- Analyze button (Search icon) for guided fixes, Fix button (Wrench icon) for safe/confirm
+- Confirmation dialog for "confirm" level fixes with warning text
+- Analysis results shown as prominent card in drawer (not just sidebar text)
+- Webflow ID null check with user-friendly error
 
-The current fixes are too aggressive. Rework them:
+## Phase 2.5: Webflow ID in site management - IN PROGRESS
 
-### A1 fix (remove tracking scripts from header)
-Current: silently removes everything except GTM/Cookiebot
-New behavior:
-- DON'T auto-remove anything
-- Instead, return a categorized list: tracking (needs GTM), non-tracking (can stay), unknown (user decides)
-- Show this in the scan results drawer as Step 1 of the guided flow
-- The actual removal is manual (user comments out in Designer) or via API if the script was API-managed
+### Done
+- `findWebflowSiteByDomain()` in src/lib/api/webflow.ts - matches by customDomain, defaultDomain, or shortName
+- `listAllSites()` with pagination in src/lib/api/webflow.ts
+- Retry with backoff (3 attempts) for 429 rate limits in webflowFetch
+- `detectSiteIds` now looks up Webflow site when WEBFLOW_API_TOKEN is configured
+- Webflow Site ID field in add-site-dialog.tsx (visible when platform = webflow)
+- Webflow Site ID field in edit-site-dialog.tsx (visible when platform = webflow)
+- Auto-fill Webflow ID from detect results
+- User-friendly error messages for all Webflow API errors (rate limit, scopes, auth, forbidden)
+- Detect button helper text updated: "Scans the URL to find IDs automatically"
+- Webflow OAuth app created with scopes: sites:read, custom_code:read, custom_code:write
+- New token exchanged and set in Coolify
 
-### B1 fix (inject GTM snippet)
-Current: injects GTM snippet without checking for existing one
-New behavior:
-- Check if there's already an API-managed GTM snippet (via list_registered_scripts)
-- If yes: offer to replace (delete old, push new)
-- If no API-managed one but scan detected a GTM snippet in HTML: warn that there's likely a manually-added one, user must comment it out first
-- If no GTM snippet at all: safe to push, just confirm
-- Always show the generated snippet with a "Copy" button as alternative
-
-### A3 fix (Cookiebot trigger in GTM)
-Current: directly modifies GTM tag trigger
-Keep this but add: confirmation dialog explaining what will change in the GTM container
-
-### Other fixes
-Review each of the 11 fixes for similar safety issues. Add confirmations where needed.
-
-Files to change:
-- src/app/actions/fixes.ts (rework fix functions)
-- src/lib/fixes.ts (update fix metadata/descriptions)
+### Remaining - must fix before moving on
+- **listAllSites() fetches all 446 Webflow sites on every detect call** - this hits rate limits and is wasteful. Only 34 sites have custom domains and are real clients. Need a caching strategy:
+  - Option A: Cache the Webflow sites list in DB (one-time sync, refresh on demand)
+  - Option B: Skip Webflow lookup entirely if the site already has a webflowId in our DB
+  - Option C: In-memory cache with TTL (simplest but lost on restart)
+  - Recommended: Option A (store Webflow site mapping in DB) combined with Option B (skip lookup if already known). This also sets up the 34-site import flow.
+- Verify detect actually finds and fills Webflow ID once rate limit issue is resolved
+- Test end-to-end: add site -> detect -> Webflow ID auto-fills -> save -> ID persisted
 
 ## Phase 3: Enhanced scan results drawer (Tier 3 guided flow)
 
@@ -115,11 +115,6 @@ Files to change:
 
 ## Phase 5: Chatbot updates
 
-### Add fix flow reference page
-- Add "fix-flow" to the getReferencePage enum
-- Map to docs/fix-flow-guide.md
-- Chatbot can now explain the fix flow when asked
-
 ### Add web search capability
 - Add a new tool "searchOnline" that the chatbot can call
 - Uses the same web search/fetch we have available
@@ -135,8 +130,7 @@ Files to change:
 - Keep the prompt behavioral (no hardcoded content)
 
 Files to change:
-- src/app/api/chat/route.ts (add reference page, add search tool, update system prompt)
-- docs/fix-flow-guide.md (the reference content)
+- src/app/api/chat/route.ts (add search tool, update system prompt)
 
 ## Phase 6: Update HTML doc with everything
 
@@ -146,12 +140,13 @@ Final update to docs/webflow-script-management.html incorporating everything we'
 
 Do one phase at a time, commit after each, verify before moving on.
 
-1. Phase 1 (docs + reference) - foundation, no UI changes
-2. Phase 2 (rework fixes) - safety improvements to existing code
-3. Phase 3 (guided flow UI) - the big one, A1 script cleanup
-4. Phase 4 (simpler fix buttons) - improvements to other checks
-5. Phase 5 (chatbot) - dynamic knowledge + web search
-6. Phase 6 (final doc update) - capture everything learned
+1. ~~Phase 1 (docs + reference)~~ - DONE
+2. ~~Phase 2 (rework fixes)~~ - DONE
+3. Phase 2.5 (Webflow ID) - fix caching, verify detection works
+4. Phase 3 (guided flow UI) - the big one, A1 script cleanup
+5. Phase 4 (simpler fix buttons) - improvements to other checks
+6. Phase 5 (chatbot) - dynamic knowledge + web search
+7. Phase 6 (final doc update) - capture everything learned
 
 ## Key decisions made with user
 
@@ -164,3 +159,11 @@ Do one phase at a time, commit after each, verify before moving on.
 - All automated actions require user trigger (no auto-running fixes)
 - "Copy snippet" always available as manual alternative to API push
 - Step completion persisted to audit trail (notes on check results)
+- Only ~34 Webflow sites with custom domains are real clients - these are the ones to import
+- Webflow site list must be cached (not fetched fresh on every detect call)
+
+## Infrastructure status
+
+- **Webflow API**: OAuth token active with sites:read + custom_code:read + custom_code:write scopes. Token in Coolify env as WEBFLOW_API_TOKEN.
+- **GTM API**: OAuth2 flow ready (scripts/get-google-token.js), blocked on boss's 2FA code for Google account authorization.
+- **Cookiebot**: No API integration yet. Cookiebot IDs detected from HTML or from inside GTM container (when GTM API is connected). Many sites load Cookiebot through GTM (recommended setup) so HTML scanning won't find it.

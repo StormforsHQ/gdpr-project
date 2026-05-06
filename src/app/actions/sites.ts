@@ -193,14 +193,16 @@ export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
       } catch (wfErr) {
         const wfMsg = wfErr instanceof Error ? wfErr.message : "Unknown error";
         console.error("Webflow lookup failed:", wfMsg);
-        if (/missing_scopes|sites:read/i.test(wfMsg)) {
+        if (/429|too_many_requests|rate.?limit/i.test(wfMsg)) {
+          result.webflowSource = "Webflow API rate limit hit - wait a minute and try again";
+        } else if (/missing_scopes|sites:read/i.test(wfMsg)) {
           result.webflowSource = "Webflow API missing 'sites:read' scope - re-authorize the app with this scope enabled";
         } else if (/401|unauthorized/i.test(wfMsg)) {
           result.webflowSource = "Webflow API token expired or invalid - re-authorize the app";
         } else if (/403|forbidden/i.test(wfMsg)) {
           result.webflowSource = "Webflow API access denied - check app permissions and re-authorize";
         } else {
-          result.webflowSource = `Webflow lookup failed: ${wfMsg.slice(0, 100)}`;
+          result.webflowSource = "Webflow lookup failed - try again in a moment";
         }
       }
     }

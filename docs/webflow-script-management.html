@@ -120,5 +120,37 @@
 
 <p><strong>Important:</strong> Don't remove scripts from Webflow until they exist in GTM. If you delete a tracking script before recreating it as a GTM tag, the client loses that tracking data with no way to recover it.</p>
 
+<h2>Common questions</h2>
+
+<h3>How is the GTM snippet generated?</h3>
+
+<p>The GTM snippet is a standard template - the same few lines of JavaScript that Google provides, with only the container ID swapped in (e.g. <code>GTM-ABC1234</code>). The audit app generates this automatically using the GTM Container ID stored for the site. There's nothing custom about the snippet itself - it's the same code every GTM user has.</p>
+
+<h3>What if there's already a GTM snippet in the Designer?</h3>
+
+<p>Most existing sites have a manually-pasted GTM snippet in the Designer custom code. Before pushing an API-managed one, you must comment out the old one. Two GTM snippets on the same page cause double-tracking - every tag fires twice, which corrupts analytics data. The audit app warns about this before pushing.</p>
+
+<h3>Can the audit app remove scripts from the Designer?</h3>
+
+<p>No. The Webflow API can only manage scripts that were added through the API. Scripts pasted manually in the Designer are completely invisible to the API - it can't read, edit, or delete them. This is why the cleanup step (commenting out old scripts) must be done by a human in the Webflow Designer.</p>
+
+<h3>What about Cookiebot - does it need its own script tag?</h3>
+
+<p>No. When set up correctly, Cookiebot lives inside the GTM container as a special tag (the "Cookiebot CMP" tag). It loads when GTM loads, before any other tags, because it's on the "Consent Initialization" trigger. There should not be a separate Cookiebot script tag in the Webflow header - only the GTM snippet.</p>
+
+<p>Some older setups have Cookiebot loaded directly in the HTML instead of through GTM. This works for showing the banner, but it doesn't integrate with GTM's consent mode - meaning GTM tags may still fire without proper consent checks.</p>
+
+<h3>Is Cookiebot free?</h3>
+
+<p>No, Cookiebot is a paid service. Each client needs their own Cookiebot subscription at cookiebot.com. Don't set up Cookiebot for a client without confirming they have an account. If a scan shows no Cookiebot and no consent banner, the first step is to check whether the client has Cookiebot - not to install it.</p>
+
+<h3>What can the audit app do without the GTM API?</h3>
+
+<p>Without the GTM API connection, the app can still scan the site HTML and detect the GTM container ID. It can also detect Cookiebot if it's loaded directly in the HTML. But it cannot see inside the GTM container - so it can't check whether Cookiebot is configured correctly inside GTM, whether tags have consent triggers, or what tags exist at all. Those checks show as "skipped" in the scan results until the GTM API is connected.</p>
+
+<h3>What does the audit app automate vs what's manual?</h3>
+
+<p>The app automates: scanning and categorizing scripts, detecting IDs, reading GTM container contents (when API connected), checking Cookiebot config (public API), generating and pushing the GTM snippet, and managing API-registered scripts. Everything else is manual: creating GTM tags, setting up Cookiebot subscriptions, commenting out Designer scripts, and verifying in GTM Preview mode.</p>
+
 </body>
 </html>

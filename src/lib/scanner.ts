@@ -856,7 +856,7 @@ function checkB5($: cheerio.CheerioAPI, html: string): CheckResult {
   return { checkKey: "B5", status: "na", findings, summary: "Cannot determine Consent Mode V2 from HTML alone - verify in GTM" };
 }
 
-function detectGtmId($: cheerio.CheerioAPI, html: string): string | null {
+export function detectGtmId($: cheerio.CheerioAPI, html: string): string | null {
   let gtmId: string | null = null;
 
   $("script[src]").each((_, el) => {
@@ -887,7 +887,7 @@ function detectGtmId($: cheerio.CheerioAPI, html: string): string | null {
   return gtmId;
 }
 
-function detectCookiebotId($: cheerio.CheerioAPI): string | null {
+export function detectCookiebotId($: cheerio.CheerioAPI): string | null {
   const cbidAttr = $("script[data-cbid]").attr("data-cbid");
   if (cbidAttr) return cbidAttr;
 

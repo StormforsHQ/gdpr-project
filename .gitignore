@@ -38,3 +38,7 @@ Thumbs.db
 # IDE
 .idea/
 .vscode/
+
+# Scripts credentials
+scripts/credentials.json
+scripts/token.json

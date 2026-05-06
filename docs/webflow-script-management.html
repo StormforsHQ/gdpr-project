@@ -2,76 +2,96 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Script Management Cheat Sheet</title>
+<title>Webflow Script Management - How It Works</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 700px; margin: 0 auto; padding: 24px 16px; font-size: 13px; line-height: 1.5; color: #1a1a1a; }
-  h1 { font-size: 18px; margin-bottom: 20px; }
-  h2 { font-size: 14px; margin: 24px 0 8px 0; border-bottom: 1px solid #999; padding-bottom: 2px; }
-  table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 12px; }
-  th, td { border: 1px solid #ccc; padding: 5px 8px; text-align: left; }
-  th { background: #f0f0f0; }
-  .step { display: flex; gap: 8px; margin: 6px 0; padding: 8px 10px; background: #f9f9f9; border-radius: 4px; }
-  .step-n { font-weight: 700; color: #555; min-width: 18px; }
-  .manual { color: #b45309; font-weight: 600; font-size: 11px; }
-  .auto { color: #166534; font-weight: 600; font-size: 11px; }
-  .rule { background: #fff0f0; border-left: 3px solid #d32f2f; padding: 8px 12px; margin: 10px 0; font-size: 12px; }
-  .rule strong { color: #d32f2f; }
+  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 660px; margin: 0 auto; padding: 24px 16px; font-size: 13px; line-height: 1.7; color: #1a1a1a; }
+  h1 { font-size: 17px; margin-bottom: 4px; }
+  .subtitle { font-size: 12px; color: #666; margin-bottom: 24px; }
+  h2 { font-size: 14px; margin: 28px 0 10px 0; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+  p { margin: 8px 0; }
+  .concept { background: #f5f7fa; border-left: 3px solid #4a90d9; padding: 10px 14px; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .concept strong { display: block; margin-bottom: 2px; }
+  .warning { background: #fff5f5; border-left: 3px solid #d32f2f; padding: 10px 14px; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .warning strong { color: #d32f2f; }
+  .flow { display: flex; align-items: center; gap: 6px; margin: 14px 0; flex-wrap: wrap; font-size: 12px; }
+  .flow-step { background: #e8eef6; padding: 6px 12px; border-radius: 4px; font-weight: 600; }
+  .flow-arrow { color: #888; font-size: 16px; }
+  ol { margin: 8px 0 8px 20px; }
+  ol li { margin: 6px 0; }
+  .tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 3px; vertical-align: middle; margin-left: 4px; }
+  .tag-auto { background: #d4edda; color: #166534; }
+  .tag-manual { background: #fde8cd; color: #8a5a00; }
   @media print { body { font-size: 11px; padding: 8px; } }
 </style>
 </head>
 <body>
 
-<h1>Script Management Cheat Sheet</h1>
+<h1>Webflow Script Management</h1>
+<p class="subtitle">How scripts, consent, and the audit app work together</p>
 
-<h2>Per-Site Cleanup (one time)</h2>
+<h2>The core idea</h2>
 
-<div class="step"><span class="step-n">1.</span><span>Scan site in audit app - flags bad scripts, detects GTM + Cookiebot IDs <span class="auto">auto</span></span></div>
-<div class="step"><span class="step-n">2.</span><span>Check GTM container has Cookiebot tag + consent triggers + Consent Mode V2</span></div>
-<div class="step"><span class="step-n">3.</span><span>Move flagged tracking scripts into GTM as tags with consent triggers</span></div>
-<div class="step"><span class="step-n">4.</span><span>Open Webflow Designer - remove tracking scripts from custom code boxes <span class="manual">manual</span></span></div>
-<div class="step"><span class="step-n">5.</span><span>Push GTM + Cookiebot snippets via MCP (<code>add_inline_site_script</code>) <span class="auto">auto</span></span></div>
-<div class="step"><span class="step-n">6.</span><span>Remove GTM + Cookiebot from Designer custom code (now API-managed) <span class="manual">manual</span></span></div>
-<div class="step"><span class="step-n">7.</span><span>Re-scan to verify clean <span class="auto">auto</span></span></div>
+<p>Every tracking script (Google Analytics, Meta Pixel, HotJar, etc.) needs visitor consent before it runs. To enforce that, we use two tools together:</p>
 
-<h2>New Site Setup</h2>
+<div class="concept">
+  <strong>GTM (Google Tag Manager)</strong>
+  A container that holds all tracking scripts. Instead of pasting scripts directly into Webflow, we put them inside GTM as "tags." GTM controls when each tag fires - and it checks consent before firing.
+</div>
 
-<div class="step"><span class="step-n">1.</span><span>Create/assign GTM container with Cookiebot + consent triggers</span></div>
-<div class="step"><span class="step-n">2.</span><span>Push GTM + Cookiebot snippets via MCP <span class="auto">auto</span></span></div>
-<div class="step"><span class="step-n">3.</span><span>All tracking goes into GTM - never into Webflow custom code</span></div>
-<div class="step"><span class="step-n">4.</span><span>Scan to verify <span class="auto">auto</span></span></div>
+<div class="concept">
+  <strong>Cookiebot</strong>
+  Shows the cookie consent banner. Lives inside the GTM container as a special tag that runs first (before anything else). When a visitor accepts or declines, Cookiebot tells GTM which categories are allowed, and GTM only fires the matching tags.
+</div>
 
-<h2>Where Scripts Go</h2>
+<p>The only script in the Webflow site header should be the GTM snippet. Cookiebot loads through GTM, and all tracking loads through GTM. One script controls everything.</p>
 
-<table>
-  <tr><th>Type</th><th>Where</th></tr>
-  <tr><td>Tracking (analytics, pixels, chat widgets)</td><td><strong>GTM container</strong> - as tags with consent triggers</td></tr>
-  <tr><td>Cookiebot + GTM snippets</td><td><strong>Webflow head</strong> - via API/MCP</td></tr>
-  <tr><td>JSON-LD / structured data</td><td><strong>Webflow head</strong> - via API/MCP</td></tr>
-  <tr><td>Webflow framework scripts</td><td>Leave alone</td></tr>
-</table>
+<div class="flow">
+  <span class="flow-step">Visitor loads page</span>
+  <span class="flow-arrow">&rarr;</span>
+  <span class="flow-step">GTM loads</span>
+  <span class="flow-arrow">&rarr;</span>
+  <span class="flow-step">Cookiebot shows banner</span>
+  <span class="flow-arrow">&rarr;</span>
+  <span class="flow-step">Visitor chooses</span>
+  <span class="flow-arrow">&rarr;</span>
+  <span class="flow-step">GTM fires allowed tags</span>
+</div>
 
-<div class="rule"><strong>Rule:</strong> Never paste tracking scripts into Webflow's custom code boxes. They go in GTM. Non-tracking scripts go via the API/MCP so we can manage them.</div>
+<h2>Why we use the Webflow API (not the Designer)</h2>
 
-<h2>Why API/MCP Matters</h2>
+<p>Webflow has two ways to add scripts to a site:</p>
 
-<table>
-  <tr><th></th><th>Designer custom code</th><th>API/MCP scripts</th></tr>
-  <tr><td>Read via API</td><td>No</td><td>Yes</td></tr>
-  <tr><td>Edit/delete via API</td><td>No</td><td>Yes</td></tr>
-  <tr><td>Looks different in HTML</td><td colspan="2">No - identical output</td></tr>
-</table>
+<ol>
+  <li><strong>Designer custom code</strong> - the boxes in Site Settings > Custom Code. These are invisible to the API, meaning we can't read, update, or remove them programmatically.</li>
+  <li><strong>API-registered scripts</strong> - added via the Webflow API (or MCP). These produce identical HTML output, but we can manage them from the audit app.</li>
+</ol>
 
-<p style="margin-top: 8px; font-size: 12px;">All existing sites have manually-added scripts. The API can't touch those. After cleanup, everything is API-managed.</p>
+<p>For auditing and managing 34+ sites, we need to read and update scripts programmatically. That's only possible with API-registered scripts. So the goal is to move all scripts out of the Designer and into the API.</p>
 
-<h2>End State Per Site</h2>
+<h2>Cleaning up an existing site</h2>
 
-<table>
-  <tr><th>Location</th><th>Contents</th></tr>
-  <tr><td>Designer custom code boxes</td><td>Empty</td></tr>
-  <tr><td>API-registered scripts</td><td>GTM snippet, Cookiebot snippet, JSON-LD</td></tr>
-  <tr><td>GTM container</td><td>All tracking with consent triggers</td></tr>
-</table>
+<ol>
+  <li>Scan the site in the audit app - it flags problematic scripts and detects GTM/Cookiebot IDs <span class="tag tag-auto">auto</span></li>
+  <li>Verify the GTM container has Cookiebot set up correctly (CMP tag on "Consent Initialization" trigger, Consent Mode V2 enabled)</li>
+  <li>Move any tracking scripts found in Webflow into GTM as tags with consent triggers</li>
+  <li>In Webflow Designer, remove all scripts from the custom code boxes (Site Settings > Custom Code, and per-page settings) <span class="tag tag-manual">manual in Designer</span></li>
+  <li>Push the GTM snippet back to the site via the audit app / MCP <span class="tag tag-auto">auto</span></li>
+  <li>Re-scan to verify everything is clean <span class="tag tag-auto">auto</span></li>
+</ol>
+
+<div class="warning">
+  <strong>Never paste tracking scripts into Webflow's custom code boxes.</strong> They bypass consent and we can't manage them from the audit app. All tracking goes into GTM.
+</div>
+
+<h2>End state for each site</h2>
+
+<p>After cleanup, a properly configured site has:</p>
+<ol>
+  <li><strong>Designer custom code boxes:</strong> empty (nothing in head or footer)</li>
+  <li><strong>API-registered scripts:</strong> GTM snippet in header (+ JSON-LD if applicable)</li>
+  <li><strong>GTM container:</strong> Cookiebot CMP tag + all tracking tags with consent triggers</li>
+</ol>
 
 </body>
 </html>

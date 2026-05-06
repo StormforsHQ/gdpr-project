@@ -49,7 +49,7 @@ interface ChecklistViewProps {
   auditType?: "basic" | "full";
   initialStates?: Record<string, { status: string; notes: string; source: string }>;
   initialScanRuns?: ScanRunEntry[];
-  siteFields?: { cookiebotId?: string | null; gtmId?: string | null };
+  siteFields?: { webflowId?: string | null; cookiebotId?: string | null; gtmId?: string | null };
 }
 
 export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", initialStates, initialScanRuns, siteFields: initialSiteFields }: ChecklistViewProps) {
@@ -378,7 +378,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const executeApplyFix = async (checkKey: string) => {
     setFixingChecks((prev) => new Set(prev).add(checkKey));
     try {
-      const result = await applyFix(checkKey, siteFields?.cookiebotId, siteFields?.gtmId);
+      const result = await applyFix(checkKey, siteFields?.webflowId, siteFields?.gtmId);
       if (result.success) {
         updateCheck(checkKey, "status", "ok");
         updateCheck(checkKey, "notes", `Auto-fixed: ${result.message}`);
@@ -399,7 +399,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const handleAnalyzeFix = async (checkKey: string) => {
     setFixingChecks((prev) => new Set(prev).add(checkKey));
     try {
-      const result = await analyzeFix(checkKey, siteFields?.cookiebotId, siteFields?.gtmId);
+      const result = await analyzeFix(checkKey, siteFields?.webflowId, siteFields?.gtmId);
       setAnalysisResult(result);
       setScanDrawerCheckKey(checkKey);
       setScanDrawerOpen(true);

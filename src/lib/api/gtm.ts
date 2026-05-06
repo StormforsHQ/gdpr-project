@@ -74,6 +74,14 @@ export async function listTriggers(accountId: string, containerId: string, works
   return data.trigger || [];
 }
 
+export async function listWorkspaces(accountId: string, containerId: string): Promise<{ workspaceId: string; name: string }[]> {
+  const data = await gtmFetch(`/accounts/${accountId}/containers/${containerId}/workspaces`);
+  return (data.workspace || []).map((w: { workspaceId: string; name: string }) => ({
+    workspaceId: w.workspaceId,
+    name: w.name,
+  }));
+}
+
 export async function getContainerInfo(containerId: string): Promise<{
   accountId: string;
   containerId: string;
@@ -98,4 +106,37 @@ export async function getContainerInfo(containerId: string): Promise<{
     } catch {}
   }
   throw new Error(`GTM container ${containerId} not found`);
+}
+
+export async function findCookiebotIdInContainer(gtmPublicId: string): Promise<string | null> {
+  const container = await getContainerInfo(gtmPublicId);
+  const workspaces = await listWorkspaces(container.accountId, container.containerId);
+  const defaultWs = workspaces.find((w) => w.name === "Default Workspace") || workspaces[0];
+  if (!defaultWs) return null;
+
+  const tags = await listTags(container.accountId, container.containerId, defaultWs.workspaceId);
+
+  for (const tag of tags) {
+    const isCookiebotType = /cookiebot/i.test(tag.type) || /cookiebot/i.test(tag.name);
+    if (!isCookiebotType) continue;
+
+    for (const param of tag.parameter || []) {
+      if (/cbid|cookiebotId|CookiebotID/i.test(param.key)) {
+        return param.value;
+      }
+    }
+  }
+
+  // Fallback: check all tags for a parameter value that looks like a Cookiebot UUID
+  for (const tag of tags) {
+    for (const param of tag.parameter || []) {
+      if (/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(param.value)) {
+        if (/cookiebot|consent|cookie/i.test(tag.name) || /cookiebot|cbid/i.test(param.key)) {
+          return param.value;
+        }
+      }
+    }
+  }
+
+  return null;
 }

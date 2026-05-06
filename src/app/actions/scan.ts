@@ -3,6 +3,7 @@
 import { scanSite, type ScanResult } from "@/lib/scanner";
 import { runAICheck, AI_CHECK_KEYS } from "@/lib/ai-agent";
 import { fetchCookiebotData, runCookiebotChecks } from "@/lib/cookiebot";
+import { isGtmConfigured, findCookiebotIdInContainer } from "@/lib/api/gtm";
 import { prisma } from "@/lib/db";
 import { getEffectiveAPIKey } from "@/app/actions/ai-settings";
 import type { CheckResult } from "@/lib/scanner";
@@ -48,6 +49,16 @@ export async function runPageScan(url: string, siteId?: string): Promise<ScanRes
 
   try {
     const result = await scanSite(url);
+
+    // If GTM ID found but no Cookiebot ID in HTML, try the GTM API
+    if (result.detectedGtmId && !result.detectedCookiebotId && isGtmConfigured()) {
+      try {
+        const cbid = await findCookiebotIdInContainer(result.detectedGtmId);
+        if (cbid) result.detectedCookiebotId = cbid;
+      } catch (gtmErr) {
+        console.error("GTM lookup for Cookiebot ID failed:", gtmErr);
+      }
+    }
 
     if (siteId && (result.detectedCookiebotId || result.detectedGtmId)) {
       try {

@@ -1,16 +1,54 @@
 const API_BASE = "https://tagmanager.googleapis.com/tagmanager/v2";
+const TOKEN_URL = "https://oauth2.googleapis.com/token";
 
-function getToken(): string | null {
-  return process.env.GTM_API_TOKEN || null;
+let cachedToken: { value: string; expiresAt: number } | null = null;
+
+function getOAuthConfig() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+  if (!clientId || !clientSecret || !refreshToken) return null;
+  return { clientId, clientSecret, refreshToken };
 }
 
 export function isGtmConfigured(): boolean {
-  return !!getToken();
+  return !!getOAuthConfig();
+}
+
+async function getAccessToken(): Promise<string> {
+  if (cachedToken && Date.now() < cachedToken.expiresAt) {
+    return cachedToken.value;
+  }
+
+  const config = getOAuthConfig();
+  if (!config) throw new Error("GTM OAuth not configured (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN)");
+
+  const res = await fetch(TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      refresh_token: config.refreshToken,
+      grant_type: "refresh_token",
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Google token refresh failed ${res.status}: ${body}`);
+  }
+
+  const data = await res.json();
+  cachedToken = {
+    value: data.access_token,
+    expiresAt: Date.now() + (data.expires_in - 60) * 1000,
+  };
+  return cachedToken.value;
 }
 
 async function gtmFetch(path: string, options?: RequestInit) {
-  const token = getToken();
-  if (!token) throw new Error("GTM_API_TOKEN not configured");
+  const token = await getAccessToken();
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,

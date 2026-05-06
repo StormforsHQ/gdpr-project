@@ -23,7 +23,7 @@ export async function getFixAvailability(): Promise<Record<string, FixAvailabili
       missing.push("Webflow API token (WEBFLOW_API_TOKEN)");
     }
     if (fix.requires.includes("gtm") && !gtmReady) {
-      missing.push("GTM API token (GTM_API_TOKEN)");
+      missing.push("Google OAuth credentials (GOOGLE_REFRESH_TOKEN)");
     }
 
     result[key] = {

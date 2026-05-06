@@ -848,13 +848,22 @@ function detectGtmId($: cheerio.CheerioAPI, html: string): string | null {
   });
 
   if (!gtmId) {
-    const inlineMatch = html.match(/['"](?:https?:\/\/)?(?:www\.)?googletagmanager\.com\/gtm\.js\?[^'"]*id=(GTM-[A-Z0-9]+)/i);
+    const inlineMatch = html.match(/googletagmanager\.com\/gtm\.js\?[^'"]*id=(GTM-[A-Z0-9]+)/i);
     if (inlineMatch) gtmId = inlineMatch[1].toUpperCase();
   }
 
   if (!gtmId) {
     const noscriptMatch = html.match(/googletagmanager\.com\/ns\.html\?id=(GTM-[A-Z0-9]+)/i);
     if (noscriptMatch) gtmId = noscriptMatch[1].toUpperCase();
+  }
+
+  // Standard GTM snippet passes the container ID as a string literal
+  if (!gtmId) {
+    const literalMatch = html.match(/['"](?:GTM-[A-Z0-9]{4,10})['"]/i);
+    if (literalMatch) {
+      const idMatch = literalMatch[0].match(/GTM-[A-Z0-9]{4,10}/i);
+      if (idMatch) gtmId = idMatch[0].toUpperCase();
+    }
   }
 
   return gtmId;

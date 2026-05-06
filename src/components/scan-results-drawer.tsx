@@ -12,11 +12,13 @@ import { Separator } from "@/components/ui/separator";
 import { CHECKLIST } from "@/lib/checklist";
 import type { ScanResult } from "@/lib/scanner";
 import { REMEDIATION } from "@/lib/remediation";
-import { AlertCircle, CheckCircle2, ExternalLink, Info, Wrench } from "lucide-react";
+import type { FixAnalysisResult, ScriptAnalysis } from "@/app/actions/fixes";
+import { AlertCircle, CheckCircle2, ExternalLink, Info, Wrench, AlertTriangle } from "lucide-react";
 
 interface ScanResultsDrawerProps {
   checkKey: string | null;
   scanResult: ScanResult | null;
+  analysisResult?: FixAnalysisResult | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -35,9 +37,42 @@ function getCheckLabel(key: string): string {
   return key;
 }
 
+function ScriptAnalysisSection({ scripts }: { scripts: ScriptAnalysis }) {
+  const sections = [
+    { key: "tracking" as const, label: "Tracking scripts (move to GTM)", items: scripts.tracking, color: "text-destructive" },
+    { key: "nonTracking" as const, label: "Non-tracking scripts (can stay)", items: scripts.nonTracking, color: "text-green-600 dark:text-green-400" },
+    { key: "unknown" as const, label: "Unknown scripts (review manually)", items: scripts.unknown, color: "text-amber-600 dark:text-amber-400" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {sections.map(({ key, label, items, color }) => (
+        items.length > 0 && (
+          <div key={key}>
+            <h4 className={`text-xs font-semibold mb-2 ${color}`}>
+              {label} ({items.length})
+            </h4>
+            <div className="space-y-2">
+              {items.map((item, i) => (
+                <div key={i} className="space-y-0.5">
+                  <p className="text-xs font-medium">{item.detail}</p>
+                  <code className="text-[11px] bg-muted text-muted-foreground px-2 py-1 rounded block break-all">
+                    {item.script}
+                  </code>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      ))}
+    </div>
+  );
+}
+
 export function ScanResultsDrawer({
   checkKey,
   scanResult,
+  analysisResult,
   open,
   onOpenChange,
 }: ScanResultsDrawerProps) {
@@ -45,9 +80,11 @@ export function ScanResultsDrawer({
     ? scanResult?.checks.find((c) => c.checkKey === checkKey)
     : null;
 
-  if (!checkResult) return null;
+  const hasAnalysis = analysisResult && analysisResult.checkKey === checkKey;
+  if (!checkResult && !hasAnalysis) return null;
 
-  const remediation = REMEDIATION[checkResult.checkKey];
+  const effectiveKey = checkResult?.checkKey ?? checkKey!;
+  const remediation = REMEDIATION[effectiveKey];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -55,18 +92,18 @@ export function ScanResultsDrawer({
         <SheetHeader className="px-6 py-4 border-b">
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="text-xs font-mono">
-              {checkResult.checkKey}
+              {effectiveKey}
             </Badge>
             <SheetTitle className="text-base">
-              Scan Results
+              {hasAnalysis && !checkResult ? "Script Analysis" : "Scan Results"}
             </SheetTitle>
-            {checkResult.status === "ok" ? (
+            {checkResult?.status === "ok" ? (
               <Badge variant="secondary" className="text-xs bg-green-500/15 text-green-600 dark:text-green-400">OK</Badge>
-            ) : checkResult.status === "issue" ? (
+            ) : checkResult?.status === "issue" ? (
               <Badge variant="destructive" className="text-xs">Issue</Badge>
-            ) : (
+            ) : checkResult ? (
               <Badge variant="secondary" className="text-xs">N/A</Badge>
-            )}
+            ) : null}
           </div>
         </SheetHeader>
 
@@ -76,7 +113,7 @@ export function ScanResultsDrawer({
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
                 Check
               </h3>
-              <p className="text-sm">{getCheckLabel(checkResult.checkKey)}</p>
+              <p className="text-sm">{getCheckLabel(effectiveKey)}</p>
             </div>
 
             {remediation?.plainExplanation && (
@@ -90,14 +127,16 @@ export function ScanResultsDrawer({
               </div>
             )}
 
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                Summary
-              </h3>
-              <p className="text-sm">{checkResult.summary}</p>
-            </div>
+            {checkResult && (
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                  Summary
+                </h3>
+                <p className="text-sm">{checkResult.summary}</p>
+              </div>
+            )}
 
-            {checkResult.findings.length > 0 && (
+            {checkResult && checkResult.findings.length > 0 && (
               <>
                 <Separator />
                 <div>
@@ -123,14 +162,43 @@ export function ScanResultsDrawer({
               </>
             )}
 
-            {checkResult.status === "ok" && checkResult.findings.length === 0 && (
+            {checkResult?.status === "ok" && checkResult.findings.length === 0 && (
               <div className="flex items-center gap-2 text-green-500">
                 <CheckCircle2 className="h-5 w-5" />
                 <p className="text-sm font-medium">No issues found</p>
               </div>
             )}
 
-            {checkResult.status === "issue" && remediation && (
+            {analysisResult && analysisResult.checkKey === checkKey && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <Wrench className="h-3 w-3" />
+                    Script Analysis
+                  </h3>
+                  <p className="text-sm mb-3">{analysisResult.message}</p>
+                  {analysisResult.warning && (
+                    <div className="flex items-start gap-2 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-md mb-3">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-700 dark:text-amber-400">{analysisResult.warning}</p>
+                    </div>
+                  )}
+                  {analysisResult.scripts && <ScriptAnalysisSection scripts={analysisResult.scripts} />}
+                  {analysisResult.existingGtmSnippet && (
+                    <div className="mt-3 p-2.5 bg-muted rounded-md">
+                      <p className="text-xs font-medium">Existing GTM snippet</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{analysisResult.existingGtmSnippet.detail}</p>
+                      <Badge variant={analysisResult.existingGtmSnippet.apiManaged ? "secondary" : "outline"} className="mt-1.5 text-[10px]">
+                        {analysisResult.existingGtmSnippet.apiManaged ? "API-managed" : "Manually added"}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {checkResult?.status === "issue" && remediation && (
               <>
                 <Separator />
                 <div>
@@ -187,17 +255,20 @@ export function ScanResultsDrawer({
               </>
             )}
 
-            <Separator />
-
-            <div className="space-y-2">
-              <div className="text-xs text-muted-foreground">
-                <p>Scanned: {scanResult?.url}</p>
-                <p>Time: {scanResult?.scannedAt ? new Date(scanResult.scannedAt).toLocaleString() : "-"}</p>
-              </div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                For more details, click the <Info className="h-3 w-3 inline" /> icon on this check in the checklist.
-              </p>
-            </div>
+            {scanResult && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <div className="text-xs text-muted-foreground">
+                    <p>Scanned: {scanResult.url}</p>
+                    <p>Time: {scanResult.scannedAt ? new Date(scanResult.scannedAt).toLocaleString() : "-"}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    For more details, click the <Info className="h-3 w-3 inline" /> icon on this check in the checklist.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </ScrollArea>
       </SheetContent>

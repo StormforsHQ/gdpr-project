@@ -12,7 +12,7 @@ import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
 import { saveCheckResult, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType } from "@/app/actions/audits";
-import { getFixAvailability, applyFix, type FixAvailability } from "@/app/actions/fixes";
+import { getFixAvailability, applyFix, analyzeFix, type FixAvailability, type FixAnalysisResult } from "@/app/actions/fixes";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
 import {
   AlertDialog,
@@ -118,6 +118,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const [fixAvailability, setFixAvailability] = useState<Record<string, FixAvailability>>({});
   const [fixingChecks, setFixingChecks] = useState<Set<string>>(new Set());
   const [lastSkippedCount, setLastSkippedCount] = useState(0);
+  const [fixConfirm, setFixConfirm] = useState<{ checkKey: string; warning: string; label: string } | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<FixAnalysisResult | null>(null);
 
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -365,6 +367,15 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   };
 
   const handleApplyFix = async (checkKey: string) => {
+    const fa = fixAvailability[checkKey];
+    if (fa?.fix.safetyLevel === "confirm" && fa.fix.warning) {
+      setFixConfirm({ checkKey, warning: fa.fix.warning, label: fa.fix.label });
+      return;
+    }
+    await executeApplyFix(checkKey);
+  };
+
+  const executeApplyFix = async (checkKey: string) => {
     setFixingChecks((prev) => new Set(prev).add(checkKey));
     try {
       const result = await applyFix(checkKey, siteFields?.cookiebotId, siteFields?.gtmId);
@@ -383,6 +394,30 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         return next;
       });
     }
+  };
+
+  const handleAnalyzeFix = async (checkKey: string) => {
+    setFixingChecks((prev) => new Set(prev).add(checkKey));
+    try {
+      const result = await analyzeFix(checkKey, siteFields?.cookiebotId, siteFields?.gtmId);
+      setAnalysisResult(result);
+      setScanDrawerCheckKey(checkKey);
+      setScanDrawerOpen(true);
+    } catch (err) {
+      addError("fix", `Analysis for ${checkKey} failed`, err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setFixingChecks((prev) => {
+        const next = new Set(prev);
+        next.delete(checkKey);
+        return next;
+      });
+    }
+  };
+
+  const handleConfirmFix = async () => {
+    if (!fixConfirm) return;
+    setFixConfirm(null);
+    await executeApplyFix(fixConfirm.checkKey);
   };
 
   const handleRunCheck = async (checkKey: string, automation: string) => {
@@ -755,6 +790,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                         ready: fa.ready,
                         missingServices: fa.missingServices,
                         requires: fa.fix.requires,
+                        safetyLevel: fa.fix.safetyLevel,
+                        warning: fa.fix.warning,
                       }
                     : undefined;
                   return (
@@ -774,6 +811,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                       onViewScanDetails={scanCheck ? openScanDetails : undefined}
                       onRunCheck={(check.automation === "ai-agent" || check.automation === "page-scan" || check.automation === "cookiebot-api") ? (key) => handleRunCheck(key, check.automation) : undefined}
                       onApplyFix={handleApplyFix}
+                      onAnalyzeFix={handleAnalyzeFix}
                     />
                   );
                 })}
@@ -853,8 +891,12 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       <ScanResultsDrawer
         checkKey={scanDrawerCheckKey}
         scanResult={scanResult}
+        analysisResult={analysisResult}
         open={scanDrawerOpen}
-        onOpenChange={setScanDrawerOpen}
+        onOpenChange={(open) => {
+          setScanDrawerOpen(open);
+          if (!open) setAnalysisResult(null);
+        }}
       />
 
       <AlertDialog open={confirmAction !== null} onOpenChange={(open) => !open && setConfirmAction(null)}>
@@ -872,6 +914,26 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirm}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={fixConfirm !== null} onOpenChange={(open) => !open && setFixConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {fixConfirm?.label}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">{fixConfirm?.warning}</span>
+              <span className="block text-amber-600 dark:text-amber-400 font-medium">
+                This will modify external systems (GTM or Webflow). Make sure you understand what will change before continuing.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmFix}>Apply fix</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

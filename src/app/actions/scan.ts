@@ -49,14 +49,20 @@ export async function runPageScan(url: string, siteId?: string): Promise<ScanRes
   try {
     const result = await scanSite(url);
 
-    if (result.detectedCookiebotId && siteId) {
+    if (siteId && (result.detectedCookiebotId || result.detectedGtmId)) {
       try {
         const site = await prisma.site.findUnique({ where: { id: siteId } });
-        if (site && !site.cookiebotId) {
-          await prisma.site.update({
-            where: { id: siteId },
-            data: { cookiebotId: result.detectedCookiebotId },
-          });
+        if (site) {
+          const updates: { cookiebotId?: string; gtmId?: string } = {};
+          if (result.detectedCookiebotId && !site.cookiebotId) {
+            updates.cookiebotId = result.detectedCookiebotId;
+          }
+          if (result.detectedGtmId && !site.gtmId) {
+            updates.gtmId = result.detectedGtmId;
+          }
+          if (Object.keys(updates).length > 0) {
+            await prisma.site.update({ where: { id: siteId }, data: updates });
+          }
         }
       } catch {}
     }

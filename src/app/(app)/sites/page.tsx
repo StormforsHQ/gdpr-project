@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { AddSiteDialog } from "@/components/add-site-dialog";
+import { SyncWebflowButton } from "@/components/sync-webflow-button";
 import { SiteList, type SiteWithAudit } from "@/components/site-list";
 import { getSites } from "@/app/actions/sites";
 
@@ -25,6 +26,7 @@ async function loadSites(): Promise<SiteWithAudit[]> {
         name: site.name,
         url: site.url,
         platform: site.platform,
+        active: site.active,
         status: getAuditStatus(results),
         auditType: ((latestAudit as Record<string, unknown>)?.auditType as "basic" | "full") ?? null,
         checkCount: results.filter((r) => r.status !== "not_checked").length,
@@ -49,7 +51,10 @@ export default async function SitesPage() {
             All sites registered for GDPR compliance auditing
           </p>
         </div>
-        <AddSiteDialog />
+        <div className="flex items-center gap-2">
+          <SyncWebflowButton />
+          <AddSiteDialog />
+        </div>
       </div>
 
       {!dbConnected && (

@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { normalizeUrl } from "@/lib/url";
 import { detectGtmId, detectCookiebotId } from "@/lib/scanner";
 import { isGtmConfigured, findCookiebotIdInContainer } from "@/lib/api/gtm";
-import { isWebflowConfigured, findWebflowSiteByDomain } from "@/lib/api/webflow";
+import { isWebflowConfigured, listAllSites, type WebflowSite } from "@/lib/api/webflow";
 import * as cheerio from "cheerio";
 
 export async function getSites() {
@@ -182,28 +182,19 @@ export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
       }
     }
 
-    if (isWebflowConfigured()) {
-      try {
-        const domain = new URL(normalizedUrl).hostname.replace(/^www\./, "");
-        const wfSite = await findWebflowSiteByDomain(domain);
-        if (wfSite) {
-          result.webflowId = wfSite.id;
-          result.webflowSource = `Matched Webflow site "${wfSite.displayName}"`;
-        }
-      } catch (wfErr) {
-        const wfMsg = wfErr instanceof Error ? wfErr.message : "Unknown error";
-        console.error("Webflow lookup failed:", wfMsg);
-        if (/429|too_many_requests|rate.?limit/i.test(wfMsg)) {
-          result.webflowSource = "Webflow API rate limit hit - wait a minute and try again";
-        } else if (/missing_scopes|sites:read/i.test(wfMsg)) {
-          result.webflowSource = "Webflow API missing 'sites:read' scope - re-authorize the app with this scope enabled";
-        } else if (/401|unauthorized/i.test(wfMsg)) {
-          result.webflowSource = "Webflow API token expired or invalid - re-authorize the app";
-        } else if (/403|forbidden/i.test(wfMsg)) {
-          result.webflowSource = "Webflow API access denied - check app permissions and re-authorize";
-        } else {
-          result.webflowSource = "Webflow lookup failed - try again in a moment";
-        }
+    {
+      const domain = new URL(normalizedUrl).hostname.replace(/^www\./, "").toLowerCase();
+      const match = await prisma.site.findFirst({
+        where: {
+          platform: "webflow",
+          webflowId: { not: null },
+          url: { contains: domain },
+        },
+        select: { webflowId: true, name: true },
+      });
+      if (match?.webflowId) {
+        result.webflowId = match.webflowId;
+        result.webflowSource = `Matched site "${match.name}" in database`;
       }
     }
   } catch (err) {
@@ -218,4 +209,103 @@ export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
   }
 
   return result;
+}
+
+export async function toggleSiteActive(id: string, active: boolean) {
+  await prisma.site.update({
+    where: { id },
+    data: { active },
+  });
+
+  revalidatePath("/sites");
+  revalidatePath("/");
+}
+
+export interface SyncWebflowResult {
+  created: number;
+  updated: number;
+  total: number;
+  activeCount: number;
+  error?: string;
+}
+
+export async function syncWebflowSites(): Promise<SyncWebflowResult> {
+  if (!isWebflowConfigured()) {
+    return { created: 0, updated: 0, total: 0, activeCount: 0, error: "WEBFLOW_API_TOKEN not configured" };
+  }
+
+  let wfSites: WebflowSite[];
+  try {
+    wfSites = await listAllSites();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    return { created: 0, updated: 0, total: 0, activeCount: 0, error: `Webflow API error: ${msg}` };
+  }
+
+  const existingByWebflowId = new Map<string, { id: string; url: string }>();
+  const existingByUrl = new Map<string, { id: string; webflowId: string | null }>();
+
+  const allExisting = await prisma.site.findMany({
+    select: { id: true, url: true, webflowId: true },
+  });
+  for (const site of allExisting) {
+    if (site.webflowId) existingByWebflowId.set(site.webflowId, site);
+    if (site.url) existingByUrl.set(site.url.toLowerCase(), site);
+  }
+
+  let created = 0;
+  let updated = 0;
+  let activeCount = 0;
+
+  for (const wf of wfSites) {
+    const hasCustomDomain = (wf.customDomains?.length ?? 0) > 0;
+    const primaryDomain = wf.customDomains?.[0]?.url?.replace(/^www\./, "") || "";
+    const url = primaryDomain || wf.defaultDomain || `${wf.shortName}.webflow.io`;
+
+    if (hasCustomDomain) activeCount++;
+
+    const existingById = existingByWebflowId.get(wf.id);
+    if (existingById) {
+      await prisma.site.update({
+        where: { id: existingById.id },
+        data: {
+          name: wf.displayName,
+          url: url.toLowerCase(),
+        },
+      });
+      updated++;
+      continue;
+    }
+
+    const existingByDomain = existingByUrl.get(url.toLowerCase())
+      || existingByUrl.get(primaryDomain.toLowerCase())
+      || (wf.defaultDomain ? existingByUrl.get(wf.defaultDomain.toLowerCase()) : null);
+
+    if (existingByDomain) {
+      await prisma.site.update({
+        where: { id: existingByDomain.id },
+        data: {
+          webflowId: wf.id,
+          name: wf.displayName,
+        },
+      });
+      updated++;
+      continue;
+    }
+
+    await prisma.site.create({
+      data: {
+        name: wf.displayName,
+        url: url.toLowerCase(),
+        platform: "webflow",
+        webflowId: wf.id,
+        active: hasCustomDomain,
+      },
+    });
+    created++;
+  }
+
+  revalidatePath("/sites");
+  revalidatePath("/");
+  return { created, updated, total: wfSites.length, activeCount };
 }

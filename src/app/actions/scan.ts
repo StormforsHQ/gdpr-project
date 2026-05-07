@@ -3,7 +3,8 @@
 import { scanSite, type ScanResult } from "@/lib/scanner";
 import { runAICheck, AI_CHECK_KEYS } from "@/lib/ai-agent";
 import { fetchCookiebotData, runCookiebotChecks } from "@/lib/cookiebot";
-import { isGtmConfigured, findCookiebotIdInContainer } from "@/lib/api/gtm";
+import { isGtmConfigured, findCookiebotIdInContainer, getContainerInfo, listTags, listTriggers, listWorkspaces } from "@/lib/api/gtm";
+import { runGtmChecks } from "@/lib/gtm-checks";
 import { prisma } from "@/lib/db";
 import { getEffectiveAPIKey } from "@/app/actions/ai-settings";
 import type { CheckResult } from "@/lib/scanner";
@@ -133,6 +134,52 @@ export async function runCookiebotScan(cookiebotId: string, siteUrl?: string): P
       status: "na",
       findings: [{ element: "", detail: error instanceof Error ? error.message : "Cookiebot scan failed", severity: "warning" }],
       summary: "Cookiebot scan failed",
+    }];
+  }
+}
+
+export async function runGtmScan(gtmId: string): Promise<CheckResult[]> {
+  if (!gtmId || gtmId.trim().length === 0) {
+    return [{
+      checkKey: "A3",
+      status: "na",
+      findings: [{ element: "", detail: "GTM ID is required", severity: "warning" }],
+      summary: "No GTM ID provided",
+    }];
+  }
+
+  if (!isGtmConfigured()) {
+    return [{
+      checkKey: "A3",
+      status: "na",
+      findings: [{ element: "", detail: "GTM API not configured (missing OAuth credentials)", severity: "warning" }],
+      summary: "GTM API not available",
+    }];
+  }
+
+  try {
+    const container = await getContainerInfo(gtmId.trim());
+    const workspaces = await listWorkspaces(container.accountId, container.containerId);
+    const defaultWs = workspaces.find((w) => w.name === "Default Workspace") || workspaces[0];
+    if (!defaultWs) {
+      return [{
+        checkKey: "A3",
+        status: "na",
+        findings: [{ element: "", detail: "No workspace found in GTM container", severity: "warning" }],
+        summary: "GTM workspace not found",
+      }];
+    }
+
+    const tags = await listTags(container.accountId, container.containerId, defaultWs.workspaceId);
+    const triggers = await listTriggers(container.accountId, container.containerId, defaultWs.workspaceId);
+
+    return runGtmChecks(tags, triggers);
+  } catch (error) {
+    return [{
+      checkKey: "A3",
+      status: "na",
+      findings: [{ element: "", detail: error instanceof Error ? error.message : "GTM scan failed", severity: "warning" }],
+      summary: "GTM scan failed",
     }];
   }
 }

@@ -71,17 +71,19 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
     return [...set].sort();
   }, [sites]);
 
+  const visibleSites = useMemo(() => showAll ? sites : sites.filter((s) => s.active), [sites, showAll]);
+
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { not_started: 0, in_progress: 0, compliant: 0 };
-    for (const s of sites) counts[s.status] = (counts[s.status] || 0) + 1;
+    for (const s of visibleSites) counts[s.status] = (counts[s.status] || 0) + 1;
     return counts;
-  }, [sites]);
+  }, [visibleSites]);
 
   const platformCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const s of sites) counts[s.platform] = (counts[s.platform] || 0) + 1;
+    for (const s of visibleSites) counts[s.platform] = (counts[s.platform] || 0) + 1;
     return counts;
-  }, [sites]);
+  }, [visibleSites]);
 
   const toggleStatus = (status: string) => {
     setStatusFilter((prev) => {
@@ -142,7 +144,7 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
     });
 
     return result;
-  }, [sites, search, statusFilter, platformFilter, sortField, sortDir]);
+  }, [sites, search, showAll, statusFilter, platformFilter, sortField, sortDir]);
 
   const hasFilters = search.trim() || statusFilter.size > 0 || platformFilter.size > 0 || showAll;
 
@@ -151,7 +153,9 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
       <CardHeader className="space-y-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">
-            {hasFilters ? `${filtered.length} of ${sites.length}` : sites.length} site{sites.length !== 1 ? "s" : ""}
+            {filtered.length} {showAll ? "sites" : "active site"}{filtered.length !== 1 ? "s" : ""}
+            {showAll && <span className="text-muted-foreground font-normal"> (total)</span>}
+            {!showAll && inactiveCount > 0 && <span className="text-muted-foreground font-normal"> of {sites.length} total</span>}
           </CardTitle>
           <div className="flex items-center gap-3">
             {hasFilters && (
@@ -216,6 +220,7 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
       </CardHeader>
       <CardContent className="p-0">
         {filtered.length > 0 ? (
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -330,6 +335,7 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
               })}
             </TableBody>
           </Table>
+          </div>
         ) : (
           <div className="py-8 text-center">
             <p className="text-sm text-muted-foreground">

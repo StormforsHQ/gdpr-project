@@ -50,8 +50,8 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Script setup",
     checks: [
       {
-        key: "A1", label: "Only GTM script in site header", description: "No other scripts hardcoded (Cookiebot deploys via GTM)", automation: "page-scan", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 5(1)(a), Art. 7, Art. 25",
+        key: "A1", label: "Only GTM script in site header", description: "The only script in the site header should be Google Tag Manager. All other scripts (analytics, marketing, consent) should be loaded through GTM so they respect consent settings.", automation: "page-scan", tier: "basic",
+        legalBasis: "Scripts outside GTM can fire before consent is given, which violates EU cookie consent rules. Swedish DPA (IMY) fined pharmacies SEK 45M for this exact issue.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "GDPR Art. 25 - Data protection by design", url: "https://gdpr-info.eu/art-25-gdpr/" },
@@ -64,16 +64,16 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "A2", label: "No scripts hardcoded in footer", description: "Everything managed through GTM", automation: "page-scan", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 5(1)(a), Art. 7, Art. 25",
+        key: "A2", label: "No scripts hardcoded in footer", description: "Footer scripts (analytics, chat widgets, pixels) should also be managed through GTM, not placed directly in the site footer code.", automation: "page-scan", tier: "full",
+        legalBasis: "Same as header scripts - anything outside GTM bypasses consent controls and can track visitors without permission.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "EDPB Guidelines 4/2019 on Art. 25", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-42019-article-25-data-protection-design-and_en" },
         ],
       },
       {
-        key: "A3", label: "Cookiebot CMP tag on correct trigger", description: 'Must be "Consent Initialization - All Pages" (NOT "All Pages")', automation: "gtm-api", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 7(1) - consent must precede processing",
+        key: "A3", label: "Cookiebot CMP tag on correct trigger", description: "Cookiebot must load before everything else on the page. In GTM, it needs to be on the 'Consent Initialization' trigger - not 'All Pages' - so visitors see the consent banner before any tracking starts.", automation: "gtm-api", tier: "basic",
+        legalBasis: "EU law requires consent before any tracking. If Cookiebot loads too late, other scripts may fire first and track visitors without permission.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "CJEU C-673/17 Planet49 (consent must precede data collection)", url: "https://gdprhub.eu/index.php?title=CJEU_-_C-673/17_-_Planet49" },
@@ -81,16 +81,16 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "A4", label: "Official Cookiebot GTM template used", description: "Not Custom HTML (Custom HTML misses V2 consent fields)", automation: "gtm-api", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 25 - data protection by design",
+        key: "A4", label: "Official Cookiebot GTM template used", description: "Cookiebot should be set up using the official GTM template from the Template Gallery, not as a custom HTML tag. The official template includes Google Consent Mode V2 support that custom HTML misses.", automation: "gtm-api", tier: "full",
+        legalBasis: "The official template ensures consent signals are sent correctly to Google services. Custom HTML setups often miss important consent fields.",
         references: [
           { label: "GDPR Art. 25 - Data protection by design", url: "https://gdpr-info.eu/art-25-gdpr/" },
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
         ],
       },
       {
-        key: "A5", label: "AutoBlock is OFF", description: "Breaks Advanced Consent Mode cookieless pings", automation: "gtm-api", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 7(1), Art. 25",
+        key: "A5", label: "AutoBlock is OFF", description: "AutoBlock is a Cookiebot setting that tries to block scripts automatically. It should be OFF because it interferes with Google's Consent Mode, which needs to send anonymous pings even before consent.", automation: "gtm-api", tier: "basic",
+        legalBasis: "AutoBlock can accidentally block the anonymous data collection that Google Consent Mode uses, breaking analytics setup even though no personal data is involved.",
         references: [
           { label: "EDPB Guidelines 05/2020 on consent", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en" },
           { label: "GDPR Art. 25 - Data protection by design", url: "https://gdpr-info.eu/art-25-gdpr/" },
@@ -103,8 +103,8 @@ export const CHECKLIST: CheckCategory[] = [
     label: "GTM configuration",
     checks: [
       {
-        key: "B1", label: "All tracking scripts inside GTM", description: "Nothing running outside GTM except the GTM snippet itself", automation: "page-scan", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 5(1)(a), Art. 7, Art. 25",
+        key: "B1", label: "All tracking scripts inside GTM", description: "Every tracking script (analytics, pixels, marketing tools) should be managed inside GTM. The only script running directly on the page should be the GTM snippet itself.", automation: "page-scan", tier: "basic",
+        legalBasis: "Scripts outside GTM bypass consent controls completely. IMY fined Swedish pharmacies SEK 45M because Meta Pixel ran outside GTM and sent health data to Meta without consent.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
@@ -115,31 +115,31 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "B2", label: "Google tags: consent overview set", description: '"No additional consent required" (they self-adapt)', automation: "gtm-api", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 7(1)",
+        key: "B2", label: "Google tags: consent overview set", description: "Google's own tags (GA4, Google Ads, etc.) automatically adapt to consent state - they send less data when consent is denied. Their Consent Overview should be set to 'No additional consent required' so they aren't blocked unnecessarily.", automation: "gtm-api", tier: "full",
+        legalBasis: "Google tags already respect consent signals. Adding extra consent requirements on top can block them entirely, losing even the anonymous data you're allowed to collect.",
         references: [
           { label: "EDPB Guidelines 05/2020 on consent (granularity)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en" },
         ],
       },
       {
-        key: "B3", label: "Non-Google tags: consent gated", description: '"Require additional consent" + correct type (ad_storage/analytics_storage)', automation: "gtm-api", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 7(1), Art. 6(1)(a)",
+        key: "B3", label: "Non-Google tags: consent gated", description: "Third-party tags (LinkedIn Pixel, HotJar, etc.) must wait for visitor consent before firing. In GTM, each tag needs 'Require additional consent' turned on with the right consent type (e.g. ad_storage for marketing, analytics_storage for analytics).", automation: "gtm-api", tier: "basic",
+        legalBasis: "Non-Google tags don't automatically respect consent. Without consent gating, they fire immediately and track visitors who haven't agreed to it.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "CJEU C-673/17 Planet49", url: "https://gdprhub.eu/index.php?title=CJEU_-_C-673/17_-_Planet49" },
         ],
       },
       {
-        key: "B4", label: "Non-Google tag triggers correct", description: 'Using cookie_consent_update event, not "All Pages"', automation: "gtm-api", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 7(1), Art. 25",
+        key: "B4", label: "Non-Google tag triggers correct", description: "Non-Google tags should fire on a consent-aware trigger (like a custom event that fires after consent is given), not on 'All Pages'. The 'All Pages' trigger fires on every page load regardless of consent.", automation: "gtm-api", tier: "full",
+        legalBasis: "Tags on the 'All Pages' trigger fire before the visitor has a chance to accept or decline cookies, which violates consent requirements.",
         references: [
           { label: "EDPB Guidelines 05/2020 on consent", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en" },
           { label: "GDPR Art. 25 - Data protection by design", url: "https://gdpr-info.eu/art-25-gdpr/" },
         ],
       },
       {
-        key: "B5", label: "Google Consent Mode V2 enabled", description: "Checkbox in Cookiebot CMP template. All 4 parameters transmitting.", automation: "page-scan", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 6(1)(a), Art. 7, Art. 25",
+        key: "B5", label: "Google Consent Mode V2 enabled", description: "Google Consent Mode V2 tells Google services whether a visitor has given consent. It must be enabled in the Cookiebot GTM template and all 4 consent signals (ad_storage, analytics_storage, ad_user_data, ad_personalization) should be transmitting.", automation: "page-scan", tier: "basic",
+        legalBasis: "Without Consent Mode V2, Google services don't know the visitor's consent choice and may collect data they shouldn't, or block data collection entirely.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "EDPB Guidelines 05/2020 on consent", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en" },
@@ -152,16 +152,16 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Cookie categories",
     checks: [
       {
-        key: "C1", label: "Necessary cookies identified", description: "CDN (Webflow, Cloudflare), session, security - no consent needed", automation: "cookiebot-api", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3) - strictly necessary exemption",
+        key: "C1", label: "Necessary cookies identified", description: "Cookies the site needs to function (session, security, CDN cookies from Webflow or Cloudflare). These don't need visitor consent because the site can't work without them.", automation: "cookiebot-api", tier: "full",
+        legalBasis: "EU law exempts 'strictly necessary' cookies from consent. But they must genuinely be essential - not just convenient.",
         references: [
           { label: "ePrivacy Directive Art. 5(3) - strictly necessary exemption", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "EDPB Cookie Banner Taskforce Report 2023", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/other/report-work-undertaken-cookie-banner-taskforce_en" },
         ],
       },
       {
-        key: "C2", label: "Statistics cookies under consent", description: "Google Analytics, HotJar, etc. - require opt-in (EU). UK: exempt post-DUAA if conditions met.", automation: "cookiebot-api", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 6(1)(a). UK: PECR Schedule A1 (analytics exemption, DUAA 2025)",
+        key: "C2", label: "Statistics cookies under consent", description: "Analytics cookies (Google Analytics, HotJar, etc.) must be listed in the 'Statistics' category in Cookiebot. In the EU, visitors must actively agree before these cookies are set.", automation: "cookiebot-api", tier: "basic",
+        legalBasis: "EU rules require opt-in consent for analytics cookies. They are not 'necessary' - the site works without them. UK rules are slightly more relaxed for pure analytics since 2025.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "CJEU C-673/17 Planet49 (consent per purpose)", url: "https://gdprhub.eu/index.php?title=CJEU_-_C-673/17_-_Planet49" },
@@ -170,8 +170,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "C3", label: "Marketing cookies under consent", description: "LinkedIn Pixel, Meta Pixel, ad trackers - require opt-in", automation: "cookiebot-api", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 6(1)(a), Art. 21",
+        key: "C3", label: "Marketing cookies under consent", description: "Ad tracking cookies (LinkedIn Pixel, Meta Pixel, Google Ads, etc.) must be listed in the 'Marketing' category in Cookiebot. These always require visitor consent before they can be set.", automation: "cookiebot-api", tier: "basic",
+        legalBasis: "Marketing cookies track visitors across websites for ad targeting. This is the most privacy-sensitive category and always requires explicit consent in the EU.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "EDPB Guidelines 8/2020 on social media targeting", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-82020-targeting-social-media-users_en" },
@@ -179,24 +179,24 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "C4", label: "Preference cookies under consent", description: "Language, UI customization - if applicable. UK: exempt post-DUAA if conditions met.", automation: "cookiebot-api", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 6(1)(a). UK: PECR Schedule A1 (functionality exemption, DUAA 2025)",
+        key: "C4", label: "Preference cookies under consent", description: "Cookies that remember visitor preferences (language choice, UI settings). If the site uses these, they should be in the 'Preferences' category in Cookiebot and require consent.", automation: "cookiebot-api", tier: "full",
+        legalBasis: "Preference cookies are not strictly necessary for the site to work, so they need consent in the EU. UK rules allow some functionality cookies without consent since 2025.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "UK DUAA 2025 - PECR cookie exceptions", url: "https://www.legislation.gov.uk/ukpga/2025/18/part/5" },
         ],
       },
       {
-        key: "C5", label: "No unclassified cookies", description: "All cookies categorized in Cookiebot admin", automation: "cookiebot-api", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 5(2) - accountability, Art. 30",
+        key: "C5", label: "No unclassified cookies", description: "Every cookie on the site must be sorted into a category (necessary, statistics, marketing, or preferences) in the Cookiebot admin. Unclassified cookies mean visitors can't make an informed consent choice.", automation: "cookiebot-api", tier: "basic",
+        legalBasis: "Visitors must know what each cookie does before they can give valid consent. Unclassified cookies make consent meaningless.",
         references: [
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
           { label: "GDPR Art. 30 - Records of processing", url: "https://gdpr-info.eu/art-30-gdpr/" },
         ],
       },
       {
-        key: "C6", label: "Cookie lifetimes proportionate", description: "No non-essential cookies exceed 13 months duration. Check in DevTools or Cookiebot scan.", automation: "human", tier: "full",
-        legalBasis: "GDPR Art. 5(1)(c) - data minimization; ePrivacy Directive Art. 5(3); CNIL guidance (13 months max)",
+        key: "C6", label: "Cookie lifetimes proportionate", description: "Cookies should not last longer than necessary. The recommended maximum is 13 months. Check expiry dates in Cookiebot or browser DevTools.", automation: "human", tier: "full",
+        legalBasis: "Data privacy rules say you shouldn't keep data longer than needed. A marketing cookie lasting 10 years is disproportionate. 13 months is the widely accepted maximum.",
         references: [
           { label: "GDPR Art. 5(1)(c) - Data minimization", url: "https://gdpr-info.eu/art-5-gdpr/" },
         ],
@@ -208,24 +208,24 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Legacy/cleanup",
     checks: [
       {
-        key: "D1", label: "No ghost scripts", description: "Leftover scripts from discontinued services (HotJar, Leadfeeder, etc.)", automation: "page-scan", tier: "full",
-        legalBasis: "GDPR Art. 5(1)(c) - data minimization; Art. 5(1)(e) - storage limitation; ePrivacy Directive Art. 5(3)",
+        key: "D1", label: "No ghost scripts", description: "Old scripts from services the site no longer uses (cancelled HotJar, old Leadfeeder, etc.) that are still loading. These waste bandwidth and may still send visitor data to services nobody monitors.", automation: "page-scan", tier: "full",
+        legalBasis: "Sending visitor data to services you no longer use has no legitimate purpose. You can't justify tracking that serves nobody.",
         references: [
           { label: "GDPR Art. 5(1)(c) - Data minimization", url: "https://gdpr-info.eu/art-5-gdpr/" },
           { label: "GDPR Art. 25 - Data protection by design and by default", url: "https://gdpr-info.eu/art-25-gdpr/" },
         ],
       },
       {
-        key: "D2", label: "No old campaign scripts", description: "Old Salesforce/marketing campaigns. Ask client before removing.", automation: "human", tier: "full",
-        legalBasis: "GDPR Art. 5(1)(b) - purpose limitation; Art. 5(1)(c) - data minimization",
+        key: "D2", label: "No old campaign scripts", description: "Scripts left over from past marketing campaigns (old Salesforce tracking, expired promotions, etc.). Check with the client before removing - some may still be needed.", automation: "human", tier: "full",
+        legalBasis: "Data collection must have a clear, current purpose. Scripts from finished campaigns no longer have one.",
         references: [
           { label: "GDPR Art. 5(1)(b) - Purpose limitation", url: "https://gdpr-info.eu/art-5-gdpr/" },
           { label: "EDPB Guidelines 05/2020 on consent (purpose-specific)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en" },
         ],
       },
       {
-        key: "D3", label: "No orphaned pixels", description: "Pixels placed directly in header instead of GTM", automation: "page-scan", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 5(1)(c) - data minimization; Art. 5(2) - accountability",
+        key: "D3", label: "No orphaned pixels", description: "Tracking pixels (Meta Pixel, LinkedIn Insight Tag, etc.) placed directly in the page HTML instead of through GTM. These run without any consent check.", automation: "page-scan", tier: "basic",
+        legalBasis: "Pixels outside GTM track visitors immediately, bypassing consent. IMY fined Swedish pharmacies SEK 45M specifically for orphaned Meta Pixels sending health data without consent.",
         references: [
           { label: "GDPR Art. 5 - Principles", url: "https://gdpr-info.eu/art-5-gdpr/" },
         ],
@@ -241,16 +241,16 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Third-party services",
     checks: [
       {
-        key: "E1", label: "Video embeds audited", description: "YouTube (use youtube-nocookie.com), Vimeo - block until consent or click-to-load", automation: "page-scan", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 6(1)(a), Art. 44-49 (international transfers)",
+        key: "E1", label: "Video embeds audited", description: "YouTube and Vimeo embeds set tracking cookies and send visitor IP addresses to US servers on page load. Use youtube-nocookie.com for YouTube, and consider blocking all video embeds until the visitor gives consent.", automation: "page-scan", tier: "basic",
+        legalBasis: "Video embeds transfer visitor data to third parties (often in the US) before consent. They must be blocked or use privacy-friendly alternatives.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "LG Munchen - Google Fonts ruling (same transfer principle)", url: "https://gdprhub.eu/index.php?title=LG_M%C3%BCnchen_-_3_O_17493/20" },
         ],
       },
       {
-        key: "E2", label: "Google Fonts self-hosted", description: "NOT loaded from Google CDN (EUR 100/violation precedent). Use local files or Fontsource.", automation: "page-scan", tier: "basic",
-        legalBasis: "GDPR Art. 6(1) - no legal basis for IP transfer; Art. 44-46 - international data transfers; Art. 5(1)(c) - data minimization",
+        key: "E2", label: "Google Fonts self-hosted", description: "Fonts must be hosted on the site itself, not loaded from Google's servers. Loading from Google sends every visitor's IP address to Google on every page view. A German court set a EUR 100/visitor fine precedent for this.", automation: "page-scan", tier: "basic",
+        legalBasis: "Loading fonts from Google transfers visitor IP to the US without consent or legal justification. Courts have fined websites for this. Self-hosting fonts eliminates the issue entirely.",
         references: [
           { label: "LG Munchen I, 3 O 17493/20 (Google Fonts ruling, Jan 2022)", url: "https://gdprhub.eu/index.php?title=LG_M%C3%BCnchen_-_3_O_17493/20" },
           { label: "GDPR Art. 44-46 - International transfers", url: "https://gdpr-info.eu/art-44-gdpr/" },
@@ -262,8 +262,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "E3", label: "Maps blocked until consent", description: "Google Maps, Mapbox, etc. Or use static image with link.", automation: "page-scan", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 6(1)(a), Art. 44-49",
+        key: "E3", label: "Maps blocked until consent", description: "Google Maps and similar embeds send visitor IP to third-party servers on load. Block them until consent, or replace with a static map image that links to Google Maps.", automation: "page-scan", tier: "full",
+        legalBasis: "Same principle as video embeds and fonts - loading third-party content transfers visitor data without consent.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "LG Munchen - Google Fonts ruling (same transfer principle)", url: "https://gdprhub.eu/index.php?title=LG_M%C3%BCnchen_-_3_O_17493/20" },
@@ -274,24 +274,24 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "E4", label: "Chat widgets checked", description: "If non-essential cookies: consent before loading", automation: "page-scan", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 6(1)(a), Art. 13, Art. 28",
+        key: "E4", label: "Chat widgets checked", description: "Chat widgets (Intercom, Drift, HubSpot chat, etc.) often set tracking cookies and send data to third parties. If they use non-essential cookies, they need consent before loading.", automation: "page-scan", tier: "full",
+        legalBasis: "Chat widgets that track visitors need consent like any other tracking tool. The chat provider is also a data processor and needs a data processing agreement.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "EDPB Guidelines 07/2020 on controller/processor", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-072020-concepts-controller-and-processor-gdpr_en" },
         ],
       },
       {
-        key: "E5", label: "Social embeds checked", description: "Social feeds, share buttons, etc.", automation: "page-scan", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 6(1)(a), Art. 44-49",
+        key: "E5", label: "Social embeds checked", description: "Embedded social media content (Instagram feeds, Twitter timelines, Facebook like buttons, share buttons) loads scripts from those platforms and tracks visitors. Consider blocking until consent or using static alternatives.", automation: "page-scan", tier: "full",
+        legalBasis: "Social embeds let platforms like Meta and X track visitors on your site, even if they don't click anything. This requires consent.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "EDPB Guidelines 8/2020 on social media targeting", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-82020-targeting-social-media-users_en" },
         ],
       },
       {
-        key: "E6", label: "CRM integrations reviewed", description: "HubSpot, Salesforce - DPA in place, data transfer mechanism verified", automation: "human", tier: "full",
-        legalBasis: "GDPR Art. 28 - processor obligations; Art. 44-46 - international transfers; Art. 26 - joint controllers",
+        key: "E6", label: "CRM integrations reviewed", description: "CRM systems (HubSpot, Salesforce, etc.) that receive form data or track visitors need a signed Data Processing Agreement (DPA). If the CRM is US-based, verify they have a valid data transfer mechanism.", automation: "human", tier: "full",
+        legalBasis: "Any service that handles personal data on your behalf needs a DPA. Sending data to US services also needs a legal transfer mechanism (like the EU-US Data Privacy Framework).",
         references: [
           { label: "GDPR Art. 28 - Processor", url: "https://gdpr-info.eu/art-28-gdpr/" },
           { label: "GDPR Art. 44-46 - International transfers", url: "https://gdpr-info.eu/art-44-gdpr/" },
@@ -306,16 +306,16 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Forms & data collection",
     checks: [
       {
-        key: "F1", label: "All forms identified", description: "List every form on the site", automation: "page-scan", tier: "full",
-        legalBasis: "GDPR Art. 30 - records of processing; Art. 5(2) - accountability",
+        key: "F1", label: "All forms identified", description: "Find and list every form on the site (contact forms, newsletter signups, quote requests, login forms, etc.). Each one collects personal data and needs to be reviewed.", automation: "page-scan", tier: "full",
+        legalBasis: "You need to know what personal data you collect and where. Forms are the most common collection point on websites.",
         references: [
           { label: "GDPR Art. 30 - Records of processing", url: "https://gdpr-info.eu/art-30-gdpr/" },
           { label: "WP260 rev.01 - Transparency guidelines", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/article-29-working-party-guidelines-transparency-under-regulation_en" },
         ],
       },
       {
-        key: "F2", label: "Data minimization", description: "Only collecting what's needed for stated purpose", automation: "ai-agent", tier: "full",
-        legalBasis: "GDPR Art. 5(1)(c) - data minimization; Art. 25(2) - data protection by default",
+        key: "F2", label: "Data minimization", description: "Forms should only ask for what's actually needed. A newsletter signup doesn't need a phone number. A contact form doesn't need a date of birth. Remove unnecessary fields.", automation: "ai-agent", tier: "full",
+        legalBasis: "GDPR says you may only collect data that's necessary for the stated purpose. Collecting 'nice to have' data violates this principle.",
         references: [
           { label: "GDPR Art. 5(1)(c) - Data minimization", url: "https://gdpr-info.eu/art-5-gdpr/" },
           { label: "GDPR Art. 25(2) - Data protection by default", url: "https://gdpr-info.eu/art-25-gdpr/" },
@@ -324,8 +324,8 @@ export const CHECKLIST: CheckCategory[] = [
         imyNote: "For Swedish sites: personnummer (personal identity numbers) have extra protection under dataskyddslagen (2018:218). They may only be collected with consent or when 'clearly justified'. See check F6 for details. Also: Sweden sets children's consent age at 13 (not 16) - if forms may be used by minors, this affects data collection requirements.",
       },
       {
-        key: "F3", label: "Privacy policy linked at/near form", description: "User informed at point of collection", automation: "page-scan", tier: "basic",
-        legalBasis: "GDPR Art. 13 - information at point of collection; Art. 12 - transparency",
+        key: "F3", label: "Privacy policy linked at/near form", description: "Every form that collects personal data should have a visible link to the privacy policy near the submit button. Visitors must know how their data will be used before they submit.", automation: "page-scan", tier: "basic",
+        legalBasis: "GDPR requires that visitors are informed about data processing at the point where their data is collected - not buried on a separate page.",
         references: [
           { label: "GDPR Art. 13 - Information at point of collection", url: "https://gdpr-info.eu/art-13-gdpr/" },
           { label: "GDPR Art. 12 - Transparent communication", url: "https://gdpr-info.eu/art-12-gdpr/" },
@@ -333,8 +333,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "F4", label: "Separate consent per purpose", description: "Inquiry vs marketing = separate checkboxes, no pre-ticking", automation: "ai-agent", tier: "basic",
-        legalBasis: "GDPR Art. 7 - conditions for consent; Art. 6(1)(a); Recital 32 - pre-ticked boxes prohibited",
+        key: "F4", label: "Separate consent per purpose", description: "If a form is used for both an inquiry and marketing emails, these need separate checkboxes. The marketing checkbox must not be pre-ticked. Visitors must actively opt in to each purpose.", automation: "ai-agent", tier: "basic",
+        legalBasis: "Consent must be specific to each purpose. Bundling 'contact us' with 'subscribe to newsletter' in one action is not valid consent for the newsletter.",
         references: [
           { label: "GDPR Art. 7 - Conditions for consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
           { label: "GDPR Recital 32 - Active consent required", url: "https://gdpr-info.eu/recitals/no-32/" },
@@ -343,8 +343,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "F5", label: "Form submissions encrypted", description: "SSL/TLS on form POST", automation: "page-scan", tier: "basic",
-        legalBasis: "GDPR Art. 5(1)(f) - integrity and confidentiality; Art. 32(1)(a) - encryption as security measure",
+        key: "F5", label: "Form submissions encrypted", description: "Form data must be sent over HTTPS (encrypted connection). Check that the form action URL starts with https:// and that the site has a valid SSL certificate.", automation: "page-scan", tier: "basic",
+        legalBasis: "Personal data sent over an unencrypted connection can be intercepted. GDPR requires appropriate security measures, and encryption is a basic one.",
         references: [
           { label: "GDPR Art. 32 - Security of processing", url: "https://gdpr-info.eu/art-32-gdpr/" },
           { label: "GDPR Art. 5(1)(f) - Integrity and confidentiality", url: "https://gdpr-info.eu/art-5-gdpr/" },
@@ -355,8 +355,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "F6", label: "Personnummer collection justified (SE)", description: "Swedish personal identity numbers (personnummer/samordningsnummer) may only be processed with consent or when 'clearly justified' by the purpose. Do not collect in web forms unless strictly necessary.", automation: "ai-agent", tier: "full",
-        legalBasis: "Dataskyddslagen (SFS 2018:218) - supplementary Swedish GDPR provisions; GDPR Art. 5(1)(c) - data minimization",
+        key: "F6", label: "Personnummer collection justified (SE)", description: "Swedish personal identity numbers (personnummer) have extra legal protection. Only collect them in web forms if absolutely necessary and clearly justified. Most website forms do not need them.", automation: "ai-agent", tier: "full",
+        legalBasis: "Swedish law adds extra restrictions on personnummer beyond normal GDPR rules. Collection must be 'clearly justified' - a higher bar than general data minimization.",
         references: [
           { label: "Dataskyddslagen (2018:218) - English translation", url: "https://www.government.se/government-policy/the-constitution-of-sweden-and-personal-privacy/act-containing-supplementary-provisions-to-the-eu-sfs-2018218-general-data-protection-regulation/" },
           { label: "GDPR Art. 5(1)(c) - Data minimization", url: "https://gdpr-info.eu/art-5-gdpr/" },
@@ -373,8 +373,8 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Consent banner",
     checks: [
       {
-        key: "G1", label: "Banner appears on first visit", description: "Consent dialog visible and functional", automation: "page-scan", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 6(1)(a), Art. 7 - consent must precede processing",
+        key: "G1", label: "Banner appears on first visit", description: "The cookie consent banner must appear when a visitor first arrives on the site. It should be clearly visible and functional (buttons work, categories load).", automation: "page-scan", tier: "basic",
+        legalBasis: "Visitors must be asked for consent before any non-essential cookies are set. No banner means no consent, which means all tracking is unlawful.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "CJEU C-673/17 Planet49 (consent must precede processing)", url: "https://gdprhub.eu/index.php?title=CJEU_-_C-673/17_-_Planet49" },
@@ -386,8 +386,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "G2", label: "Accept and Reject equally prominent", description: "Same size, same visual weight, same number of clicks", automation: "ai-agent", tier: "basic",
-        legalBasis: "GDPR Art. 7(4) - freely given consent; Art. 4(11) - definition of consent; Recital 42",
+        key: "G2", label: "Accept and Reject equally prominent", description: "The 'Accept' and 'Reject/Decline' buttons must be equally visible - same size, same visual weight, same number of clicks to reach. Hiding or de-emphasizing 'Reject' is a dark pattern.", automation: "ai-agent", tier: "basic",
+        legalBasis: "Consent must be freely given. If rejecting is harder than accepting, the consent is not truly free. IMY reprimanded three Swedish companies in 2025 for exactly this.",
         references: [
           { label: "GDPR Art. 7 - Conditions for consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
           { label: "EDPB Cookie Banner Taskforce Report 2023 (reject must be on same layer)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/other/report-work-undertaken-cookie-banner-taskforce_en" },
@@ -400,8 +400,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "G3", label: "Granular category controls available", description: "User can accept/reject per category", automation: "cookiebot-api", tier: "basic",
-        legalBasis: "GDPR Art. 7 - conditions for consent; Art. 4(11) - specific consent",
+        key: "G3", label: "Granular category controls available", description: "Visitors must be able to choose which cookie categories to accept (e.g. accept statistics but decline marketing). An all-or-nothing choice is not valid consent.", automation: "cookiebot-api", tier: "basic",
+        legalBasis: "Consent must be specific to each purpose. Visitors need the option to accept some categories while declining others.",
         references: [
           { label: "GDPR Art. 7 - Conditions for consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
           { label: "EDPB Guidelines 05/2020 on consent (granularity)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en" },
@@ -409,24 +409,24 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "G4", label: "Declining actually blocks scripts", description: "Non-necessary scripts don't fire after decline (verify in DevTools)", automation: "browser-test", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 7(3) - withdrawal must be effective",
+        key: "G4", label: "Declining actually blocks scripts", description: "When a visitor clicks 'Decline' or 'Reject all', non-essential scripts (analytics, marketing) must actually stop. Verify in browser DevTools that no tracking scripts fire after declining.", automation: "browser-test", tier: "basic",
+        legalBasis: "A decline button that doesn't actually block tracking is worse than no button at all - it gives visitors a false sense of control.",
         references: [
           { label: "GDPR Art. 7(3) - Withdrawal of consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
           { label: "EDPB Guidelines 05/2020 on consent (effective withdrawal)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en" },
         ],
       },
       {
-        key: "G5", label: "Consent remembered on return", description: "CookieConsent cookie persists, no re-prompt", automation: "browser-test", tier: "basic",
-        legalBasis: "GDPR Art. 7(1) - demonstrating consent; Art. 5(2) - accountability",
+        key: "G5", label: "Consent remembered on return", description: "When a visitor returns to the site, their previous consent choice should be remembered. The banner should not appear again on every visit - that's annoying and undermines trust.", automation: "browser-test", tier: "basic",
+        legalBasis: "The site must be able to prove that consent was given. Storing the consent choice in a cookie is the standard way to do this.",
         references: [
           { label: "GDPR Art. 7(1) - Demonstrating consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
         ],
       },
       {
-        key: "G6", label: "Banner in correct language(s)", description: "Matches site content language(s). Cookiebot multi-language configured.", automation: "ai-agent", tier: "basic",
-        legalBasis: "GDPR Art. 12(1) - clear and plain language; Art. 7 - informed consent",
+        key: "G6", label: "Banner in correct language(s)", description: "The consent banner must be in the same language as the site content. A Swedish site needs a Swedish banner. Cookiebot supports multiple languages - make sure the right ones are configured.", automation: "ai-agent", tier: "basic",
+        legalBasis: "Consent information must be in clear, plain language the visitor understands. An English banner on a Swedish site fails this requirement.",
         references: [
           { label: "GDPR Art. 12 - Transparent communication", url: "https://gdpr-info.eu/art-12-gdpr/" },
           { label: "WP260 rev.01 - Transparency guidelines (language of audience)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/article-29-working-party-guidelines-transparency-under-regulation_en" },
@@ -434,8 +434,8 @@ export const CHECKLIST: CheckCategory[] = [
         imyNote: "For Swedish-language sites: the consent banner must be in Swedish. An English-only banner on a Swedish site fails the 'clear and plain language' requirement. Cookiebot supports Swedish (sv) - ensure it is configured.",
       },
       {
-        key: "G7", label: "No dark patterns", description: "No pre-ticked boxes, no cookie walls, no guilt language, no hidden reject, no pay-or-consent without free alternative (EDPB Opinion 08/2024)", automation: "ai-agent", tier: "basic",
-        legalBasis: "GDPR Art. 7(4) - freely given consent; Art. 4(11) - unambiguous indication; Recitals 42-43",
+        key: "G7", label: "No dark patterns", description: "The consent banner must not use manipulative design: no pre-ticked boxes, no cookie walls that block content, no guilt-tripping language ('You'll miss out!'), no hidden reject button, no 'pay or accept cookies' without a free alternative.", automation: "ai-agent", tier: "basic",
+        legalBasis: "Dark patterns make consent invalid because the visitor was manipulated, not freely choosing. This is now an active enforcement area - IMY issued its first cookie banner fines in 2025.",
         references: [
           { label: "EDPB Cookie Banner Taskforce Report 2023 (8 dark pattern violations)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/other/report-work-undertaken-cookie-banner-taskforce_en" },
           { label: "CJEU C-673/17 Planet49 (pre-ticked boxes invalid)", url: "https://gdprhub.eu/index.php?title=CJEU_-_C-673/17_-_Planet49" },
@@ -449,16 +449,16 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "G8", label: "Consent withdrawal accessible at all times", description: "Persistent widget or footer link lets users review and change consent. Withdrawal must be as easy as giving consent.", automation: "page-scan", tier: "basic",
-        legalBasis: "GDPR Art. 7(3) - withdrawal must be as easy as giving consent",
+        key: "G8", label: "Consent withdrawal accessible at all times", description: "Visitors must be able to change their consent choice at any time. This is usually done via a small floating widget or a 'Cookie settings' link in the footer that reopens the consent banner.", automation: "page-scan", tier: "basic",
+        legalBasis: "Withdrawing consent must be as easy as giving it. If accepting takes one click, changing your mind should also take one click.",
         references: [
           { label: "GDPR Art. 7(3) - Withdrawal of consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
           { label: "EDPB Guidelines 05/2020 on consent", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en" },
         ],
       },
       {
-        key: "G9", label: "Consent renewal period configured", description: "CMP re-prompts after max 12 months (6 months for French visitors). Also re-prompts when cookie notice changes.", automation: "human", tier: "full",
-        legalBasis: "GDPR Art. 5(2) - accountability; CNIL guidance (6 months); EDPB recommendations (12 months max)",
+        key: "G9", label: "Consent renewal period configured", description: "The consent banner should re-appear after a set period (max 12 months, 6 months for French visitors) so visitors can reconsider their choice. It should also re-appear if the cookie policy changes.", automation: "human", tier: "full",
+        legalBasis: "Consent is not forever. Visitors should periodically be reminded of their choice and given the option to change it.",
         references: [
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
           { label: "EDPB Guidelines 05/2020 on consent", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en" },
@@ -471,51 +471,51 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Verification",
     checks: [
       {
-        key: "H1", label: "Cookiebot compliance scan run", description: "Run scanner, document result, no unclassified cookies", automation: "human", tier: "full",
-        legalBasis: "GDPR Art. 5(2) - accountability; ePrivacy Directive Art. 5(3)",
+        key: "H1", label: "Cookiebot compliance scan run", description: "Run a full scan in the Cookiebot admin panel and save the results. This checks that all cookies are detected and properly categorized.", automation: "human", tier: "full",
+        legalBasis: "You need documented proof that you've checked your cookie setup. The scan report serves as evidence of due diligence.",
         references: [
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
         ],
       },
       {
-        key: "H2", label: "Cookiebot GCM Check run", description: "Google Consent Mode Checker in Cookiebot admin", automation: "human", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 7 - verifies consent signals are working",
+        key: "H2", label: "Cookiebot GCM Check run", description: "Run the Google Consent Mode Checker in the Cookiebot admin panel. This verifies that consent signals are being sent correctly to Google services.", automation: "human", tier: "full",
+        legalBasis: "Confirms that your Consent Mode setup actually works - that Google receives the right consent signals when visitors accept or decline.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
         ],
       },
       {
-        key: "H3", label: "GTM Preview Mode test: decline all", description: 'Consent tab shows Denied, non-Google tags under "Not Fired"', automation: "human", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 7, Art. 25 - verifies consent implementation",
+        key: "H3", label: "GTM Preview Mode test: decline all", description: "Open GTM Preview Mode, decline all cookies, and verify: the Consent tab should show 'Denied' for all types, and non-Google tags should appear under 'Not Fired'.", automation: "human", tier: "basic",
+        legalBasis: "The most important test - proves that declining cookies actually prevents tracking. If tags still fire after declining, your setup is broken.",
         references: [
           { label: "GDPR Art. 25 - Data protection by design", url: "https://gdpr-info.eu/art-25-gdpr/" },
         ],
       },
       {
-        key: "H4", label: "GTM Preview Mode test: accept all", description: "All tags fire, Consent tab shows Granted", automation: "human", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 7, Art. 25 - verifies consent implementation",
+        key: "H4", label: "GTM Preview Mode test: accept all", description: "Open GTM Preview Mode, accept all cookies, and verify: all tags should fire and the Consent tab should show 'Granted' for all types.", automation: "human", tier: "full",
+        legalBasis: "Verifies the other side - that accepting cookies actually enables tracking. If tags don't fire after accepting, your analytics and marketing tools won't collect data.",
         references: [
           { label: "GDPR Art. 25 - Data protection by design", url: "https://gdpr-info.eu/art-25-gdpr/" },
         ],
       },
       {
-        key: "H5", label: "GTM Preview Mode test: selective", description: "Accept Statistics only, verify Marketing tags don't fire", automation: "human", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 7 - verifies granular consent works",
+        key: "H5", label: "GTM Preview Mode test: selective", description: "Accept only Statistics cookies (decline Marketing), then verify in GTM Preview that marketing tags (LinkedIn Pixel, Meta Pixel, etc.) did NOT fire while analytics tags did.", automation: "human", tier: "full",
+        legalBasis: "Tests that granular consent actually works - accepting one category should not enable another.",
         references: [
           { label: "GDPR Art. 7 - Conditions for consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
           { label: "EDPB Guidelines 05/2020 on consent (granularity)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en" },
         ],
       },
       {
-        key: "H6", label: "Cookie tab check in DevTools", description: "Before consent: only CookieConsent. After decline: no tracking cookies.", automation: "browser-test", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 5(2) - accountability",
+        key: "H6", label: "Cookie tab check in DevTools", description: "Open browser DevTools > Application > Cookies. Before any consent choice: only the CookieConsent cookie should exist. After declining: no analytics or marketing cookies should appear.", automation: "browser-test", tier: "full",
+        legalBasis: "The ultimate proof that consent works - if tracking cookies appear before or after declining consent, something is broken regardless of what GTM Preview shows.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
         ],
       },
       {
-        key: "H7", label: "Consent records stored and auditable", description: "CMP consent log enabled. Records: timestamp, consent choices per category, banner version. Retention 5+ years.", automation: "human", tier: "basic",
-        legalBasis: "GDPR Art. 7(1) - controller must demonstrate consent was given; Art. 5(2) - accountability",
+        key: "H7", label: "Consent records stored and auditable", description: "Cookiebot's consent log must be enabled. It records when each visitor consented, what they accepted/declined, and which banner version they saw. Keep these records for at least 5 years.", automation: "human", tier: "basic",
+        legalBasis: "If a data protection authority investigates, you must prove that each visitor actually consented. Without consent records, you have no evidence.",
         references: [
           { label: "GDPR Art. 7(1) - Demonstrating consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
@@ -526,8 +526,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "H8", label: "Non-cookie tracking checked", description: "Check localStorage, sessionStorage, IndexedDB, fingerprinting scripts. Same consent rules apply as for cookies.", automation: "browser-test", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3) - applies to ALL storage/access on user device, not just cookies",
+        key: "H8", label: "Non-cookie tracking checked", description: "Tracking isn't limited to cookies. Check localStorage, sessionStorage, and IndexedDB in browser DevTools for tracking data. Also check for fingerprinting scripts. The same consent rules apply to all of these.", automation: "browser-test", tier: "full",
+        legalBasis: "EU consent rules apply to ALL data stored on the visitor's device, not just cookies. localStorage tracking without consent is just as illegal as cookie tracking without consent.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "ICO - Storage and access technologies guidance", url: "https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/guidance-on-the-use-of-storage-and-access-technologies/" },
@@ -540,8 +540,8 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Privacy documentation",
     checks: [
       {
-        key: "I1", label: "Privacy Policy complete (Art. 13/14)", description: "Controller ID, DPO contact (if applicable), purposes per processing activity, legal basis, data categories, recipients, international transfers, retention periods, all data subject rights, right to withdraw consent, right to complain to DPA, automated decision-making info (if used)", automation: "ai-agent", tier: "basic",
-        legalBasis: "GDPR Art. 13 - information at point of collection; Art. 14 - information not from data subject; Art. 12 - transparency",
+        key: "I1", label: "Privacy Policy complete", description: "The privacy policy must include: who is responsible for the site (company name, contact), what data is collected, why, who it's shared with, how long it's kept, visitor rights (access, delete, object), how to withdraw consent, and how to complain to a data protection authority.", automation: "ai-agent", tier: "basic",
+        legalBasis: "GDPR lists specific information that must be provided to visitors. Missing any of these items is a violation - IMY fined Klarna SEK 7.5M and Spotify SEK 58M for incomplete privacy notices.",
         references: [
           { label: "GDPR Art. 13 - Information at point of collection", url: "https://gdpr-info.eu/art-13-gdpr/" },
           { label: "GDPR Art. 14 - Information not obtained from data subject", url: "https://gdpr-info.eu/art-14-gdpr/" },
@@ -555,56 +555,56 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "I2", label: "Privacy Policy in site language(s)", description: "Available in every language the site content uses", automation: "ai-agent", tier: "basic",
-        legalBasis: "GDPR Art. 12(1) - clear and plain language; Art. 5(1)(a) - transparency",
+        key: "I2", label: "Privacy Policy in site language(s)", description: "The privacy policy must be available in every language the site uses. A Swedish site needs a Swedish privacy policy. An English-only policy on a Swedish site is not compliant.", automation: "ai-agent", tier: "basic",
+        legalBasis: "Privacy information must be in a language the visitor understands. Using only English on a non-English site fails the transparency requirement.",
         references: [
           { label: "GDPR Art. 12 - Transparent communication", url: "https://gdpr-info.eu/art-12-gdpr/" },
           { label: "WP260 rev.01 - Transparency guidelines (language of audience)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/article-29-working-party-guidelines-transparency-under-regulation_en" },
         ],
       },
       {
-        key: "I3", label: "Cookie Policy exists (separate page)", description: "Lists all cookies, purpose, duration, vendor. Cookie Declaration script installed.", automation: "page-scan", tier: "full",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 13(1)(c)-(d)",
+        key: "I3", label: "Cookie Policy exists (separate page)", description: "A dedicated cookie policy page that lists every cookie: its name, purpose, how long it lasts, and which service sets it. Cookiebot can auto-generate this via the Cookie Declaration script.", automation: "page-scan", tier: "full",
+        legalBasis: "Visitors must be able to see exactly which cookies are used and why, so they can make an informed consent decision.",
         references: [
           { label: "CJEU C-673/17 Planet49 (cookie duration and function must be disclosed)", url: "https://gdprhub.eu/index.php?title=CJEU_-_C-673/17_-_Planet49" },
           { label: "GDPR Art. 13 - Information at point of collection", url: "https://gdpr-info.eu/art-13-gdpr/" },
         ],
       },
       {
-        key: "I4", label: "Privacy Policy linked from every page", description: "Typically in footer", automation: "page-scan", tier: "basic",
-        legalBasis: "GDPR Art. 12(1) - easily accessible; Art. 13",
+        key: "I4", label: "Privacy Policy linked from every page", description: "A link to the privacy policy should be in the site footer so it's accessible from every page. Visitors should never have to search for it.", automation: "page-scan", tier: "basic",
+        legalBasis: "Privacy information must be easily accessible. A footer link on every page is the standard way to achieve this.",
         references: [
           { label: "GDPR Art. 12 - Transparent communication", url: "https://gdpr-info.eu/art-12-gdpr/" },
           { label: "WP260 rev.01 - Transparency guidelines (easily accessible)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/article-29-working-party-guidelines-transparency-under-regulation_en" },
         ],
       },
       {
-        key: "I5", label: "Script inventory documented", description: "All scripts and their purposes documented internally", automation: "human", tier: "full",
-        legalBasis: "GDPR Art. 30 - records of processing; Art. 5(2) - accountability",
+        key: "I5", label: "Script inventory documented", description: "Keep an internal document listing every script on the site, what it does, and why it's there. This is for your own records - not published on the site.", automation: "human", tier: "full",
+        legalBasis: "You need to be able to account for every piece of tracking on your site. If a data protection authority asks, you should be able to show this list immediately.",
         references: [
           { label: "GDPR Art. 30 - Records of processing", url: "https://gdpr-info.eu/art-30-gdpr/" },
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
         ],
       },
       {
-        key: "I6", label: "Automated decision-making disclosed (if applicable)", description: "If site uses profiling or automated decisions with significant effects: privacy policy discloses logic, significance, consequences, and right to human review. N/A for most marketing websites.", automation: "human", tier: "full",
-        legalBasis: "GDPR Art. 13(2)(f), Art. 14(2)(g), Art. 22",
+        key: "I6", label: "Automated decision-making disclosed (if applicable)", description: "If the site uses AI or automated systems that make decisions affecting people (e.g. automated loan approvals, content filtering), the privacy policy must explain how it works and the visitor's right to human review. Not applicable to most marketing websites.", automation: "human", tier: "full",
+        legalBasis: "People have a right to know when decisions about them are made by machines, and to request a human review.",
         references: [
           { label: "GDPR Art. 22 - Automated decision-making", url: "https://gdpr-info.eu/art-22-gdpr/" },
           { label: "GDPR Art. 13(2)(f) - Disclosure requirement", url: "https://gdpr-info.eu/art-13-gdpr/" },
         ],
       },
       {
-        key: "I7", label: "DPO contact in privacy policy (if applicable)", description: "If client has a DPO (mandatory for public authorities, large-scale monitoring, special category data): contact details in privacy policy. If DPO required but not appointed, flag as critical.", automation: "human", tier: "full",
-        legalBasis: "GDPR Art. 37-39 - DPO requirements; Art. 13(1)(b) - must disclose DPO contact",
+        key: "I7", label: "DPO contact in privacy policy (if applicable)", description: "If the organization has a Data Protection Officer (required for public authorities and companies doing large-scale monitoring or handling sensitive data), their contact details must be in the privacy policy.", automation: "human", tier: "full",
+        legalBasis: "If a DPO is required and appointed, visitors must be able to contact them. If a DPO is required but not appointed, that's a separate compliance issue to flag.",
         references: [
           { label: "GDPR Art. 37 - Designation of DPO", url: "https://gdpr-info.eu/art-37-gdpr/" },
           { label: "GDPR Art. 13(1)(b) - DPO contact disclosure", url: "https://gdpr-info.eu/art-13-gdpr/" },
         ],
       },
       {
-        key: "I8", label: "Privacy information accessible and layered", description: "Clear, plain language. Long policies should use layered approach (summary + full detail). Easy to navigate (sections, anchors). 2026 DPA coordinated enforcement priority.", automation: "ai-agent", tier: "full",
-        legalBasis: "GDPR Art. 12 - concise, transparent, intelligible, easily accessible",
+        key: "I8", label: "Privacy information accessible and layered", description: "Privacy policies should be written in clear, plain language - not legal jargon. Long policies should use a layered approach: a short summary at the top with links to detailed sections. Easy to scan with clear headings.", automation: "ai-agent", tier: "full",
+        legalBasis: "A privacy policy nobody can understand is the same as no privacy policy. Both Klarna and Spotify were fined by IMY partly for dense, unreadable privacy notices.",
         references: [
           { label: "GDPR Art. 12 - Transparent communication", url: "https://gdpr-info.eu/art-12-gdpr/" },
           { label: "WP260 rev.01 - Transparency guidelines (layered approach)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/article-29-working-party-guidelines-transparency-under-regulation_en" },
@@ -622,24 +622,24 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Data processing & legal",
     checks: [
       {
-        key: "J1", label: "DPAs in place for all processors", description: "Analytics, CRM, email, hosting, CDN, payment, any SaaS with personal data", automation: "human", tier: "basic",
-        legalBasis: "GDPR Art. 28 - processor obligations (mandatory written contract); Art. 28(3) - required contract terms",
+        key: "J1", label: "DPAs in place for all processors", description: "Every third-party service that handles visitor or customer data (analytics, CRM, email tools, hosting, CDN, payment) must have a signed Data Processing Agreement (DPA). Most services offer these in their settings.", automation: "human", tier: "basic",
+        legalBasis: "GDPR requires a written agreement with every company that processes personal data on your behalf. Without a DPA, the data sharing has no legal basis.",
         references: [
           { label: "GDPR Art. 28 - Processor", url: "https://gdpr-info.eu/art-28-gdpr/" },
           { label: "EDPB Guidelines 07/2020 on controller/processor", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-072020-concepts-controller-and-processor-gdpr_en" },
         ],
       },
       {
-        key: "J2", label: "Vendor inventory maintained", description: "List of all third parties, what data they process, DPA status", automation: "human", tier: "full",
-        legalBasis: "GDPR Art. 30 - records of processing; Art. 5(2) - accountability",
+        key: "J2", label: "Vendor inventory maintained", description: "Keep an up-to-date list of every third-party service used: what data they receive, where they store it, and whether a DPA is signed. Review this list at least annually.", automation: "human", tier: "full",
+        legalBasis: "You must be able to show exactly which companies handle your visitors' data. This is a core accountability requirement.",
         references: [
           { label: "GDPR Art. 30 - Records of processing", url: "https://gdpr-info.eu/art-30-gdpr/" },
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
         ],
       },
       {
-        key: "J3", label: "US services DPF-certified", description: "Check dataprivacyframework.gov for each US-based vendor. If certified: transfer is lawful. If NOT certified: verify SCCs + Transfer Impact Assessment are in place (see J8).", automation: "human", tier: "basic",
-        legalBasis: "GDPR Art. 44-46 - international transfers; EU-US DPF adequacy decision (Art. 45, Jul 2023)",
+        key: "J3", label: "US services DPF-certified", description: "For every US-based service (Google, Meta, HubSpot, etc.), check if they're certified on dataprivacyframework.gov. If yes, the data transfer is lawful. If not, you need additional legal safeguards (see J8).", automation: "human", tier: "basic",
+        legalBasis: "Sending EU visitor data to US companies is only legal if there's a valid transfer mechanism. The EU-US Data Privacy Framework (since 2023) is the easiest one. IMY fined companies SEK 12M+ for US transfers without proper safeguards.",
         references: [
           { label: "GDPR Art. 44-46 - International transfers", url: "https://gdpr-info.eu/art-44-gdpr/" },
           { label: "EU-US Data Privacy Framework", url: "https://www.dataprivacyframework.gov/list" },
@@ -653,8 +653,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "J4", label: "Data subject rights process exists", description: "DSAR handling procedure documented, 30-day response capability", automation: "human", tier: "basic",
-        legalBasis: "GDPR Art. 15-21 - data subject rights; Art. 12 - response within 1 month",
+        key: "J4", label: "Data subject rights process exists", description: "There must be a documented process for handling requests from people who want to see, correct, or delete their data. You must be able to respond within 30 days.", automation: "human", tier: "basic",
+        legalBasis: "People have the right to access, correct, and delete their personal data. If someone asks and you can't respond within 30 days, that's a violation.",
         references: [
           { label: "GDPR Art. 15 - Right of access", url: "https://gdpr-info.eu/art-15-gdpr/" },
           { label: "GDPR Art. 17 - Right to erasure", url: "https://gdpr-info.eu/art-17-gdpr/" },
@@ -667,8 +667,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "J5", label: "Data breach response plan exists", description: "72-hour notification procedure, breach register maintained", automation: "human", tier: "basic",
-        legalBasis: "GDPR Art. 33 - notification to DPA within 72 hours; Art. 34 - communication to data subjects",
+        key: "J5", label: "Data breach response plan exists", description: "There must be a plan for what to do if personal data is leaked or stolen. The data protection authority must be notified within 72 hours. Affected individuals may also need to be told. Keep a log of all breaches.", automation: "human", tier: "basic",
+        legalBasis: "A data breach without a response plan means slower notification, worse outcomes, and larger fines. IMY received 12,000+ breach reports in 2025 alone.",
         references: [
           { label: "GDPR Art. 33 - Notification to supervisory authority", url: "https://gdpr-info.eu/art-33-gdpr/" },
           { label: "GDPR Art. 34 - Communication to data subject", url: "https://gdpr-info.eu/art-34-gdpr/" },
@@ -682,31 +682,31 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "J6", label: "Records of Processing Activities (ROPA) exist", description: "Client maintains ROPA covering all website processing: purposes, data categories, recipients, retention periods, transfer safeguards. Must be available to DPA on request.", automation: "human", tier: "basic",
-        legalBasis: "GDPR Art. 30 - records of processing activities (mandatory for controllers)",
+        key: "J6", label: "Records of Processing Activities (ROPA) exist", description: "The client must maintain a formal record of all personal data processing: what data, why, who receives it, how long it's kept, and what safeguards are in place. Must be available to the data protection authority if they ask.", automation: "human", tier: "basic",
+        legalBasis: "ROPA is mandatory for most organizations. It's the master document that ties together everything else in your data protection setup.",
         references: [
           { label: "GDPR Art. 30 - Records of processing", url: "https://gdpr-info.eu/art-30-gdpr/" },
         ],
       },
       {
-        key: "J7", label: "Sub-processor management in DPAs", description: "DPAs include sub-processor clauses: prior notification of changes, right to object, same obligations flow down. Key vendors have accessible sub-processor lists.", automation: "human", tier: "full",
-        legalBasis: "GDPR Art. 28(2), Art. 28(4) - sub-processor obligations",
+        key: "J7", label: "Sub-processor management in DPAs", description: "Your vendors often use their own sub-vendors (sub-processors). DPAs should include: advance notice when sub-processors change, your right to object, and that sub-processors follow the same data protection rules.", automation: "human", tier: "full",
+        legalBasis: "You're responsible for the entire chain. If your vendor shares data with a sub-processor who mishandles it, you're still accountable.",
         references: [
           { label: "GDPR Art. 28 - Processor", url: "https://gdpr-info.eu/art-28-gdpr/" },
           { label: "EDPB Guidelines 07/2020 on controller/processor", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-072020-concepts-controller-and-processor-gdpr_en" },
         ],
       },
       {
-        key: "J8", label: "Transfer Impact Assessments for non-DPF transfers", description: "For US vendors NOT on DPF, or non-adequate country vendors: TIA completed, covering legal framework, government access risks, supplementary measures. N/A if all vendors DPF-certified or in adequate countries.", automation: "human", tier: "full",
-        legalBasis: "GDPR Art. 46 - appropriate safeguards; Schrems II ruling; EDPB Recommendations 01/2020",
+        key: "J8", label: "Transfer Impact Assessments for non-DPF transfers", description: "For US vendors not on the Data Privacy Framework, or vendors in other non-EU countries: you need a Transfer Impact Assessment documenting the risks of sending data there. Not needed if all vendors are DPF-certified or in EU-approved countries.", automation: "human", tier: "full",
+        legalBasis: "When there's no adequacy agreement (like the DPF), you must assess whether the destination country adequately protects personal data and what supplementary measures are needed.",
         references: [
           { label: "GDPR Art. 46 - Appropriate safeguards", url: "https://gdpr-info.eu/art-46-gdpr/" },
           { label: "CJEU C-311/18 Schrems II", url: "https://gdprhub.eu/index.php?title=CJEU_-_C-311/18_-_Schrems_II" },
         ],
       },
       {
-        key: "J9", label: "DPIA need assessed", description: "Evaluate if processing triggers DPIA: large-scale profiling, systematic monitoring, automated decision-making, special category data, children's data. Document conclusion. If required, verify completion.", automation: "human", tier: "full",
-        legalBasis: "GDPR Art. 35 - Data Protection Impact Assessment",
+        key: "J9", label: "DPIA need assessed", description: "Check if the site's data processing requires a Data Protection Impact Assessment (DPIA). Triggers include: large-scale profiling, systematic monitoring of public areas, automated decision-making, handling sensitive data, or collecting children's data. Document your conclusion either way.", automation: "human", tier: "full",
+        legalBasis: "High-risk data processing requires a formal risk assessment before you start. Even if a DPIA isn't needed, you should document why not.",
         references: [
           { label: "GDPR Art. 35 - DPIA", url: "https://gdpr-info.eu/art-35-gdpr/" },
           { label: "EDPB Guidelines on DPIA", url: "https://commission.europa.eu/law/law-topic/data-protection/rules-business-and-organisations/obligations/when-data-protection-impact-assessment-dpia-required_en" },
@@ -724,8 +724,8 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Geo-targeting",
     checks: [
       {
-        key: "K1", label: "EU/EEA visitors get opt-in banner", description: "Full blocking consent banner", automation: "browser-test", tier: "basic",
-        legalBasis: "ePrivacy Directive Art. 5(3); GDPR Art. 6(1)(a), Art. 7; GDPR Art. 3(2) - territorial scope",
+        key: "K1", label: "EU/EEA visitors get opt-in banner", description: "Visitors from EU/EEA countries must see a full consent banner that blocks all non-essential cookies until they actively choose to accept. This is the strictest consent model.", automation: "browser-test", tier: "basic",
+        legalBasis: "EU rules require opt-in consent - nothing tracks until the visitor says yes. This applies to any website that targets EU visitors, even if the company is based elsewhere.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
           { label: "GDPR Art. 3 - Territorial scope", url: "https://gdpr-info.eu/art-3-gdpr/" },
@@ -733,8 +733,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "K2", label: "US visitors get appropriate notice", description: 'Opt-out model. "Do Not Sell/Share" link (CCPA). Honor GPC browser signals.', automation: "browser-test", tier: "full",
-        legalBasis: "CCPA/CPRA Cal. Civ. Code 1798.120, 1798.135 - opt-out of sale/sharing; state privacy laws (20+ states)",
+        key: "K2", label: "US visitors get appropriate notice", description: "US visitors use an opt-out model (tracking can start, but visitors can say stop). The site needs a 'Do Not Sell/Share My Personal Information' link and must honor the Global Privacy Control (GPC) browser signal.", automation: "browser-test", tier: "full",
+        legalBasis: "California (CCPA) and 20+ other US states require an opt-out option. GPC browser signals must be treated as a valid opt-out request.",
         references: [
           { label: "CCPA - California Consumer Privacy Act", url: "https://oag.ca.gov/privacy/ccpa" },
           { label: "CCPA 1798.120 - Right to opt out", url: "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?sectionNum=1798.120.&lawCode=CIV" },
@@ -743,8 +743,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "K3", label: "UK visitors handled correctly", description: "Marketing: opt-in required. Analytics: can load without consent if solely for service improvement, users informed, opt-out provided, and third-party provider does not use data for own purposes (DUAA 2025, in force Feb 2026).", automation: "browser-test", tier: "full",
-        legalBasis: "UK GDPR; PECR Reg. 6; PECR Schedule A1 (inserted by DUAA 2025 s.112); UK GDPR Art. 6(1)(f)",
+        key: "K3", label: "UK visitors handled correctly", description: "UK rules differ from EU: marketing cookies still need opt-in, but analytics cookies can load without consent if they're only used for service improvement, visitors are informed, an opt-out is provided, and the analytics provider doesn't use the data for their own purposes (since Feb 2026).", automation: "browser-test", tier: "full",
+        legalBasis: "The UK relaxed analytics cookie rules in 2025 but kept strict rules for marketing. If you serve UK visitors, your consent banner should reflect these different requirements.",
         references: [
           { label: "UK PECR - Cookie consent rules", url: "https://www.legislation.gov.uk/uksi/2003/2426" },
           { label: "UK DUAA 2025 Part 5 - PECR amendments", url: "https://www.legislation.gov.uk/ukpga/2025/18/part/5" },
@@ -754,8 +754,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "K4", label: "GPC browser signal honored", description: "Website/CMP detects and honors Global Privacy Control signals as valid opt-out. Required in 11+ US states (CA, CO, CT, TX, MT, OR, DE, NH, KY, RI, IN). Verify with GPC browser extension.", automation: "browser-test", tier: "full",
-        legalBasis: "CCPA/CPRA 1798.135; Colorado CPA; Connecticut CTDPA; Texas TDPSA; 7+ additional state laws",
+        key: "K4", label: "GPC browser signal honored", description: "Some visitors have Global Privacy Control (GPC) enabled in their browser, which signals 'do not sell/share my data'. The site must detect and honor this signal. Required by law in 11+ US states. Test with the GPC browser extension.", automation: "browser-test", tier: "full",
+        legalBasis: "California, Colorado, Texas, and 8+ other US states legally require websites to honor GPC signals as a valid opt-out of data sale/sharing.",
         references: [
           { label: "Global Privacy Control (GPC)", url: "https://globalprivacycontrol.org/" },
           { label: "CA Attorney General - GPC guidance", url: "https://oag.ca.gov/privacy/ccpa/gpc" },

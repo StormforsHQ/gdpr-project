@@ -211,27 +211,26 @@ export function CheckItem({
               )}
             </div>
           )}
-          {scanResult && scanResult.findings.length > 0 && (() => {
-            const errorFindings = scanResult.findings.filter((f) => f.severity === "error");
-            const errorElements = errorFindings
-              .map((f) => f.element)
-              .filter((e) => e && e !== "page");
-            const uniqueElements = [...new Set(errorElements)];
-
-            return (
-              <div className="space-y-1">
-                {scanResult.status === "issue" && uniqueElements.length > 0 ? (
-                  <p className="text-xs text-destructive">
-                    {errorFindings.length} issue{errorFindings.length !== 1 ? "s" : ""}: {uniqueElements.join(", ")}
-                  </p>
-                ) : scanResult.status === "issue" ? (
-                  <p className="text-xs text-destructive">{scanResult.summary}</p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">{scanResult.summary}</p>
-                )}
-              </div>
-            );
-          })()}
+          {scanResult && (
+            <div className="space-y-1.5">
+              <p className={`text-xs ${scanResult.status === "issue" ? "text-destructive" : "text-muted-foreground"}`}>
+                {scanResult.summary}
+              </p>
+              {scanResult.status === "issue" && scanResult.findings.filter((f) => f.severity === "error").length > 0 && (
+                <ul className="space-y-1 pl-3">
+                  {scanResult.findings.filter((f) => f.severity === "error").map((f, i) => (
+                    <li key={i} className="text-xs text-destructive/80 flex gap-1.5">
+                      <span className="shrink-0">-</span>
+                      <span>
+                        {f.element && f.element !== "page" && <span className="font-medium">{f.element}: </span>}
+                        {f.detail.length > 120 ? f.detail.slice(0, 120) + "..." : f.detail}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-3">
             {onRunCheck && (
               <Tooltip>

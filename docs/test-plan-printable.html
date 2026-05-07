@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GDPR Audit App - Test Plan</title>
+<style>
+  body { font-family: -apple-system, sans-serif; font-size: 11px; line-height: 1.5; max-width: 720px; margin: 20px auto; }
+  h1 { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
+  h2 { font-size: 12px; font-weight: 600; margin: 14px 0 4px; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
+  p.note { font-style: italic; margin: 2px 0 6px; }
+  ul { list-style: none; padding-left: 0; margin: 0 0 6px; }
+  li { padding: 1px 0; }
+  li::before { content: "\2610\0020"; }
+  li.sub { padding-left: 16px; }
+  li.sub::before { content: "\2610\0020"; }
+  @media print { body { font-size: 10px; margin: 10px; } h2 { break-after: avoid; } }
+</style>
+</head>
+<body>
+
+<h1>GDPR Audit App - Test Plan</h1>
+<p class="note">Test on a real site with Cookiebot + GTM configured. After each scan, cross-check a few results manually in browser DevTools / GTM / Cookiebot admin to catch false positives.</p>
+
+<h2>1. Page scan (18 Auto checks)</h2>
+<ul>
+  <li>Run "Scan site" on a configured site - all Auto checks get results</li>
+  <li>Inline results: each check row shows summary text + itemized error findings (not just element names)</li>
+  <li>Findings drawer on a failing check: status badge, findings list with severity icons, "How to fix" steps, doc links</li>
+  <li>Findings drawer on a passing check: green "No issues found"</li>
+  <li>Findings drawer on unchecked check: check guide appears as fallback</li>
+  <li>Scan summary badge above checks: correct total, basic/full breakdown</li>
+  <li>Re-scan: results update in place, not duplicated</li>
+  <li class="sub">Verify false positive: pick a check marked OK (e.g. E2 Google Fonts) - open DevTools Network, filter "fonts.googleapis" - confirm the scanner result matches reality</li>
+  <li class="sub">Verify false positive: pick a check marked Issue (e.g. B1 tracking outside GTM) - check the flagged script actually exists in page source</li>
+</ul>
+
+<h2>2. Cookiebot API checks (6 checks: C1-C5, G3)</h2>
+<ul>
+  <li>Run as part of "Scan site" on a site with Cookiebot ID set - 6 Cookiebot checks get results</li>
+  <li>Findings drawer: remediation steps appear for each</li>
+  <li>Remove Cookiebot ID from the site, re-scan - these 6 show "Cookiebot ID required" warning, no false results</li>
+  <li class="sub">Verify: open Cookiebot admin cookie report - compare categories against C1-C5 results to confirm accuracy</li>
+  <li class="sub">Check C5 (unclassified cookies): if it reports none, verify in Cookiebot admin that no unclassified cookies exist</li>
+</ul>
+
+<h2>3. GTM API checks (6 checks: A3-A5, B2-B4)</h2>
+<ul>
+  <li>Run individually via "Run check" button on a site with GTM configured</li>
+  <li>Results appear inline and in findings drawer with remediation steps</li>
+  <li>Remove GTM ID - verify warning appears instead of results</li>
+  <li class="sub">Verify A3 (Cookiebot trigger): open GTM, check the Cookiebot tag's trigger - does it match what the app reports?</li>
+  <li class="sub">Verify B3 (consent gating): pick a non-Google tag in GTM, check its consent settings match the app's finding</li>
+  <li class="sub">Run all 6 GTM checks on a site with no non-Google tags - B3/B4 should report OK or N/A, not false issues</li>
+</ul>
+
+<h2>4. AI checks (9 checks: F2, F4, F6, G2, G6, G7, I1, I2, I8)</h2>
+<ul>
+  <li>Verify OpenRouter credits in Settings before running</li>
+  <li>Run "AI Analyze" - all 9 AI checks get results</li>
+  <li>Findings drawer shows AI analysis section + remediation steps</li>
+  <li>Purple "AI" badge on all 9 checks</li>
+  <li class="sub">Verify G2 (accept/reject equally prominent): visually check the consent banner yourself - does the AI result match what you see?</li>
+  <li class="sub">Verify I1 (privacy policy complete): open the privacy policy, spot-check 2-3 elements the AI flagged as missing/present</li>
+  <li class="sub">Run AI checks on a site with no forms - F2/F4/F6 should report N/A or note no forms found, not hallucinate issues</li>
+  <li>Run AI checks with 0 credits - verify clear error message, no partial results</li>
+</ul>
+
+<h2>5. Browser checks (8 checks: G4, G5, H6, H8, K1-K4)</h2>
+<ul>
+  <li>All 8 show blue "Browser" badge</li>
+  <li>Check guide (info icon) on each: step-by-step instructions present and understandable</li>
+  <li>Findings drawer on a manually-set "issue": "How to fix" section with remediation steps</li>
+  <li>Set status to OK, issue, N/A on different browser checks - verify saves persist after reload</li>
+  <li>Add an internal note to a browser check - verify note saves and "Internal notes" badge count updates</li>
+</ul>
+
+<h2>6. Manual checks (22 checks: C6, D2, E6, G9, H1-H5, H7, I5-I7, J1-J9)</h2>
+<ul>
+  <li>All 22 show grey "Manual" badge</li>
+  <li>Check guide present on each</li>
+  <li>Findings drawer: remediation steps appear (newly added)</li>
+  <li>Set status + add note on a manual check - verify persistence</li>
+  <li>Set a check to N/A with a note explaining why - verify both save</li>
+</ul>
+
+<h2>7. Tier filtering</h2>
+<ul>
+  <li>Toggle Basic/Full audit - visible check count changes (34 basic, 69 full)</li>
+  <li>Issue badges: separate basic/full counts, both visible regardless of tier toggle</li>
+  <li>Switch to Basic: only basic-tier checks visible, full-tier checks hidden</li>
+  <li>Switch back to Full: all checks visible, no data lost</li>
+  <li class="sub">Set a full-tier check to "issue" while on Full view, switch to Basic - that issue badge still shows in the full count</li>
+</ul>
+
+<h2>8. Filter bar</h2>
+<ul>
+  <li>Click each filter badge: OK, Issues (basic), Issues (full), N/A, Not checked, Internal notes</li>
+  <li>Check list filters correctly for each, active filter shows ring highlight</li>
+  <li>Click active filter again to deselect - all checks reappear</li>
+  <li>Combine: set tier to Basic + filter to Issues - only basic-tier issues show</li>
+</ul>
+
+<h2>9. Findings drawer - cross-type spot check</h2>
+<p class="note">Pick one check from each type and verify the full drawer content.</p>
+<ul>
+  <li>Page-scan check (e.g. A1): status, summary, findings, remediation, doc links</li>
+  <li>Cookiebot check (e.g. C3): status, summary, findings, remediation</li>
+  <li>GTM check (e.g. B3): status, summary, findings, remediation, dev/legal note</li>
+  <li>AI check (e.g. G7): status, AI analysis, remediation</li>
+  <li>Browser check (e.g. G4): status, remediation with DevTools instructions</li>
+  <li>Manual check (e.g. J1): status, remediation with client-facing steps</li>
+  <li>Platform-specific steps show Webflow/HubSpot badges where applicable</li>
+  <li>"Needs developer or legal input" note appears where marked</li>
+</ul>
+
+<h2>10. Chatbot - typical queries</h2>
+<ul>
+  <li>"What checks are there for cookies?" - returns relevant checks from categories C, G, H</li>
+  <li>"How do I fix check B3?" - returns guide AND remediation steps (not just the guide)</li>
+  <li>"What's the status of this site?" (while on a site page) - returns audit progress with issue count</li>
+  <li>"Which sites have the most issues?" - returns compliance overview across all sites</li>
+  <li>"What does check A5 do?" - returns description, why it matters, and how to verify</li>
+  <li>"How do I test G4?" - explains the manual browser testing steps from the guide</li>
+</ul>
+
+<h2>11. Chatbot - less typical queries</h2>
+<ul>
+  <li>"What's the difference between basic and full audit?" - should explain tier system sensibly</li>
+  <li>"Do I need a DPIA?" - should reference J9 and list the triggers</li>
+  <li>"What about US visitors?" - should find K2, K4 and explain opt-out model + GPC</li>
+  <li>"Is Google Analytics allowed without consent?" - should reference C2, explain EU vs UK difference</li>
+  <li>"What DPAs do I need?" - should reference J1, J2, list common vendors</li>
+  <li>"Which checks can't be automated?" - should list manual and browser check types</li>
+  <li>"Explain consent mode v2" - should reference B5 and the technical guide</li>
+  <li>"What if a cookie is unclassified?" - should reference C5 with remediation steps</li>
+  <li>Ask about a nonexistent check (e.g. "what is check Z9?") - should say not found, suggest search</li>
+  <li>Ask a vague question ("help") - should offer useful starting points, not hallucinate</li>
+</ul>
+
+<h2>12. Legend</h2>
+<ul>
+  <li>Open "How this page works" - all 6 badge types listed: Auto, Cookiebot, GTM API, AI, Browser, Manual</li>
+  <li>Scan button descriptions match actual behavior</li>
+  <li>Status icons section accurate (not checked, OK, issue, N/A)</li>
+  <li>Row icons: ClipboardList = "Findings & fixes", Info = "Check guide"</li>
+</ul>
+
+<h2>13. Report</h2>
+<ul>
+  <li>Generate report on a site with mixed results (OK, issues, not checked, N/A)</li>
+  <li>Browser and manual check results included alongside automated results</li>
+  <li>Remediation steps included for checks with issues</li>
+  <li>Report version increments correctly on re-generation</li>
+</ul>
+
+<h2>14. Edge cases</h2>
+<ul>
+  <li>Scan a site with no Cookiebot ID and no GTM ID - only page-scan runs, others show warnings</li>
+  <li>Scan with invalid/unreachable URL - clear error, no crash, no partial bad data saved</li>
+  <li>Open app with no sites - empty state, no errors</li>
+  <li>Delete a site that has audit data - confirm deletion works, no orphaned data errors</li>
+  <li>Rapid-click "Scan site" twice - doesn't create duplicate scan runs</li>
+  <li>Set all checks to OK, then re-scan with new issues - verify old OK statuses update to issue where scanner finds problems</li>
+  <li>Compliance dashboard reflects current statuses accurately (spot-check 2-3 sites)</li>
+</ul>
+
+</body>
+</html>

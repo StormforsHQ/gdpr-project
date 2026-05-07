@@ -528,15 +528,18 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   };
 
   const visibleCheckKeys = new Set(filteredChecklist.flatMap((c) => c.checks.map((ch) => ch.key)));
-  const visibleStates = Object.entries(checkStates).filter(([key]) => visibleCheckKeys.has(key)).map(([, s]) => s);
+  const basicCheckKeys = new Set(CHECKLIST.flatMap((c) => c.checks.filter((ch) => ch.tier === "basic").map((ch) => ch.key)));
+  const visibleStates = Object.entries(checkStates).filter(([key]) => visibleCheckKeys.has(key));
   const totalChecks = visibleCheckKeys.size;
-  const totalChecked = visibleStates.filter((s) => s.status !== "not_checked").length;
-  const totalIssues = visibleStates.filter((s) => s.status === "issue").length;
-  const totalOk = visibleStates.filter((s) => s.status === "ok").length;
-  const totalNa = visibleStates.filter((s) => s.status === "na").length;
+  const totalChecked = visibleStates.filter(([, s]) => s.status !== "not_checked").length;
+  const totalIssues = visibleStates.filter(([, s]) => s.status === "issue").length;
+  const basicIssues = visibleStates.filter(([key, s]) => s.status === "issue" && basicCheckKeys.has(key)).length;
+  const fullIssues = visibleStates.filter(([key, s]) => s.status === "issue" && !basicCheckKeys.has(key)).length;
+  const totalOk = visibleStates.filter(([, s]) => s.status === "ok").length;
+  const totalNa = visibleStates.filter(([, s]) => s.status === "na").length;
   const totalNotChecked = totalChecks - totalChecked;
-  const totalWithComments = visibleStates.filter((s) => s.notes.trim()).length;
-  const totalWithInternalNotes = visibleStates.filter((s) => s.internalNote.trim()).length;
+  const totalWithComments = visibleStates.filter(([, s]) => s.notes.trim()).length;
+  const totalWithInternalNotes = visibleStates.filter(([, s]) => s.internalNote.trim()).length;
 
   const toggleFilter = (filter: string) => {
     setActiveFilters((prev) => {
@@ -746,7 +749,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             variant="destructive"
             className={`cursor-pointer text-xs ${activeFilters.has("issue") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
           >
-            Issues ({totalIssues})
+            {auditType === "full" && fullIssues > 0
+              ? `Issues (${basicIssues} basic + ${fullIssues} full)`
+              : `Issues (${totalIssues})`}
           </Badge>
         </button>
         <button onClick={() => toggleFilter("na")}>

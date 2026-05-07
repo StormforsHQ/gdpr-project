@@ -157,7 +157,7 @@ export function checkC1(data: CookiebotData): CheckResult {
       detail: `Provider: ${c.provider}, Expiry: ${c.expiry}`,
       severity: "info" as const,
     })),
-    summary: `${necessary.length} necessary cookie(s) correctly identified`,
+    summary: `${necessary.length} necessary cookie${necessary.length !== 1 ? "s" : ""} registered in Cookiebot`,
   };
 }
 
@@ -174,8 +174,8 @@ export function checkC2(data: CookiebotData): CheckResult {
     status: "ok",
     findings,
     summary: stats.length === 0
-      ? "No statistics cookies configured (verify this is correct)"
-      : `${stats.length} statistics cookie(s) under consent`,
+      ? "No statistics cookies found - check if this is expected"
+      : `${stats.length} statistics cookie${stats.length !== 1 ? "s" : ""} registered and require visitor consent`,
   };
 }
 
@@ -192,8 +192,8 @@ export function checkC3(data: CookiebotData): CheckResult {
     status: "ok",
     findings,
     summary: marketing.length === 0
-      ? "No marketing cookies configured (verify this is correct)"
-      : `${marketing.length} marketing cookie(s) under consent`,
+      ? "No marketing cookies found - check if this is expected"
+      : `${marketing.length} marketing cookie${marketing.length !== 1 ? "s" : ""} registered and require visitor consent`,
   };
 }
 
@@ -210,8 +210,8 @@ export function checkC4(data: CookiebotData): CheckResult {
     status: "ok",
     findings,
     summary: prefs.length === 0
-      ? "No preference cookies configured (verify this is correct)"
-      : `${prefs.length} preference cookie(s) under consent`,
+      ? "No preference cookies found - check if this is expected"
+      : `${prefs.length} preference cookie${prefs.length !== 1 ? "s" : ""} registered and require visitor consent`,
   };
 }
 
@@ -232,10 +232,10 @@ export function checkC5(data: CookiebotData): CheckResult {
     status: "issue",
     findings: unclassified.map((c) => ({
       element: c.name,
-      detail: `Provider: ${c.provider} - must be classified into a consent category`,
+      detail: `Provider: ${c.provider} - needs to be sorted into a category (statistics, marketing, or preferences)`,
       severity: "error" as const,
     })),
-    summary: `${unclassified.length} unclassified cookie(s) need categorization`,
+    summary: `${unclassified.length} cookie${unclassified.length !== 1 ? "s" : ""} not sorted into any category - visitors can't give proper consent for these`,
   };
 }
 
@@ -268,8 +268,8 @@ export function checkC6(data: CookiebotData): CheckResult {
     status: findings.length === 0 ? "ok" : "issue",
     findings,
     summary: findings.length === 0
-      ? "All cookie lifetimes are proportionate"
-      : `${findings.length} cookie(s) with excessive lifetime`,
+      ? "All cookies expire within recommended timeframes"
+      : `${findings.length} cookie${findings.length !== 1 ? "s" : ""} expire later than recommended`,
   };
 }
 
@@ -288,7 +288,7 @@ export function checkG3(data: CookiebotData): CheckResult {
       status: "issue",
       findings: [{
         element: "Cookiebot",
-        detail: "No optional cookie categories configured. Users have nothing to consent to granularly.",
+        detail: "No optional cookie categories found. Visitors should be able to choose which types of cookies to accept (statistics, marketing, preferences).",
         severity: "warning",
       }],
       summary: "No optional cookie categories found",
@@ -303,7 +303,7 @@ export function checkG3(data: CookiebotData): CheckResult {
       detail: `${c.count} cookie(s) in ${c.name.toLowerCase()} category`,
       severity: "info" as const,
     })),
-    summary: `${activeCategories.length} granular consent categories available (${activeCategories.map((c) => c.name).join(", ")})`,
+    summary: `Visitors can choose from ${activeCategories.length} cookie categories: ${activeCategories.map((c) => c.name).join(", ")}`,
   };
 }
 

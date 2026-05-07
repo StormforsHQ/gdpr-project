@@ -248,7 +248,7 @@ export function ScanResultsDrawer({
                 )}
 
                 {/* Static remediation steps (non-guided checks) */}
-                {checkResult?.status === "issue" && remediation && (
+                {remediation && (
                   <>
                     <Separator />
                     <div>
@@ -306,7 +306,7 @@ export function ScanResultsDrawer({
                 )}
 
                 {/* Fallback: show guide steps when no remediation entry exists */}
-                {checkResult?.status === "issue" && !remediation && CHECK_GUIDES[effectiveKey] && (
+                {!remediation && CHECK_GUIDES[effectiveKey] && (
                   <>
                     <Separator />
                     <div>

@@ -115,53 +115,36 @@ export function CheckItem({
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs text-xs text-black dark:text-black">
-              <div>
-                <p>{missingRequirements.map((r) => r.reason).join(" ")}</p>
-                <p className="opacity-60 mt-0.5">Add it in the site settings page to run this check.</p>
-              </div>
+              Needs: {missingRequirements.map((r) => r.label).join(", ")}
             </TooltipContent>
           </Tooltip>
         )}
         {scanResult && (
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewScanDetails?.(check.key);
-                }}
-                aria-label={`Scan results for ${check.key}`}
-              >
-                <FileSearch className="h-4 w-4 text-primary" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs text-black dark:text-black">
-              Scan results and how to fix
-            </TooltipContent>
-          </Tooltip>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewScanDetails?.(check.key);
+            }}
+            aria-label={`Scan results for ${check.key}`}
+          >
+            <FileSearch className="h-4 w-4 text-primary" />
+          </Button>
         )}
-        <Tooltip>
-          <TooltipTrigger>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 shrink-0"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenGuide(check.key);
-              }}
-              aria-label={`Guide for ${check.key}`}
-            >
-              <Info className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="text-xs text-black dark:text-black">
-            What this check means and where to find it
-          </TooltipContent>
-        </Tooltip>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenGuide(check.key);
+          }}
+          aria-label={`Guide for ${check.key}`}
+        >
+          <Info className="h-4 w-4 text-muted-foreground" />
+        </Button>
       </div>
 
       {expanded && (
@@ -173,7 +156,7 @@ export function CheckItem({
             <div className="flex items-start gap-1.5">
               <AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-600 dark:text-amber-400">
-                {missingRequirements.map((r) => r.reason).join(". ")}
+                Needs {missingRequirements.map((r) => r.label).join(" and ")} to run this check
               </p>
             </div>
           )}
@@ -245,17 +228,6 @@ export function CheckItem({
                   <p className="text-xs text-destructive">{scanResult.summary}</p>
                 ) : (
                   <p className="text-xs text-muted-foreground">{scanResult.summary}</p>
-                )}
-                {onViewScanDetails && (
-                  <button
-                    className="text-xs text-primary hover:underline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onViewScanDetails(check.key);
-                    }}
-                  >
-                    View details and how to fix
-                  </button>
                 )}
               </div>
             );

@@ -14,13 +14,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DeleteSiteButton } from "@/components/delete-site-button";
-import { Search, ArrowUpDown, BarChart3 } from "lucide-react";
+import { Search, ArrowUpDown, BarChart3, Eye, EyeOff } from "lucide-react";
+import { toggleSiteActive } from "@/app/actions/sites";
+import { Switch } from "@/components/ui/switch";
 
 export type SiteWithAudit = {
   id: string;
   name: string;
   url: string;
   platform: string;
+  active: boolean;
   status: string;
   auditType: "basic" | "full" | null;
   checkCount: number;
@@ -54,10 +57,14 @@ type SortDir = "asc" | "desc";
 
 export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
   const [search, setSearch] = useState("");
+  const [showAll, setShowAll] = useState(false);
   const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
   const [platformFilter, setPlatformFilter] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  const activeCount = useMemo(() => sites.filter((s) => s.active).length, [sites]);
+  const inactiveCount = sites.length - activeCount;
 
   const platforms = useMemo(() => {
     const set = new Set(sites.map((s) => s.platform));
@@ -106,6 +113,10 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
   const filtered = useMemo(() => {
     let result = sites;
 
+    if (!showAll) {
+      result = result.filter((s) => s.active);
+    }
+
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -133,7 +144,7 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
     return result;
   }, [sites, search, statusFilter, platformFilter, sortField, sortDir]);
 
-  const hasFilters = search.trim() || statusFilter.size > 0 || platformFilter.size > 0;
+  const hasFilters = search.trim() || statusFilter.size > 0 || platformFilter.size > 0 || showAll;
 
   return (
     <Card>
@@ -142,14 +153,28 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
           <CardTitle className="text-base">
             {hasFilters ? `${filtered.length} of ${sites.length}` : sites.length} site{sites.length !== 1 ? "s" : ""}
           </CardTitle>
-          {hasFilters && (
-            <button
-              onClick={() => { setSearch(""); setStatusFilter(new Set()); setPlatformFilter(new Set()); }}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              Clear filters
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {hasFilters && (
+              <button
+                onClick={() => { setSearch(""); setShowAll(false); setStatusFilter(new Set()); setPlatformFilter(new Set()); }}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Clear filters
+              </button>
+            )}
+            {inactiveCount > 0 && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Switch
+                  checked={showAll}
+                  onCheckedChange={setShowAll}
+                  className="scale-75"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Show all ({sites.length})
+                </span>
+              </label>
+            )}
+          </div>
         </div>
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -223,7 +248,7 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
                 const badge = STATUS_BADGES[site.status] ?? STATUS_BADGES.not_started;
                 const dot = STATUS_DOT[site.status] ?? STATUS_DOT.not_started;
                 return (
-                  <TableRow key={site.id} className="group relative cursor-pointer">
+                  <TableRow key={site.id} className={`group relative cursor-pointer ${!site.active && showAll ? "opacity-50" : ""}`}>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span
@@ -277,6 +302,17 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
+                        {showAll && (
+                          <button
+                            className="relative z-10 text-muted-foreground hover:text-foreground p-1 rounded"
+                            title={site.active ? "Set inactive" : "Set active"}
+                            onClick={async () => {
+                              await toggleSiteActive(site.id, !site.active);
+                            }}
+                          >
+                            {site.active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                          </button>
+                        )}
                         {site.checkCount > 0 && (
                           <Link
                             href={`/sites/${site.id}/dashboard`}

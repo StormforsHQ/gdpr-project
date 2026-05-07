@@ -72,11 +72,12 @@ export default async function SitePage({ params }: SitePageProps) {
   }
 
   const { site, audit, scanRuns, reportVersions } = data;
-  const initialStates: Record<string, { status: string; notes: string; source: string }> = {};
+  const initialStates: Record<string, { status: string; notes: string; internalNote: string; source: string }> = {};
   for (const result of audit.results) {
     initialStates[result.checkKey] = {
       status: result.status,
       notes: result.notes,
+      internalNote: (result as Record<string, unknown>).internalNote as string ?? "",
       source: (result as Record<string, unknown>).source as string ?? "manual",
     };
   }

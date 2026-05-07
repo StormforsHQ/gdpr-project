@@ -27,6 +27,7 @@ export type SiteWithAudit = {
   auditType: "basic" | "full" | null;
   checkCount: number;
   issueCount: number;
+  hasInternalNotes?: boolean;
 };
 
 const STATUS_DOT: Record<string, string> = {
@@ -61,11 +62,13 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("active");
   const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
   const [platformFilter, setPlatformFilter] = useState<Set<string>>(new Set());
+  const [flaggedOnly, setFlaggedOnly] = useState(false);
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const activeCount = useMemo(() => sites.filter((s) => s.active).length, [sites]);
   const inactiveCount = sites.length - activeCount;
+  const flaggedCount = useMemo(() => sites.filter((s) => s.hasInternalNotes).length, [sites]);
 
   const platforms = useMemo(() => {
     const set = new Set(sites.map((s) => s.platform));
@@ -138,6 +141,10 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
       result = result.filter((s) => platformFilter.has(s.platform));
     }
 
+    if (flaggedOnly) {
+      result = result.filter((s) => s.hasInternalNotes);
+    }
+
     const statusOrder = ["issues_found", "in_progress", "not_started", "compliant"];
     result = [...result].sort((a, b) => {
       let cmp = 0;
@@ -148,9 +155,9 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
     });
 
     return result;
-  }, [sites, search, activeFilter, statusFilter, platformFilter, sortField, sortDir]);
+  }, [sites, search, activeFilter, statusFilter, platformFilter, flaggedOnly, sortField, sortDir]);
 
-  const hasFilters = search.trim() || statusFilter.size > 0 || platformFilter.size > 0 || activeFilter !== "active";
+  const hasFilters = search.trim() || statusFilter.size > 0 || platformFilter.size > 0 || flaggedOnly || activeFilter !== "active";
 
   return (
     <Card>
@@ -162,7 +169,7 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
           </CardTitle>
           {hasFilters && (
             <button
-              onClick={() => { setSearch(""); setActiveFilter("active"); setStatusFilter(new Set()); setPlatformFilter(new Set()); }}
+              onClick={() => { setSearch(""); setActiveFilter("active"); setStatusFilter(new Set()); setPlatformFilter(new Set()); setFlaggedOnly(false); }}
               className="text-xs text-muted-foreground hover:text-foreground"
             >
               Clear filters
@@ -221,6 +228,19 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
               </Badge>
             </button>
           ))}
+          {flaggedCount > 0 && (
+            <>
+              <span className="w-px h-5 bg-border self-center mx-1" />
+              <button onClick={() => setFlaggedOnly(!flaggedOnly)}>
+                <Badge
+                  variant="outline"
+                  className={`cursor-pointer text-xs bg-violet-500/10 text-violet-600 dark:text-violet-400 ${flaggedOnly ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+                >
+                  Flagged ({flaggedCount})
+                </Badge>
+              </button>
+            </>
+          )}
         </div>
       </CardHeader>
       <CardContent className="p-0">

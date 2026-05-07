@@ -31,6 +31,7 @@ async function loadSites(): Promise<SiteWithAudit[]> {
         auditType: ((latestAudit as Record<string, unknown>)?.auditType as "basic" | "full") ?? null,
         checkCount: results.filter((r) => r.status !== "not_checked").length,
         issueCount: results.filter((r) => r.status === "issue").length,
+        hasInternalNotes: results.some((r) => ((r as Record<string, unknown>).internalNote as string || "").trim() !== ""),
       };
     });
   } catch {

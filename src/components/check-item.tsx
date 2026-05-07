@@ -16,7 +16,7 @@ import { AUTOMATION_CONFIG } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { GlossaryText } from "@/components/glossary-text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, FileSearch, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench, Search } from "lucide-react";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, FileSearch, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench, Search, StickyNote } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -39,6 +39,7 @@ interface CheckItemProps {
   check: Check;
   status: CheckStatus;
   notes: string;
+  internalNote?: string;
   scanResult?: CheckResult;
   isRunning?: boolean;
   isFixing?: boolean;
@@ -46,6 +47,7 @@ interface CheckItemProps {
   fixInfo?: FixInfo;
   onStatusChange: (status: CheckStatus) => void;
   onNotesChange: (notes: string) => void;
+  onInternalNoteChange?: (note: string) => void;
   onOpenGuide: (key: string) => void;
   onViewScanDetails?: (key: string) => void;
   onRunCheck?: (key: string) => void;
@@ -57,11 +59,13 @@ export function CheckItem({
   check,
   status,
   notes,
+  internalNote = "",
   scanResult,
   isRunning,
   siteFields,
   onStatusChange,
   onNotesChange,
+  onInternalNoteChange,
   onOpenGuide,
   onViewScanDetails,
   onRunCheck,
@@ -71,6 +75,7 @@ export function CheckItem({
   onAnalyzeFix,
 }: CheckItemProps) {
   const [expanded, setExpanded] = useState(false);
+  const [internalNoteOpen, setInternalNoteOpen] = useState(!!internalNote.trim());
   const automationInfo = AUTOMATION_CONFIG[check.automation];
 
   const requirements = CHECK_REQUIREMENTS[check.key] || [];
@@ -88,6 +93,17 @@ export function CheckItem({
         <span className="text-xs font-mono text-muted-foreground w-7 shrink-0">
           {check.key}
         </span>
+        {internalNote.trim() && (
+          <Tooltip>
+            <TooltipTrigger>
+              <span className="h-2 w-2 rounded-full bg-violet-500 shrink-0" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs text-black dark:text-black">
+              <p className="font-medium">Internal note</p>
+              <p className="opacity-60 mt-0.5 line-clamp-2">{internalNote}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
         <span className="text-sm flex-1">{check.label}</span>
         <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 ${automationInfo.className}`}>
           {automationInfo.label}
@@ -350,6 +366,29 @@ export function CheckItem({
               className="w-full rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 resize-y min-h-[2rem]"
             />
           </div>
+          {onInternalNoteChange && (
+            <div>
+              <button
+                className="flex items-center gap-1.5 text-[11px] text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setInternalNoteOpen(!internalNoteOpen);
+                }}
+              >
+                <StickyNote className="h-3 w-3" />
+                {internalNoteOpen ? "Hide internal note" : internalNote.trim() ? "Edit internal note" : "Add internal note"}
+              </button>
+              {internalNoteOpen && (
+                <textarea
+                  placeholder="Private note - not included in reports. Use for reminders, things to double-check, or questions for the team."
+                  value={internalNote}
+                  onChange={(e) => onInternalNoteChange(e.target.value)}
+                  rows={2}
+                  className="mt-1.5 w-full rounded-lg border border-violet-300 dark:border-violet-700 bg-violet-50/50 dark:bg-violet-950/20 px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-violet-500 focus-visible:ring-3 focus-visible:ring-violet-500/30 resize-y min-h-[2rem]"
+                />
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

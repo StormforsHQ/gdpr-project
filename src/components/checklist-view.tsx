@@ -12,7 +12,7 @@ import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
 import { saveCheckResult, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType } from "@/app/actions/audits";
-import { getFixAvailability, applyFix, analyzeFix, type FixAvailability, type FixAnalysisResult } from "@/app/actions/fixes";
+import { getFixAvailability, applyFix, analyzeFix, verifyGtmSetup, pushGtmSnippetToSite, deleteApiManagedScript, type FixAvailability, type FixAnalysisResult } from "@/app/actions/fixes";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
 import {
   AlertDialog,
@@ -49,7 +49,7 @@ interface ChecklistViewProps {
   auditType?: "basic" | "full";
   initialStates?: Record<string, { status: string; notes: string; source: string }>;
   initialScanRuns?: ScanRunEntry[];
-  siteFields?: { webflowId?: string | null; cookiebotId?: string | null; gtmId?: string | null };
+  siteFields?: { platform?: string | null; webflowId?: string | null; cookiebotId?: string | null; gtmId?: string | null };
 }
 
 export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", initialStates, initialScanRuns, siteFields: initialSiteFields }: ChecklistViewProps) {
@@ -892,10 +892,27 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         checkKey={scanDrawerCheckKey}
         scanResult={scanResult}
         analysisResult={analysisResult}
+        site={siteFields}
         open={scanDrawerOpen}
         onOpenChange={(open) => {
           setScanDrawerOpen(open);
           if (!open) setAnalysisResult(null);
+        }}
+        onVerifyGtm={verifyGtmSetup}
+        onPushGtmSnippet={pushGtmSnippetToSite}
+        onDeleteScript={deleteApiManagedScript}
+        onRescan={() => {
+          setScanDrawerOpen(false);
+          executeScan();
+        }}
+        onSaveNote={(step, note) => {
+          if (!auditId || !scanDrawerCheckKey) return;
+          const current = checkStates[scanDrawerCheckKey];
+          const existingNotes = current?.notes || "";
+          const updatedNotes = existingNotes
+            ? `${existingNotes}\n[Fix flow] ${step}: ${note}`
+            : `[Fix flow] ${step}: ${note}`;
+          updateCheck(scanDrawerCheckKey, "notes", updatedNotes);
         }}
       />
 

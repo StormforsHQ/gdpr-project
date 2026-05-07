@@ -527,16 +527,16 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     setScanDrawerOpen(true);
   };
 
-  const totalChecks = filteredChecklist.reduce((sum, c) => sum + c.checks.length, 0);
-  const totalChecked = Object.values(checkStates).filter(
-    (s) => s.status !== "not_checked"
-  ).length;
-  const totalIssues = Object.values(checkStates).filter((s) => s.status === "issue").length;
-  const totalOk = Object.values(checkStates).filter((s) => s.status === "ok").length;
-  const totalNa = Object.values(checkStates).filter((s) => s.status === "na").length;
+  const visibleCheckKeys = new Set(filteredChecklist.flatMap((c) => c.checks.map((ch) => ch.key)));
+  const visibleStates = Object.entries(checkStates).filter(([key]) => visibleCheckKeys.has(key)).map(([, s]) => s);
+  const totalChecks = visibleCheckKeys.size;
+  const totalChecked = visibleStates.filter((s) => s.status !== "not_checked").length;
+  const totalIssues = visibleStates.filter((s) => s.status === "issue").length;
+  const totalOk = visibleStates.filter((s) => s.status === "ok").length;
+  const totalNa = visibleStates.filter((s) => s.status === "na").length;
   const totalNotChecked = totalChecks - totalChecked;
-  const totalWithComments = Object.values(checkStates).filter((s) => s.notes.trim()).length;
-  const totalWithInternalNotes = Object.values(checkStates).filter((s) => s.internalNote.trim()).length;
+  const totalWithComments = visibleStates.filter((s) => s.notes.trim()).length;
+  const totalWithInternalNotes = visibleStates.filter((s) => s.internalNote.trim()).length;
 
   const toggleFilter = (filter: string) => {
     setActiveFilters((prev) => {
@@ -770,7 +770,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             variant="outline"
             className={`cursor-pointer text-xs bg-violet-500/10 text-violet-600 dark:text-violet-400 ${activeFilters.has("has_internal_note") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
           >
-            Flagged ({totalWithInternalNotes})
+            Internal notes ({totalWithInternalNotes})
           </Badge>
         </button>
         {activeFilters.size > 0 && (

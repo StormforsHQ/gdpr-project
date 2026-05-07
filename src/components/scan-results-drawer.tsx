@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { CHECKLIST } from "@/lib/checklist";
 import type { ScanResult } from "@/lib/scanner";
 import { REMEDIATION } from "@/lib/remediation";
+import { CHECK_GUIDES } from "@/lib/check-guides";
 import type { FixAnalysisResult, ScriptAnalysis } from "@/app/actions/fixes";
 import { FixFlowPanel } from "@/components/fix-flow-panel";
 import { AUTO_FIXES } from "@/lib/fixes";
@@ -300,6 +301,39 @@ export function ScanResultsDrawer({
                           ))}
                         </div>
                       )}
+                    </div>
+                  </>
+                )}
+
+                {/* Fallback: show guide steps when no remediation entry exists */}
+                {checkResult?.status === "issue" && !remediation && CHECK_GUIDES[effectiveKey] && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5">
+                        <Wrench className="h-3 w-3" />
+                        How to fix
+                      </h3>
+                      <ol className="space-y-2">
+                        {CHECK_GUIDES[effectiveKey].steps.map((step, i) => {
+                          const isSubStep = step.startsWith("  -");
+                          if (isSubStep) {
+                            return (
+                              <li key={i} className="text-sm leading-relaxed pl-8 text-muted-foreground">
+                                {step.trim().replace(/^- /, "")}
+                              </li>
+                            );
+                          }
+                          return (
+                            <li key={i} className="text-sm leading-relaxed flex gap-3">
+                              <span className="text-xs font-mono text-muted-foreground mt-0.5 shrink-0 w-5 text-right">
+                                {i + 1}.
+                              </span>
+                              <span>{step}</span>
+                            </li>
+                          );
+                        })}
+                      </ol>
                     </div>
                   </>
                 )}

@@ -122,31 +122,45 @@ export function CheckItem({
           </Tooltip>
         )}
         {scanResult && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 shrink-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewScanDetails?.(check.key);
-            }}
-            aria-label={`Scan details for ${check.key}`}
-          >
-            <FileSearch className="h-4 w-4 text-primary" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewScanDetails?.(check.key);
+                }}
+                aria-label={`Scan results for ${check.key}`}
+              >
+                <FileSearch className="h-4 w-4 text-primary" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs text-black dark:text-black">
+              Scan results and how to fix
+            </TooltipContent>
+          </Tooltip>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 shrink-0"
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenGuide(check.key);
-          }}
-          aria-label={`Guide for ${check.key}`}
-        >
-          <Info className="h-4 w-4 text-muted-foreground" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenGuide(check.key);
+              }}
+              aria-label={`Guide for ${check.key}`}
+            >
+              <Info className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs text-black dark:text-black">
+            What this check means and how to do it manually
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {expanded && (
@@ -247,24 +261,34 @@ export function CheckItem({
           })()}
           <div className="flex items-center gap-3">
             {onRunCheck && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-xs gap-1.5"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRunCheck(check.key);
-                }}
-                disabled={isRunning || missingRequirements.length > 0}
-                title={missingRequirements.length > 0 ? `Missing: ${missingRequirements.map((r) => r.label).join(", ")}` : undefined}
-              >
-                {isRunning ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Play className="h-3 w-3" />
-                )}
-                {isRunning ? "Running..." : status !== "not_checked" ? "Re-run" : "Run check"}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-1.5"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRunCheck(check.key);
+                    }}
+                    disabled={isRunning || missingRequirements.length > 0}
+                  >
+                    {isRunning ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Play className="h-3 w-3" />
+                    )}
+                    {isRunning ? "Running..." : status !== "not_checked" ? "Re-run" : "Run check"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs text-xs text-black dark:text-black">
+                  {missingRequirements.length > 0
+                    ? `Missing: ${missingRequirements.map((r) => r.label).join(", ")}`
+                    : status !== "not_checked"
+                      ? "Run this check again with fresh data"
+                      : "Run this automated check"}
+                </TooltipContent>
+              </Tooltip>
             )}
             {fixInfo && status === "issue" && fixInfo.safetyLevel === "guided" && (
               <Tooltip>

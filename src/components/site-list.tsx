@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DeleteSiteButton } from "@/components/delete-site-button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, ArrowUpDown, BarChart3, Eye, EyeOff } from "lucide-react";
 import { toggleSiteActive } from "@/app/actions/sites";
 
@@ -334,23 +335,35 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <button
-                          className="relative z-10 text-muted-foreground hover:text-foreground p-1 rounded"
-                          title={site.active ? "Set inactive" : "Set active"}
-                          onClick={async () => {
-                            await toggleSiteActive(site.id, !site.active);
-                          }}
-                        >
-                          {site.active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                        </button>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <button
+                              className="relative z-10 text-muted-foreground hover:text-foreground p-1 rounded"
+                              onClick={async () => {
+                                await toggleSiteActive(site.id, !site.active);
+                              }}
+                            >
+                              {site.active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs text-black dark:text-black">
+                            {site.active ? "Hide from active list" : "Show in active list"}
+                          </TooltipContent>
+                        </Tooltip>
                         {site.checkCount > 0 && (
-                          <Link
-                            href={`/sites/${site.id}/dashboard`}
-                            className="relative z-10 text-muted-foreground hover:text-foreground p-1 rounded"
-                            title="Compliance dashboard"
-                          >
-                            <BarChart3 className="h-3.5 w-3.5" />
-                          </Link>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Link
+                                href={`/sites/${site.id}/dashboard`}
+                                className="relative z-10 text-muted-foreground hover:text-foreground p-1 rounded"
+                              >
+                                <BarChart3 className="h-3.5 w-3.5" />
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs text-black dark:text-black">
+                              Compliance dashboard
+                            </TooltipContent>
+                          </Tooltip>
                         )}
                         <DeleteSiteButton siteId={site.id} siteName={site.name} />
                       </div>

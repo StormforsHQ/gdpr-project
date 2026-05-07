@@ -615,7 +615,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                 <Badge variant="destructive" className="text-xs">{scanBasicIssues} basic issue{scanBasicIssues !== 1 ? "s" : ""}</Badge>
               )}
               {scanFullIssues > 0 && (
-                <Badge variant="destructive" className="text-xs opacity-70">{scanFullIssues} full issue{scanFullIssues !== 1 ? "s" : ""}</Badge>
+                <Badge variant="destructive" className="text-xs ">{scanFullIssues} full issue{scanFullIssues !== 1 ? "s" : ""}</Badge>
               )}
               {scanFailedCount > 0 && (
                 <Badge variant="secondary" className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400">{scanFailedCount} failed</Badge>
@@ -763,7 +763,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           <button onClick={() => toggleFilter("issue")}>
             <Badge
               variant="destructive"
-              className={`cursor-pointer text-xs opacity-70 ${activeFilters.has("issue") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+              className={`cursor-pointer text-xs  ${activeFilters.has("issue") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
             >
               {fullIssues} full issue{fullIssues !== 1 ? "s" : ""}
             </Badge>

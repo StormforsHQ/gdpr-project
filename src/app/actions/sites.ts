@@ -86,6 +86,7 @@ export async function updateSite(
     webflowId?: string | null;
     cookiebotId?: string | null;
     gtmId?: string | null;
+    active?: boolean;
   }
 ) {
   const updateData = { ...data };

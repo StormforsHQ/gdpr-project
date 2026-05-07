@@ -299,6 +299,465 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
     devLegalNote: "Simplifying a privacy policy doesn't mean removing legally required content. It means restructuring and rewording so a non-lawyer can understand it. Consider a layered approach: a simple overview first, then the full legal detail below.",
   },
 
+  A3: {
+    plainExplanation: "Cookiebot needs to be the very first thing that runs on the page so visitors see the consent banner before any tracking starts. In GTM, this means using the 'Consent Initialization' trigger, which fires before 'All Pages' and everything else.",
+    steps: [
+      { instruction: "Open GTM > Tags > find the Cookiebot CMP tag", platform: "all" },
+      { instruction: "Click on the tag and check its trigger - it should be 'Consent Initialization - All Pages'", platform: "all" },
+      { instruction: "If the trigger is 'All Pages' or something else: change it to 'Consent Initialization - All Pages'*", platform: "all", needsDevOrLegal: true },
+      { instruction: "If no 'Consent Initialization' trigger exists: create one (Trigger Type > Other > Consent Initialization)", platform: "all" },
+      { instruction: "Publish the GTM container and verify the banner appears before any scripts fire", platform: "all" },
+    ],
+    devLegalNote: "The 'Consent Initialization' trigger is a special GTM trigger type designed specifically for consent management platforms. It fires before all other triggers, ensuring consent is established before any tags run.",
+    docLinks: [
+      { label: "GTM: Consent Initialization trigger", url: "https://support.google.com/tagmanager/answer/10718549" },
+    ],
+  },
+
+  A4: {
+    plainExplanation: "Cookiebot offers an official GTM template in the Template Gallery that handles Google Consent Mode V2 automatically. Custom HTML implementations often miss consent signals, meaning Google doesn't know whether the visitor consented or not.",
+    steps: [
+      { instruction: "Open GTM > Tags > find the Cookiebot tag", platform: "all" },
+      { instruction: "Check if it's a 'Custom HTML' tag or uses the official 'Cookiebot CMP' template", platform: "all" },
+      { instruction: "If Custom HTML: go to Templates > Search Gallery > search 'Cookiebot CMP' and add it", platform: "all" },
+      { instruction: "Create a new tag using the Cookiebot CMP template with your Cookiebot ID*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Set the trigger to 'Consent Initialization - All Pages'", platform: "all" },
+      { instruction: "Delete the old Custom HTML Cookiebot tag", platform: "all" },
+      { instruction: "Publish and verify the banner still works correctly", platform: "all" },
+    ],
+    docLinks: [
+      { label: "Cookiebot: GTM template setup", url: "https://www.cookiebot.com/en/help/google-tag-manager/" },
+    ],
+  },
+
+  A5: {
+    plainExplanation: "Cookiebot's AutoBlock feature tries to automatically block scripts until consent. The problem is it also blocks the anonymous pings that Google Consent Mode sends, which are allowed even without consent. This breaks your analytics baseline data.",
+    steps: [
+      { instruction: "Log in to the Cookiebot admin panel", platform: "all" },
+      { instruction: "Go to Configuration or Settings", platform: "all" },
+      { instruction: "Find the 'AutoBlock' or 'Auto-blocking' setting and make sure it's turned OFF", platform: "all" },
+      { instruction: "Save changes", platform: "all" },
+      { instruction: "Instead of AutoBlock, rely on GTM's built-in consent controls to manage when tags fire", platform: "all" },
+    ],
+    docLinks: [
+      { label: "Cookiebot: AutoBlock vs Consent Mode", url: "https://www.cookiebot.com/en/help/google-consent-mode/" },
+    ],
+  },
+
+  B2: {
+    plainExplanation: "Google's own tags (GA4, Google Ads, Floodlight) already understand Consent Mode - they automatically adjust their behavior based on consent state. Setting them to 'No additional consent required' lets them send anonymous pings even when consent is denied, which is allowed and useful for modeling.",
+    steps: [
+      { instruction: "Open GTM > Tags", platform: "all" },
+      { instruction: "For each Google tag (GA4, Google Ads, Conversion Linker, etc.): click the tag", platform: "all" },
+      { instruction: "Go to Advanced Settings > Consent Settings", platform: "all" },
+      { instruction: "Set to 'No additional consent required' (not 'Require additional consent')*", platform: "all", needsDevOrLegal: true },
+      { instruction: "This is correct because Consent Mode already handles consent for Google tags automatically", platform: "all" },
+      { instruction: "Publish the container", platform: "all" },
+    ],
+    devLegalNote: "Google tags with Consent Mode send 'consent pings' even when consent is denied. These pings contain no personal data - they help Google model conversions and traffic. This is allowed under GDPR because no personal data is processed. Adding extra consent requirements on top would block these pings unnecessarily.",
+  },
+
+  B3: {
+    plainExplanation: "Unlike Google tags, third-party tags (LinkedIn, HotJar, Meta, etc.) don't understand Consent Mode. They fire whenever their trigger activates, regardless of consent. You must explicitly tell GTM to block them until the visitor agrees.",
+    steps: [
+      { instruction: "Open GTM > Tags", platform: "all" },
+      { instruction: "For each non-Google tag: click the tag > Advanced Settings > Consent Settings", platform: "all" },
+      { instruction: "Enable 'Require additional consent'*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Add the correct consent type: 'ad_storage' for marketing tags (LinkedIn, Meta, etc.) or 'analytics_storage' for analytics tags (HotJar, Clarity, etc.)*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Publish and verify in GTM Preview Mode that these tags only fire after consent is given", platform: "all" },
+    ],
+    devLegalNote: "The consent type must match what the tag does: ad_storage for anything related to advertising/remarketing, analytics_storage for analytics tools. If a tag does both (rare), add both consent types. Getting this wrong means either blocking too much or not blocking enough.",
+    docLinks: [
+      { label: "GTM: Consent overview for tags", url: "https://support.google.com/tagmanager/answer/10718549" },
+    ],
+  },
+
+  B4: {
+    plainExplanation: "If a non-Google tag's trigger is 'All Pages', it fires on every page load immediately - before the visitor has seen the consent banner. Even with consent settings on the tag, the 'All Pages' trigger can cause timing issues. Use a consent-aware trigger instead.",
+    steps: [
+      { instruction: "Open GTM > Tags > find each non-Google tag", platform: "all" },
+      { instruction: "Check the trigger - if it says 'All Pages', it needs to change", platform: "all" },
+      { instruction: "Option 1: Keep 'All Pages' but ensure 'Require additional consent' is set on the tag (simpler, usually sufficient)*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Option 2: Create a custom trigger that fires on a consent-granted event (more robust)*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Publish and test in GTM Preview Mode - verify the tag appears under 'Tags Not Fired' before consent", platform: "all" },
+    ],
+    devLegalNote: "Option 1 (consent settings on tag) works in most cases because GTM blocks the tag until consent is granted even on 'All Pages'. Option 2 (custom trigger) is more explicit and recommended by Google for complex setups. Either way, verify the result in Preview Mode.",
+  },
+
+  B5: {
+    plainExplanation: "Google Consent Mode V2 is the system that tells Google services whether a visitor has consented. Without it, Google doesn't know the consent state and may either track without permission or block everything. All 4 signals must be transmitting: ad_storage, analytics_storage, ad_user_data, and ad_personalization.",
+    steps: [
+      { instruction: "Open GTM > Tags > find the Cookiebot CMP tag", platform: "all" },
+      { instruction: "Verify it uses the official Cookiebot template (not Custom HTML) - see check A4", platform: "all" },
+      { instruction: "In the tag settings, verify Google Consent Mode is enabled", platform: "all" },
+      { instruction: "Check that all 4 default consent states are set: ad_storage=denied, analytics_storage=denied, ad_user_data=denied, ad_personalization=denied", platform: "all" },
+      { instruction: "Publish and verify: open the site with DevTools > Console, type 'dataLayer' and look for consent_default and consent_update events", platform: "all" },
+      { instruction: "The consent_default should show all 4 types as 'denied', and after accepting they should change to 'granted'", platform: "all" },
+    ],
+    docLinks: [
+      { label: "Google: Consent Mode V2 setup", url: "https://developers.google.com/tag-platform/security/guides/consent" },
+      { label: "Cookiebot: Consent Mode integration", url: "https://www.cookiebot.com/en/help/google-consent-mode/" },
+    ],
+  },
+
+  C1: {
+    plainExplanation: "Necessary cookies are the ones the site genuinely can't work without - login sessions, security tokens, CDN cookies (like Cloudflare's __cf_bm). These are allowed without consent, but they must truly be essential. A tracking cookie labeled 'necessary' is a compliance violation.",
+    steps: [
+      { instruction: "Log in to the Cookiebot admin panel and go to the cookie report", platform: "all" },
+      { instruction: "Review the 'Necessary' category - each cookie listed must be genuinely essential for the site to function", platform: "all" },
+      { instruction: "Common legitimate necessary cookies: CookieConsent, __cf_bm (Cloudflare), session IDs, CSRF tokens", platform: "all" },
+      { instruction: "If a tracking or analytics cookie is listed as necessary: move it to the correct category (Statistics or Marketing)*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Run a new Cookiebot scan to ensure the categorization is up to date", platform: "all" },
+    ],
+    devLegalNote: "The 'necessary' category is the only one exempt from consent. Misclassifying a cookie here means it runs without permission. When in doubt, classify as Statistics or Marketing - it's safer to require consent than to skip it.",
+  },
+
+  C2: {
+    plainExplanation: "Analytics cookies like _ga (Google Analytics) and _hjSession (HotJar) must be in the Statistics category in Cookiebot. This ensures they're only set after a visitor consents to statistics cookies. If they're missing or miscategorized, they may fire without permission.",
+    steps: [
+      { instruction: "Log in to Cookiebot admin and review the cookie report", platform: "all" },
+      { instruction: "Check that all analytics cookies are in the 'Statistics' category: _ga, _gid, _gat, _hjSession, _clarity, etc.", platform: "all" },
+      { instruction: "If any analytics cookies are unclassified or in the wrong category: reassign them to Statistics", platform: "all" },
+      { instruction: "Run a new Cookiebot scan to detect any analytics cookies that may have been missed", platform: "all" },
+      { instruction: "Verify in the browser: decline statistics cookies, then check DevTools > Cookies - no analytics cookies should appear", platform: "all" },
+    ],
+  },
+
+  C3: {
+    plainExplanation: "Marketing cookies (like _fbp from Meta, li_fat_id from LinkedIn, _gcl_au from Google Ads) are used for ad targeting and tracking across websites. These are the most sensitive category and always need explicit consent before they're set.",
+    steps: [
+      { instruction: "Log in to Cookiebot admin and review the cookie report", platform: "all" },
+      { instruction: "Check that all advertising/marketing cookies are in the 'Marketing' category: _fbp, li_fat_id, _gcl_au, _uetsid, IDE, etc.", platform: "all" },
+      { instruction: "If any marketing cookies are unclassified or in the wrong category: reassign them to Marketing", platform: "all" },
+      { instruction: "Run a new Cookiebot scan to detect any marketing cookies that may have been missed", platform: "all" },
+      { instruction: "Verify: decline marketing cookies, then check DevTools > Cookies - no ad tracking cookies should appear", platform: "all" },
+    ],
+  },
+
+  C4: {
+    plainExplanation: "Preference cookies remember things like language choice or UI settings. They're not essential (the site works without them), so they need consent. If the site uses them, they should be in Cookiebot's Preferences category.",
+    steps: [
+      { instruction: "Log in to Cookiebot admin and check if any cookies are in the 'Preferences' category", platform: "all" },
+      { instruction: "Look for cookies that store UI or language preferences (e.g. lang, theme, locale)", platform: "all" },
+      { instruction: "If preference cookies are missing from the category or unclassified: assign them to Preferences", platform: "all" },
+      { instruction: "If the site doesn't use any preference cookies: this check is N/A", platform: "all" },
+    ],
+  },
+
+  C5: {
+    plainExplanation: "If Cookiebot detects a cookie on the site but it hasn't been assigned to any category (Necessary, Statistics, Marketing, or Preferences), visitors can't know what it does or make an informed consent choice. Every cookie must be classified.",
+    steps: [
+      { instruction: "Log in to Cookiebot admin and check for 'Unclassified' cookies in the cookie report", platform: "all" },
+      { instruction: "For each unclassified cookie: identify what service sets it and what it does", platform: "all" },
+      { instruction: "Assign it to the correct category based on its purpose*", platform: "all", needsDevOrLegal: true },
+      { instruction: "If you can't identify a cookie: check if it comes from an old or removed service (may need to be cleaned up)", platform: "all" },
+      { instruction: "Run a new Cookiebot scan after categorizing to confirm no unclassified cookies remain", platform: "all" },
+    ],
+    devLegalNote: "When categorizing an unknown cookie, err on the side of caution: if it might be tracking-related, classify it as Marketing. If it's analytics-related, use Statistics. Only use Necessary for cookies the site genuinely can't function without.",
+  },
+
+  C6: {
+    plainExplanation: "Cookies that last too long are collecting data beyond what's reasonable. A marketing cookie that expires in 10 years is disproportionate. The widely accepted maximum is 13 months for non-essential cookies. For French visitors, the CNIL recommends 6 months.",
+    steps: [
+      { instruction: "Check the Cookiebot cookie report for each cookie's expiry period", platform: "all" },
+      { instruction: "Alternatively: open DevTools > Application > Cookies and check the 'Expires' column for each cookie", platform: "all" },
+      { instruction: "Flag any non-essential cookie with a lifetime exceeding 13 months", platform: "all" },
+      { instruction: "For cookies set by third-party services (GA, Meta, etc.): these lifetimes are set by the service and may not be configurable", platform: "all" },
+      { instruction: "For cookies your site sets directly: adjust the max-age or expires value in the code*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Document any cookies that exceed 13 months with a justification if they can't be shortened", platform: "all" },
+    ],
+  },
+
+  D2: {
+    plainExplanation: "Marketing campaigns come and go, but their tracking scripts often stay on the site forever. Old Salesforce campaign tracking, expired promotion pixels, and deactivated remarketing tags keep collecting data with no current purpose.",
+    steps: [
+      { instruction: "Review the list of scripts found in checks A1/B1 and the GTM tag list", platform: "all" },
+      { instruction: "For each script/tag: ask the client if the campaign or service is still active", platform: "all" },
+      { instruction: "If a campaign has ended: remove the tag from GTM or the script from the site code*", platform: "all", needsDevOrLegal: true },
+      { instruction: "If the client isn't sure: pause the tag in GTM (don't delete) and schedule a follow-up review", platform: "all" },
+      { instruction: "Document which scripts were removed and why", platform: "all" },
+    ],
+    devLegalNote: "Check with the client before removing any script - what looks abandoned may still be feeding data to a report someone relies on. Pausing in GTM is safer than deleting, since it can be re-enabled.",
+  },
+
+  E6: {
+    plainExplanation: "CRM systems like HubSpot and Salesforce receive personal data from forms (names, emails, etc.) and may also track visitor behavior. If the CRM is a US-based service, you need both a DPA and a valid data transfer mechanism.",
+    steps: [
+      { instruction: "List all CRM integrations on the site (HubSpot, Salesforce, Pipedrive, etc.)", platform: "all" },
+      { instruction: "For each CRM: verify a Data Processing Agreement (DPA) is signed - most have this in their settings", platform: "all" },
+      { instruction: "For US-based CRMs: check DPF certification on dataprivacyframework.gov*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Review what data the CRM receives: form submissions, visitor tracking, cookies", platform: "all" },
+      { instruction: "If the CRM sets tracking cookies: ensure they're categorized in Cookiebot and behind consent", platform: "all" },
+    ],
+    devLegalNote: "A DPA is a legal contract, not a technical setting. Most major CRMs (HubSpot, Salesforce) have standard DPAs available in their account settings or legal pages. The client (data controller) must accept/sign the DPA.",
+  },
+
+  F1: {
+    plainExplanation: "Every form on the site collects personal data - even a simple contact form asks for a name and email. You need to know exactly how many forms exist and what they collect so you can review each one for privacy compliance.",
+    steps: [
+      { instruction: "Review the scan results above - the scanner identifies forms found in the page HTML", platform: "all" },
+      { instruction: "Browse the full site manually to catch forms on pages that weren't scanned (subpages, landing pages, pop-ups)", platform: "all" },
+      { instruction: "For each form: list what fields it collects (name, email, phone, company, message, etc.)", platform: "all" },
+      { instruction: "Note which forms go to third-party services (HubSpot, Mailchimp, etc.) vs the site's own backend", platform: "all" },
+      { instruction: "Use this inventory for the remaining form checks (F2-F6)", platform: "all" },
+    ],
+  },
+
+  G3: {
+    plainExplanation: "A consent banner that only offers 'Accept All' or 'Reject All' isn't enough. Visitors must be able to choose individually - for example, accepting analytics cookies but declining marketing cookies. Cookiebot supports this by default, but it needs to be configured correctly.",
+    steps: [
+      { instruction: "Open the site and check if the consent banner offers category-level controls (not just Accept/Reject)", platform: "all" },
+      { instruction: "Verify each category is selectable independently: Necessary (always on), Statistics, Marketing, Preferences", platform: "all" },
+      { instruction: "If categories aren't shown: check Cookiebot admin > Banner configuration for the consent dialog type", platform: "all" },
+      { instruction: "The dialog type should be 'Opt-in' with category details visible, not a simple accept/reject popup", platform: "all" },
+      { instruction: "Test: accept only Statistics, decline Marketing - then verify in DevTools that marketing cookies aren't set", platform: "all" },
+    ],
+    docLinks: [
+      { label: "Cookiebot: Banner configuration", url: "https://www.cookiebot.com/en/help/consent-dialog/" },
+    ],
+  },
+
+  G8: {
+    plainExplanation: "After a visitor makes a consent choice, the banner disappears. But they must be able to change their mind at any time. Most sites use either Cookiebot's floating widget (small icon in a corner) or a 'Cookie settings' link in the footer to reopen the consent banner.",
+    steps: [
+      { instruction: "Accept all cookies, then navigate to another page", platform: "all" },
+      { instruction: "Look for a floating widget icon (usually bottom-left) or a 'Cookie settings'/'Manage cookies' link in the footer", platform: "all" },
+      { instruction: "Click it and verify the consent preference panel opens with current choices pre-filled", platform: "all" },
+      { instruction: "If neither exists: add the Cookiebot widget or a footer link that calls CookieConsent.renew()", platform: "all" },
+      { instruction: "Webflow: add a link in the footer with href='#' and onclick='CookieConsent.renew()' or use the Cookiebot widget setting", platform: "webflow" },
+      { instruction: "Test that changing a choice (e.g. turning off Marketing) actually takes effect - check DevTools > Cookies", platform: "all" },
+    ],
+    docLinks: [
+      { label: "Cookiebot: Consent withdrawal", url: "https://www.cookiebot.com/en/help/consent-renewal/" },
+    ],
+  },
+
+  G9: {
+    plainExplanation: "Consent doesn't last forever. After a set period (maximum 12 months, or 6 months for French visitors), the banner should reappear so visitors can reconsider their choice. It should also reappear if the cookie policy changes significantly.",
+    steps: [
+      { instruction: "Log in to Cookiebot admin > Configuration", platform: "all" },
+      { instruction: "Find the 'Renew consent' or consent expiry setting", platform: "all" },
+      { instruction: "Set to 12 months maximum (6 months if the site targets French visitors)", platform: "all" },
+      { instruction: "Verify the CookieConsent cookie's expiry date matches the renewal period (check DevTools > Application > Cookies)", platform: "all" },
+      { instruction: "If the cookie policy changes: consider forcing a re-consent by resetting the consent version in Cookiebot", platform: "all" },
+    ],
+  },
+
+  H1: {
+    plainExplanation: "Cookiebot has a built-in scanner that crawls your site and detects all cookies. Running it regularly ensures newly added cookies get detected and categorized. The scan report also serves as documentation that you've done your due diligence.",
+    steps: [
+      { instruction: "Log in to Cookiebot admin panel", platform: "all" },
+      { instruction: "Go to the scan settings and verify the correct domain and pages are configured", platform: "all" },
+      { instruction: "Run a full scan (this may take a few minutes depending on site size)", platform: "all" },
+      { instruction: "Review the results: check for any new or unclassified cookies", platform: "all" },
+      { instruction: "Save or export the scan report for your records", platform: "all" },
+      { instruction: "Schedule regular scans (monthly recommended) to catch changes", platform: "all" },
+    ],
+  },
+
+  H2: {
+    plainExplanation: "Cookiebot includes a Google Consent Mode checker that verifies consent signals are being sent correctly. This confirms that when a visitor accepts or declines, Google actually receives the right signal.",
+    steps: [
+      { instruction: "Log in to Cookiebot admin panel", platform: "all" },
+      { instruction: "Find the Google Consent Mode (GCM) check tool - usually under compliance or reports", platform: "all" },
+      { instruction: "Run the GCM check against your site", platform: "all" },
+      { instruction: "Review the results: all 4 consent types should show as transmitting (ad_storage, analytics_storage, ad_user_data, ad_personalization)", platform: "all" },
+      { instruction: "If any signals are missing: check the Cookiebot GTM template configuration (see checks A3-A5)", platform: "all" },
+      { instruction: "Save the report as evidence of compliance", platform: "all" },
+    ],
+  },
+
+  H3: {
+    plainExplanation: "GTM Preview Mode lets you see exactly which tags fire and which are blocked in real time. The 'decline all' test is the most important one - it proves that rejecting cookies actually prevents tracking.",
+    steps: [
+      { instruction: "Open GTM > click 'Preview' in the top right", platform: "all" },
+      { instruction: "Enter the site URL and start the preview session", platform: "all" },
+      { instruction: "When the consent banner appears: decline all cookies", platform: "all" },
+      { instruction: "In the GTM debugger panel: check the 'Consent' tab - all types should show 'Denied'", platform: "all" },
+      { instruction: "Check 'Tags Fired' vs 'Tags Not Fired' - non-Google tags should all be under 'Not Fired'", platform: "all" },
+      { instruction: "Google tags may still fire (they send anonymous pings via Consent Mode) - this is expected and allowed", platform: "all" },
+      { instruction: "If non-Google tags appear under 'Tags Fired': fix their consent settings (see B3)", platform: "all" },
+    ],
+    docLinks: [
+      { label: "GTM: Preview and debug mode", url: "https://support.google.com/tagmanager/answer/6107056" },
+    ],
+  },
+
+  H4: {
+    plainExplanation: "The reverse of H3 - verify that accepting cookies actually enables all your tracking and analytics tags. If tags don't fire after accepting, your marketing and analytics tools won't collect any data, which defeats their purpose.",
+    steps: [
+      { instruction: "Open GTM Preview Mode and enter the site URL", platform: "all" },
+      { instruction: "When the consent banner appears: accept all cookies", platform: "all" },
+      { instruction: "In the GTM debugger: check the 'Consent' tab - all types should show 'Granted'", platform: "all" },
+      { instruction: "Check 'Tags Fired' - all tags (Google and non-Google) should appear here", platform: "all" },
+      { instruction: "If any expected tags are under 'Not Fired': check their trigger and consent settings", platform: "all" },
+    ],
+  },
+
+  H5: {
+    plainExplanation: "This tests whether granular consent actually works. If a visitor accepts Statistics but declines Marketing, only analytics tags should fire - not advertising pixels. This is the real test of whether your consent categories are wired up correctly.",
+    steps: [
+      { instruction: "Open GTM Preview Mode and enter the site URL", platform: "all" },
+      { instruction: "When the banner appears: customize consent - accept Statistics, decline Marketing", platform: "all" },
+      { instruction: "In the GTM debugger: analytics tags (GA4, HotJar, etc.) should be under 'Tags Fired'", platform: "all" },
+      { instruction: "Marketing tags (LinkedIn Pixel, Meta Pixel, etc.) should be under 'Tags Not Fired'", platform: "all" },
+      { instruction: "If marketing tags fire despite being declined: their consent type is wrong - they need 'ad_storage' (see B3)", platform: "all" },
+      { instruction: "Repeat with the opposite: accept Marketing, decline Statistics - verify analytics tags don't fire", platform: "all" },
+    ],
+  },
+
+  H7: {
+    plainExplanation: "When a data protection authority investigates, they ask: 'Prove this visitor consented.' Without consent logs, you can't. Cookiebot stores these records automatically, but the feature must be enabled and the retention period must be long enough (5 years recommended).",
+    steps: [
+      { instruction: "Log in to Cookiebot admin > check for a 'Consent log' or 'Audit log' section", platform: "all" },
+      { instruction: "Verify consent logging is enabled", platform: "all" },
+      { instruction: "Check that the log records: timestamp, consent choice (accepted/declined per category), banner version, visitor ID", platform: "all" },
+      { instruction: "Verify the retention period is set to at least 5 years*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Test: make a consent choice on the site, then check the log - your choice should appear", platform: "all" },
+    ],
+    devLegalNote: "The 5-year recommendation comes from the typical statute of limitations for GDPR enforcement. Some authorities may investigate actions from several years ago, and you need the consent record from that time to defend yourself.",
+  },
+
+  I5: {
+    plainExplanation: "A script inventory is an internal document (not published on the site) that lists every script, what it does, and why it's there. It's essential for maintaining the consent setup - when someone asks 'why is this script running?', the inventory has the answer.",
+    steps: [
+      { instruction: "Create a spreadsheet or document with columns: Script name, Vendor, Purpose, Cookie category, Consent type, DPA signed, Notes", platform: "all" },
+      { instruction: "Populate it from the GTM tag list and the Cookiebot cookie report", platform: "all" },
+      { instruction: "Cross-reference with scan results from checks A1 and B1 to catch scripts outside GTM", platform: "all" },
+      { instruction: "For each entry: note whether the script is managed via GTM or loaded directly", platform: "all" },
+      { instruction: "Share with the client and schedule annual reviews to keep it current", platform: "all" },
+    ],
+  },
+
+  I6: {
+    plainExplanation: "If the site uses AI or automated systems that make decisions affecting people (like automated loan approvals, content filtering, or dynamic pricing), the privacy policy must explain the logic and give people the right to request human review. Most marketing websites don't have this - mark as N/A if it doesn't apply.",
+    steps: [
+      { instruction: "Ask the client: does the site use any automated decision-making that affects visitors? (e.g. credit scoring, automated rejection, personalized pricing, content blocking based on profiling)", platform: "all" },
+      { instruction: "If no: mark this check as N/A and document the conclusion", platform: "all" },
+      { instruction: "If yes: verify the privacy policy discloses the logic, significance, and consequences*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Verify the privacy policy mentions the right to contest automated decisions and request human review*", platform: "all", needsDevOrLegal: true },
+    ],
+    devLegalNote: "This applies to decisions with 'legal or similarly significant effects'. Basic personalization (showing different homepage banners) doesn't count. Credit decisions, automated hiring, or algorithmic content blocking do count.",
+  },
+
+  I7: {
+    plainExplanation: "Some organizations are legally required to have a Data Protection Officer (DPO): public authorities, companies doing large-scale monitoring, or those handling sensitive data like health records. If a DPO exists, their contact details must be in the privacy policy.",
+    steps: [
+      { instruction: "Ask the client: is a DPO appointed? Is one legally required?", platform: "all" },
+      { instruction: "DPO is mandatory for: public authorities, organizations whose core activity involves large-scale systematic monitoring, organizations processing sensitive data at scale", platform: "all" },
+      { instruction: "If a DPO exists: verify their contact details (name or title, email) are in the privacy policy", platform: "all" },
+      { instruction: "If a DPO is required but not appointed: flag as a critical issue*", platform: "all", needsDevOrLegal: true },
+      { instruction: "If a DPO is not required: mark as N/A and document the conclusion", platform: "all" },
+    ],
+  },
+
+  J1: {
+    plainExplanation: "Every third-party service that touches personal data needs a Data Processing Agreement (DPA). This is a legal contract that defines what the service can and can't do with the data. Most major services (Google, HubSpot, Cloudflare, Webflow) have standard DPAs available in their settings.",
+    steps: [
+      { instruction: "List all third-party services that process personal data: analytics, CRM, email marketing, hosting, CDN, payment, chat widgets", platform: "all" },
+      { instruction: "For each service: check if a DPA is signed or accepted - most have this in account settings or legal pages", platform: "all" },
+      { instruction: "Common DPA locations: Google (Admin > Account > Legal), HubSpot (Settings > Data Privacy), Webflow (in Terms of Service), Cloudflare (Dashboard > Account > Legal)", platform: "all" },
+      { instruction: "If a service doesn't offer a standard DPA: the client needs to request one directly*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Document the DPA status for each vendor in the vendor inventory (J2)", platform: "all" },
+    ],
+  },
+
+  J2: {
+    plainExplanation: "A vendor inventory is a master list of every company that handles your visitors' data. It tracks what data they get, where they store it, and whether the legal agreements are in place. This is a core accountability requirement and one of the first things authorities check.",
+    steps: [
+      { instruction: "Create a spreadsheet with columns: Vendor, Service type, Data received, Storage location (EU/US/other), DPA signed, DPF certified (if US), Last reviewed", platform: "all" },
+      { instruction: "Populate from the script inventory (I5), GTM tag list, and form integrations", platform: "all" },
+      { instruction: "Include hosting and CDN providers (Webflow, Cloudflare, Vercel, etc.) - they also process data", platform: "all" },
+      { instruction: "Schedule annual reviews to catch vendor changes*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Share with the client - they are legally responsible for maintaining this", platform: "all" },
+    ],
+  },
+
+  J3: {
+    plainExplanation: "Sending EU visitor data to US companies is only legal if there's a valid transfer mechanism. The easiest is the EU-US Data Privacy Framework (DPF) - if the US company is DPF-certified, the transfer is lawful. You can check certification on dataprivacyframework.gov.",
+    steps: [
+      { instruction: "List all US-based services used on the site: Google, Meta, HubSpot, Salesforce, Cloudflare, etc.", platform: "all" },
+      { instruction: "For each: go to dataprivacyframework.gov and search for the company name", platform: "all" },
+      { instruction: "Verify the certification is 'Active' (not expired or withdrawn)", platform: "all" },
+      { instruction: "If a US service is NOT DPF-certified: flag for legal review - alternative safeguards needed (Standard Contractual Clauses + Transfer Impact Assessment, see J8)*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Document the certification status in the vendor inventory (J2)", platform: "all" },
+    ],
+    docLinks: [
+      { label: "Data Privacy Framework: Search participants", url: "https://www.dataprivacyframework.gov/list" },
+    ],
+  },
+
+  J4: {
+    plainExplanation: "People have the right to ask: 'What data do you have about me?' and 'Delete my data.' The organization must have a process to handle these requests within 30 days. This includes knowing who receives the request, how it's tracked, and who fulfills it.",
+    steps: [
+      { instruction: "Ask the client: do you have a documented process for handling data subject requests (access, correction, deletion)?", platform: "all" },
+      { instruction: "If yes: verify it covers who receives requests, how they're logged, response templates, and the 30-day deadline", platform: "all" },
+      { instruction: "Check the privacy policy: it should explain how visitors can exercise their rights and provide a contact method (email or form)", platform: "all" },
+      { instruction: "If no process exists: flag as an issue and recommend creating one*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Test the contact method: is the email address or form actually working?", platform: "all" },
+    ],
+    devLegalNote: "This is primarily a client/organizational responsibility, not a website issue. But the privacy policy must tell visitors how to exercise their rights, and the contact method must actually work.",
+  },
+
+  J5: {
+    plainExplanation: "If personal data is leaked or stolen, the data protection authority must be notified within 72 hours. Without a plan in place before a breach happens, teams scramble, miss the deadline, and face larger fines. The plan doesn't need to be complex - it just needs to exist.",
+    steps: [
+      { instruction: "Ask the client: do you have a data breach response plan?", platform: "all" },
+      { instruction: "If yes: verify it includes who to notify internally, assessment steps, authority notification template (72-hour deadline), affected person notification template, and a breach log", platform: "all" },
+      { instruction: "If no: flag as an issue and recommend creating one*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Verify the plan names the relevant supervisory authority (e.g. IMY for Sweden, ICO for UK)", platform: "all" },
+      { instruction: "Check that a breach log exists (even if empty) - authorities expect to see one", platform: "all" },
+    ],
+    devLegalNote: "The breach plan is an organizational document, not something published on the website. But having one is a legal requirement, and its absence is a compliance gap the audit should flag.",
+  },
+
+  J6: {
+    plainExplanation: "Records of Processing Activities (ROPA) is the master document that lists everything the organization does with personal data. It's mandatory for most organizations and is one of the first things a data protection authority asks for during an inspection.",
+    steps: [
+      { instruction: "Ask the client: do you maintain a Record of Processing Activities?", platform: "all" },
+      { instruction: "If yes: verify it covers the website's processing: analytics, form submissions, marketing tools, CRM data, email marketing", platform: "all" },
+      { instruction: "ROPA must include: purposes, data categories, recipients, retention periods, transfer safeguards, security measures", platform: "all" },
+      { instruction: "If no ROPA exists: flag as an issue - this is a legal requirement for most organizations*", platform: "all", needsDevOrLegal: true },
+      { instruction: "The ROPA must be kept up to date and available to the data protection authority on request", platform: "all" },
+    ],
+    devLegalNote: "The exemption for organizations under 250 employees only applies if processing is 'occasional' - website tracking, analytics, and marketing cookies are not occasional, so the exemption rarely applies in practice.",
+  },
+
+  J7: {
+    plainExplanation: "Your vendors (like Google or HubSpot) use their own sub-vendors to process data. The DPA should require vendors to tell you before changing sub-vendors, give you the right to object, and ensure sub-vendors follow the same data protection rules.",
+    steps: [
+      { instruction: "Review the DPAs for key vendors: look for sub-processor clauses", platform: "all" },
+      { instruction: "The DPA should include: advance notice of sub-processor changes, your right to object, and flow-down of data protection obligations", platform: "all" },
+      { instruction: "Check if key vendors publish their sub-processor list (most major ones do - Google, HubSpot, etc.)", platform: "all" },
+      { instruction: "Verify the client has a process for reviewing sub-processor change notifications*", platform: "all", needsDevOrLegal: true },
+      { instruction: "If a DPA lacks sub-processor clauses: flag for legal review*", platform: "all", needsDevOrLegal: true },
+    ],
+    devLegalNote: "Most standard DPAs from major vendors already include sub-processor clauses. The issue is more common with smaller or niche vendors. The client should subscribe to sub-processor change notifications from key vendors.",
+  },
+
+  J8: {
+    plainExplanation: "For US vendors NOT on the Data Privacy Framework (DPF), or vendors in other non-EU countries without an adequacy agreement, you need a Transfer Impact Assessment (TIA). This documents the risks of sending data to that country and what extra safeguards are in place.",
+    steps: [
+      { instruction: "Review the vendor inventory (J2) and DPF certification status (J3)", platform: "all" },
+      { instruction: "If all vendors are DPF-certified or in EU/EEA/adequate countries: this check is N/A", platform: "all" },
+      { instruction: "For any vendor without DPF certification or adequacy: a TIA is needed*", platform: "all", needsDevOrLegal: true },
+      { instruction: "The TIA must assess: the legal framework of the destination country, government access risks, and supplementary measures (like encryption)", platform: "all" },
+      { instruction: "Standard Contractual Clauses (SCCs) are typically needed alongside the TIA*", platform: "all", needsDevOrLegal: true },
+    ],
+    devLegalNote: "Transfer Impact Assessments are legal documents that require understanding of the destination country's surveillance laws. This is specialist legal work - recommend the client involve a privacy lawyer if non-DPF transfers are identified.",
+  },
+
+  J9: {
+    plainExplanation: "A Data Protection Impact Assessment (DPIA) is required when data processing is likely to result in high risk to individuals. Most standard marketing websites don't need one - but the audit should document whether a DPIA is needed and why or why not.",
+    steps: [
+      { instruction: "Review the site's processing activities against DPIA triggers: large-scale profiling, systematic monitoring of public areas, automated decision-making with legal effects, sensitive data at scale, children's data, innovative new technologies", platform: "all" },
+      { instruction: "If any trigger applies: verify a DPIA has been completed*", platform: "all", needsDevOrLegal: true },
+      { instruction: "If no triggers apply: document the conclusion ('DPIA not required because...') and mark as N/A", platform: "all" },
+      { instruction: "If unsure whether triggers apply: flag for legal review - it's safer to do a DPIA than to skip one that was needed*", platform: "all", needsDevOrLegal: true },
+    ],
+    devLegalNote: "Most standard corporate/marketing websites with analytics and contact forms won't trigger DPIA requirements. But sites with extensive user tracking, A/B testing at scale, personalization engines, or user profiling might. Document the assessment either way.",
+  },
+
   G4: {
     plainExplanation: "The consent banner is only useful if it actually controls what happens. If tracking scripts and cookies still fire after a visitor clicks 'Decline', the banner is just decoration - and the site is collecting data without permission.",
     steps: [

@@ -131,7 +131,7 @@ export async function saveCheckResults(
 
 export async function saveScanRun(
   auditId: string,
-  scanType: "page-scan" | "ai-agent" | "cookiebot",
+  scanType: "page-scan" | "ai-agent" | "cookiebot" | "gtm-api",
   url: string,
   findings: { checkKey: string; status: string; summary: string; findings?: { element: string; detail: string; severity: string }[] }[],
   error?: string

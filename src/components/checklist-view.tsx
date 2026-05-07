@@ -9,7 +9,7 @@ import { CheckItem, type FixInfo } from "@/components/check-item";
 import { CheckGuideDrawer } from "@/components/check-guide-drawer";
 import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
-import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan } from "@/app/actions/scan";
+import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan, runGtmScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
 import { saveCheckResult, saveInternalNote, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType } from "@/app/actions/audits";
 import { getFixAvailability, applyFix, analyzeFix, verifyGtmSetup, pushGtmSnippetToSite, deleteApiManagedScript, type FixAvailability, type FixAnalysisResult } from "@/app/actions/fixes";
@@ -303,6 +303,21 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             addError("scan", "Cookiebot scan failed", err instanceof Error ? err.message : "Unknown error");
           }
         }
+
+        const gtmId = result.detectedGtmId || siteFields?.gtmId;
+        if (gtmId) {
+          try {
+            const gtmResults = await runGtmScan(gtmId);
+            totalSkipped += applyCheckResults(gtmResults, "scan");
+            if (auditId) {
+              const gtmRun = await saveScanRun(auditId, "gtm-api", scanUrl, gtmResults);
+              setScanRuns((prev) => [gtmRun, ...prev]);
+            }
+          } catch (err) {
+            addError("scan", "GTM scan failed", err instanceof Error ? err.message : "Unknown error");
+          }
+        }
+
         setLastSkippedCount(totalSkipped);
       } else {
         setScanResult(result);

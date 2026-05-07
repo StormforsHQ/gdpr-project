@@ -3,6 +3,14 @@ import type { GtmTag, GtmTrigger } from "@/lib/api/gtm";
 
 const GOOGLE_BUILT_IN_TYPES = ["gaawc", "gaawe", "gclidw", "awct", "sp", "flc", "googtag", "ua", "fls"];
 
+// Built-in triggers are NOT returned by the GTM API triggers.list endpoint.
+// Tags reference them via these hardcoded trigger IDs.
+const BUILTIN_TRIGGER_IDS = {
+  consentInit: "2147479572",
+  init: "2147479573",
+  allPages: "2147479553",
+};
+
 function isCookiebotTag(tag: GtmTag): boolean {
   return /cookiebot/i.test(tag.type) || /cookiebot/i.test(tag.name);
 }
@@ -13,6 +21,21 @@ function isGoogleTag(tag: GtmTag): boolean {
 
 function isSystemTag(tag: GtmTag): boolean {
   return isCookiebotTag(tag);
+}
+
+function isConsentAwareTrigger(trigger: GtmTrigger): boolean {
+  return trigger.type === "customEvent" && /consent|cookie|accept/i.test(trigger.name);
+}
+
+function hasConsentAwareTriggers(tag: GtmTag, triggers: GtmTrigger[]): boolean {
+  const triggerIds = tag.firingTriggerId || [];
+  if (triggerIds.length === 0) return false;
+  return triggerIds.every((id) => {
+    if (id === BUILTIN_TRIGGER_IDS.consentInit || id === BUILTIN_TRIGGER_IDS.init) return true;
+    const trigger = triggers.find((t) => t.triggerId === id);
+    if (!trigger) return false;
+    return isConsentAwareTrigger(trigger);
+  });
 }
 
 export function checkA3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
@@ -26,48 +49,48 @@ export function checkA3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
     };
   }
 
-  const consentInitTrigger = triggers.find((t) => t.type === "consentInit");
-  if (!consentInitTrigger) {
+  const triggerIds = cookiebotTag.firingTriggerId || [];
+
+  // Check for built-in Consent Initialization trigger (not returned by triggers.list API)
+  const firesOnBuiltinConsentInit = triggerIds.includes(BUILTIN_TRIGGER_IDS.consentInit);
+
+  // Also check for custom triggers with consentInit type
+  const firesOnCustomConsentInit = triggerIds.some((id) => {
+    const trigger = triggers.find((t) => t.triggerId === id);
+    return trigger?.type === "consentInit";
+  });
+
+  if (firesOnBuiltinConsentInit || firesOnCustomConsentInit) {
     return {
       checkKey: "A3",
-      status: "issue",
+      status: "ok",
       findings: [{
         element: cookiebotTag.name,
-        detail: "No 'Consent Initialization - All Pages' trigger exists in the container. This trigger must be created and assigned to the Cookiebot tag.",
-        severity: "error",
+        detail: "Fires on Consent Initialization - All Pages (correct)",
+        severity: "info",
       }],
-      summary: "Consent Initialization trigger missing from container",
+      summary: "Cookiebot CMP tag on correct trigger",
     };
   }
 
-  const firesOnConsentInit = cookiebotTag.firingTriggerId?.includes(consentInitTrigger.triggerId);
-  if (!firesOnConsentInit) {
-    const actualTriggers = (cookiebotTag.firingTriggerId || [])
-      .map((id) => triggers.find((t) => t.triggerId === id))
-      .filter(Boolean);
-    const triggerNames = actualTriggers.map((t) => `"${t!.name}" (${t!.type})`).join(", ") || "none";
-
-    return {
-      checkKey: "A3",
-      status: "issue",
-      findings: [{
-        element: cookiebotTag.name,
-        detail: `Cookiebot fires on: ${triggerNames}. Must fire on "Consent Initialization - All Pages" to load before any other tags.`,
-        severity: "error",
-      }],
-      summary: "Cookiebot not on Consent Initialization trigger",
-    };
-  }
+  const actualTriggerNames = triggerIds
+    .map((id) => {
+      if (id === BUILTIN_TRIGGER_IDS.allPages) return '"All Pages" (pageview)';
+      if (id === BUILTIN_TRIGGER_IDS.init) return '"Initialization - All Pages" (init)';
+      const trigger = triggers.find((t) => t.triggerId === id);
+      return trigger ? `"${trigger.name}" (${trigger.type})` : `unknown (${id})`;
+    })
+    .join(", ") || "none";
 
   return {
     checkKey: "A3",
-    status: "ok",
+    status: "issue",
     findings: [{
       element: cookiebotTag.name,
-      detail: "Fires on Consent Initialization - All Pages (correct)",
-      severity: "info",
+      detail: `Cookiebot fires on: ${actualTriggerNames}. Must fire on "Consent Initialization - All Pages" to load before any other tags.`,
+      severity: "error",
     }],
-    summary: "Cookiebot CMP tag on correct trigger",
+    summary: "Cookiebot not on Consent Initialization trigger",
   };
 }
 
@@ -189,7 +212,7 @@ export function checkB2(tags: GtmTag[]): CheckResult {
   };
 }
 
-export function checkB3(tags: GtmTag[]): CheckResult {
+export function checkB3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
   const nonGoogleNonSystem = tags.filter((t) => !isGoogleTag(t) && !isSystemTag(t));
 
   if (nonGoogleNonSystem.length === 0) {
@@ -205,17 +228,39 @@ export function checkB3(tags: GtmTag[]): CheckResult {
   let issueCount = 0;
 
   for (const tag of nonGoogleNonSystem) {
-    const status = tag.consentSettings?.consentStatus;
-    if (status === "needed") {
+    const consentStatus = tag.consentSettings?.consentStatus;
+    const gatedByConsentSetting = consentStatus === "needed";
+    const gatedByTrigger = hasConsentAwareTriggers(tag, triggers);
+
+    if (gatedByConsentSetting) {
       findings.push({
         element: tag.name,
-        detail: `Consent requirement set to "Require additional consent" (correct)`,
+        detail: `Consent requirement: "Require additional consent" (correct)`,
+        severity: "info",
+      });
+    } else if (gatedByTrigger) {
+      const triggerNames = (tag.firingTriggerId || [])
+        .map((id) => triggers.find((t) => t.triggerId === id))
+        .filter(Boolean)
+        .map((t) => t!.name)
+        .join(", ");
+      findings.push({
+        element: tag.name,
+        detail: `Consent-gated via trigger: ${triggerNames}. Consider also adding consent types in Consent Overview for defense in depth.`,
         severity: "info",
       });
     } else {
+      const triggerIds = tag.firingTriggerId || [];
+      const triggerNames = triggerIds
+        .map((id) => {
+          if (id === BUILTIN_TRIGGER_IDS.allPages) return "All Pages";
+          const trigger = triggers.find((t) => t.triggerId === id);
+          return trigger?.name || id;
+        })
+        .join(", ") || "none";
       findings.push({
         element: tag.name,
-        detail: `Consent overview: ${status === "notNeeded" ? "No additional consent required" : status || "not set"}. Non-Google tags must have "Require additional consent" with the right consent types (e.g. ad_storage, analytics_storage).`,
+        detail: `No consent gating. Fires on: ${triggerNames}. Open GTM > Consent Overview (shield icon) > click this tag > set "Require additional consent" with the right types (ad_storage for marketing tags, analytics_storage for analytics tags).`,
         severity: "error",
       });
       issueCount++;
@@ -244,23 +289,33 @@ export function checkB4(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
     };
   }
 
-  const pageviewTrigger = triggers.find((t) => t.type === "pageview");
   const findings: CheckResult["findings"] = [];
   let issueCount = 0;
 
   for (const tag of nonGoogleNonSystem) {
     const tagTriggerIds = tag.firingTriggerId || [];
-    const tagTriggers = tagTriggerIds
-      .map((id) => triggers.find((t) => t.triggerId === id))
-      .filter(Boolean);
 
-    const firesOnAllPages = pageviewTrigger && tagTriggerIds.includes(pageviewTrigger.triggerId);
-    const triggerNames = tagTriggers.map((t) => `"${t!.name}" (${t!.type})`).join(", ") || "none";
+    // Check both built-in All Pages trigger and any custom pageview triggers
+    const firesOnAllPages = tagTriggerIds.includes(BUILTIN_TRIGGER_IDS.allPages)
+      || tagTriggerIds.some((id) => {
+        const trigger = triggers.find((t) => t.triggerId === id);
+        return trigger?.type === "pageview";
+      });
+
+    const triggerNames = tagTriggerIds
+      .map((id) => {
+        if (id === BUILTIN_TRIGGER_IDS.allPages) return '"All Pages" (pageview)';
+        if (id === BUILTIN_TRIGGER_IDS.consentInit) return '"Consent Initialization" (consentInit)';
+        if (id === BUILTIN_TRIGGER_IDS.init) return '"Initialization" (init)';
+        const trigger = triggers.find((t) => t.triggerId === id);
+        return trigger ? `"${trigger.name}" (${trigger.type})` : `unknown (${id})`;
+      })
+      .join(", ") || "none";
 
     if (firesOnAllPages) {
       findings.push({
         element: tag.name,
-        detail: `Fires on "All Pages" trigger. Non-Google tags should use a consent-aware trigger (e.g. cookie_consent_update custom event) so they only fire after the visitor grants consent.`,
+        detail: `Fires on "All Pages" trigger. Non-Google tags should use a consent-aware trigger (e.g. a custom event that fires after the visitor grants consent) so they don't run before consent is given.`,
         severity: "error",
       });
       issueCount++;
@@ -283,13 +338,34 @@ export function checkB4(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
   };
 }
 
+export function checkG1Gtm(tags: GtmTag[]): CheckResult | null {
+  const cookiebotTag = tags.find(isCookiebotTag);
+  if (!cookiebotTag) return null;
+
+  return {
+    checkKey: "G1",
+    status: "ok",
+    findings: [{
+      element: cookiebotTag.name,
+      detail: `Cookiebot loaded via GTM (tag: "${cookiebotTag.name}", type: ${cookiebotTag.type}). Banner is delivered through Google Tag Manager, not directly in the HTML.`,
+      severity: "info",
+    }],
+    summary: "Cookiebot consent banner loaded via GTM",
+  };
+}
+
 export function runGtmChecks(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult[] {
-  return [
+  const results: CheckResult[] = [
     checkA3(tags, triggers),
     checkA4(tags),
     checkA5(tags),
     checkB2(tags),
-    checkB3(tags),
+    checkB3(tags, triggers),
     checkB4(tags, triggers),
   ];
+
+  const g1 = checkG1Gtm(tags);
+  if (g1) results.push(g1);
+
+  return results;
 }

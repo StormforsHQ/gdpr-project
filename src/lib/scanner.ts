@@ -753,28 +753,26 @@ function checkG1($: cheerio.CheerioAPI, html: string, detectedGtmId: string | nu
     return { checkKey: "G1", status: "ok", findings, summary: "Consent management platform detected" };
   }
 
-  const checked = ["site HTML head"];
-  if (detectedGtmId) checked.push(`GTM container (${detectedGtmId})`);
+  if (detectedGtmId) {
+    // Cookiebot may be loaded via GTM - defer to the GTM API scan
+    findings.push({
+      element: "page",
+      detail: `No Cookiebot script found directly in the page HTML. If Cookiebot is loaded via GTM (${detectedGtmId}), the GTM scan will verify this.`,
+      severity: "warning",
+    });
+    return { checkKey: "G1", status: "na", findings, summary: "Cookiebot not in HTML - will check via GTM" };
+  }
 
   findings.push({
     element: "page",
-    detail: `No Cookiebot found in: ${checked.join(", ")}. Visitors will not see a cookie consent banner, which means tracking may run without permission.`,
+    detail: "No Cookiebot or other consent management platform found in the page HTML. No GTM container detected either. Visitors will not see a cookie consent banner.",
     severity: "error",
   });
-
-  if (detectedGtmId) {
-    findings.push({
-      element: "page",
-      detail: "Tip: Open the site in an incognito window to verify - if no banner appears, consent is missing. Check if this client has a Cookiebot subscription at cookiebot.com.",
-      severity: "warning",
-    });
-  } else {
-    findings.push({
-      element: "page",
-      detail: "Tip: No GTM container found either. This site may need both GTM and Cookiebot set up. Check if the client has a Cookiebot subscription at cookiebot.com.",
-      severity: "warning",
-    });
-  }
+  findings.push({
+    element: "page",
+    detail: "Check if this client has a Cookiebot subscription at cookiebot.com. The site may need both GTM and Cookiebot set up.",
+    severity: "warning",
+  });
 
   return { checkKey: "G1", status: "issue", findings, summary: "No cookie consent banner found" };
 }

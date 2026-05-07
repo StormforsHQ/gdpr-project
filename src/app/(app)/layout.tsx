@@ -18,7 +18,7 @@ export interface SidebarSite {
 async function loadSidebarSites(): Promise<SidebarSite[]> {
   try {
     const sites = await getSites();
-    return sites.map((s) => {
+    return sites.filter((s) => s.active).map((s) => {
       const results = s.audits[0]?.results ?? [];
       const checked = results.filter((r) => r.status !== "not_checked").length;
       let auditProgress: SidebarSite["auditProgress"] = "none";

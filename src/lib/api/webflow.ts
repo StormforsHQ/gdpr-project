@@ -12,7 +12,7 @@ async function webflowFetch(path: string, options?: RequestInit) {
   const token = getToken();
   if (!token) throw new Error("WEBFLOW_API_TOKEN not configured");
 
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     const res = await fetch(`${API_BASE}${path}`, {
       ...options,
       headers: {
@@ -23,7 +23,8 @@ async function webflowFetch(path: string, options?: RequestInit) {
     });
 
     if (res.status === 429) {
-      const retryAfter = parseInt(res.headers.get("retry-after") || "5", 10);
+      if (attempt === 1) throw new Error("Webflow API rate limited - wait a few minutes and try again");
+      const retryAfter = Math.min(parseInt(res.headers.get("retry-after") || "5", 10), 10);
       await new Promise((r) => setTimeout(r, retryAfter * 1000));
       continue;
     }
@@ -36,7 +37,7 @@ async function webflowFetch(path: string, options?: RequestInit) {
     return res.json();
   }
 
-  throw new Error("Webflow API rate limit - try again in a minute");
+  throw new Error("Webflow API rate limited - wait a few minutes and try again");
 }
 
 export async function getCustomCode(siteId: string): Promise<{

@@ -563,6 +563,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
   const scannedCheckCount = scanResult?.checks.length ?? 0;
   const scanIssueCount = scanResult?.checks.filter((c) => c.status === "issue").length ?? 0;
+  const scanBasicIssues = scanResult?.checks.filter((c) => c.status === "issue" && basicCheckKeys.has(c.checkKey)).length ?? 0;
+  const scanFullIssues = scanResult?.checks.filter((c) => c.status === "issue" && !basicCheckKeys.has(c.checkKey)).length ?? 0;
   const scanFailedCount = scanResult?.checks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning")).length ?? 0;
 
   return (
@@ -610,7 +612,11 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               <span>{lastScanType === "ai-agent" ? "AI scan" : lastScanType === "page-scan" ? "Page scan" : "Scanned"}: {scanResult.url}</span>
               <span>{scannedCheckCount} checks run</span>
               {scanIssueCount > 0 && (
-                <Badge variant="destructive" className="text-xs">{scanIssueCount} issue{scanIssueCount !== 1 ? "s" : ""}</Badge>
+                <Badge variant="destructive" className="text-xs">
+                  {scanFullIssues > 0
+                    ? `${scanBasicIssues} basic + ${scanFullIssues} full issue${scanIssueCount !== 1 ? "s" : ""}`
+                    : `${scanIssueCount} issue${scanIssueCount !== 1 ? "s" : ""}`}
+                </Badge>
               )}
               {scanFailedCount > 0 && (
                 <Badge variant="secondary" className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400">{scanFailedCount} failed</Badge>
@@ -749,9 +755,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             variant="destructive"
             className={`cursor-pointer text-xs ${activeFilters.has("issue") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
           >
-            {auditType === "full" && fullIssues > 0
+            {fullIssues > 0
               ? `Issues (${basicIssues} basic + ${fullIssues} full)`
-              : `Issues (${totalIssues})`}
+              : `Issues (${basicIssues} basic)`}
           </Badge>
         </button>
         <button onClick={() => toggleFilter("na")}>

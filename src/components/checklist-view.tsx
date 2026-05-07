@@ -293,7 +293,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         const cbid = result.detectedCookiebotId || siteFields?.cookiebotId;
         if (cbid) {
           try {
-            const cbResults = await runCookiebotScan(cbid);
+            const cbResults = await runCookiebotScan(cbid, scanUrl);
             totalSkipped += applyCheckResults(cbResults, "scan");
             if (auditId) {
               const cbRun = await saveScanRun(auditId, "cookiebot", scanUrl, cbResults);

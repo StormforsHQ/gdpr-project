@@ -16,13 +16,24 @@ export interface CookiebotData {
   unclassified: CookiebotCookie[];
 }
 
-export async function fetchCookiebotData(cbid: string): Promise<CookiebotData | null> {
+export async function fetchCookiebotData(cbid: string, referer?: string): Promise<CookiebotData | null> {
   try {
-    const res = await fetch(`https://consent.cookiebot.com/${cbid}/cc.js`, {
+    const url = referer
+      ? `https://consent.cookiebot.com/${cbid}/cc.js?referer=${encodeURIComponent(referer)}`
+      : `https://consent.cookiebot.com/${cbid}/cc.js`;
+    const res = await fetch(url, {
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return null;
     const text = await res.text();
+    if (/setOutOfRegion/i.test(text) && !/cookieTable/i.test(text)) {
+      const retryRes = await fetch(`https://consent.cookiebot.com/${cbid}/cc.js?referer=${encodeURIComponent(referer || "audit.example.com")}`, {
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!retryRes.ok) return null;
+      const retryText = await retryRes.text();
+      return parseCcJs(retryText);
+    }
     return parseCcJs(text);
   } catch {
     return null;
@@ -46,7 +57,7 @@ function parseCcJs(js: string): CookiebotData {
   const tableMatch = js.match(/CookieConsentDialog\.cookieTableNecessary\s*=\s*(\[[\s\S]*?\]);/);
   const statsMatch = js.match(/CookieConsentDialog\.cookieTableStatistics\s*=\s*(\[[\s\S]*?\]);/);
   const marketingMatch = js.match(/CookieConsentDialog\.cookieTableAdvertising\s*=\s*(\[[\s\S]*?\]);/);
-  const prefMatch = js.match(/CookieConsentDialog\.cookieTablePreferences\s*=\s*(\[[\s\S]*?\]);/);
+  const prefMatch = js.match(/CookieConsentDialog\.cookieTablePreference\s*=\s*(\[[\s\S]*?\]);/);
   const unclassMatch = js.match(/CookieConsentDialog\.cookieTableUnclassified\s*=\s*(\[[\s\S]*?\]);/);
 
   data.necessary = parseCookieTable(tableMatch?.[1]);
@@ -83,10 +94,14 @@ function parseCookieTable(raw: string | undefined): CookiebotCookie[] {
 
 function extractFields(raw: string): string[] {
   const fields: string[] = [];
-  const pattern = /'([^']*(?:''[^']*)*)'/g;
+  const pattern = /(?:"([^"]*(?:""[^"]*)*)"|'([^']*(?:''[^']*)*)')/g;
   let match;
   while ((match = pattern.exec(raw)) !== null) {
-    fields.push(match[1].replace(/''/g, "'"));
+    if (match[1] !== undefined) {
+      fields.push(match[1].replace(/""/g, '"'));
+    } else {
+      fields.push(match[2].replace(/''/g, "'"));
+    }
   }
   return fields;
 }

@@ -237,9 +237,12 @@ export async function syncWebflowSites(): Promise<SyncWebflowResult> {
 
   let wfSites: WebflowSite[];
   try {
+    console.log("[Webflow Sync] Fetching sites from Webflow API...");
     wfSites = await listAllSites();
+    console.log(`[Webflow Sync] Fetched ${wfSites.length} sites`);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
+    console.error("[Webflow Sync] API error:", msg);
     return { created: 0, updated: 0, total: 0, activeCount: 0, error: `Webflow API error: ${msg}` };
   }
 
@@ -295,10 +298,12 @@ export async function syncWebflowSites(): Promise<SyncWebflowResult> {
     created++;
   }
 
+  console.log(`[Webflow Sync] Saving to DB: ${creates.length} new, ${updates.length} updates, ${activeCount} with custom domains`);
   await prisma.$transaction([
     ...updates.map((u) => prisma.site.update({ where: { id: u.id }, data: u.data })),
     ...creates.map((c) => prisma.site.create({ data: c })),
   ]);
+  console.log("[Webflow Sync] Done");
 
   revalidatePath("/sites");
   revalidatePath("/");

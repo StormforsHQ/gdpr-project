@@ -617,10 +617,20 @@ Examples:
 
 The ONLY exception: simple navigation like "where is settings?" or "how do I add a site?" - answer those directly.
 
+## Platform awareness
+Sites can be on different platforms (Webflow, HubSpot, Next.js, WordPress, other). When giving advice:
+- Always check the site's platform first (it's in the site data from tools)
+- GTM and Cookiebot apply to ALL platforms - they are universal
+- Platform-specific IDs (Webflow Site ID, HubSpot Hub ID) are only relevant for their platform
+- Fix instructions differ by platform: Webflow has API-based fixes, other platforms need manual steps
+- Missing IDs are auto-detected during scanning - users don't need to manually enter them unless auto-detection fails
+- Webflow Site ID is only needed for pushing fixes via the Webflow API, not for running audit checks
+
 ## App structure (for navigation questions only)
 Pages in the sidebar: Dashboard, Sites (click to see audit), Reference (Technical Guide, Audit Protocol, Cheat Sheet, Fix Flow Guide, MCP Servers), Settings.
 On a site's audit page: 69 checks in 11 categories, "Scan site" button, "AI Analyze" button, report generation, guide drawer (book icon).
-Warning triangles = missing Cookiebot ID or GTM Container ID. Add via Edit Site (pencil icon).`;
+Warning triangles = missing Cookiebot ID or GTM Container ID. Add via Edit Site (pencil icon).
+"Sync from Webflow" button on Sites page imports all Webflow workspace sites. "Detect IDs from site" in Edit Site scans the URL for GTM, Cookiebot, and platform-specific IDs.`;
 
 interface ChatMessage {
   role: "user" | "assistant";

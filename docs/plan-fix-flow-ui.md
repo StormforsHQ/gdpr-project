@@ -1,6 +1,6 @@
 # Plan: Fix Flow UI
 
-Status: IN PROGRESS - Phases 1-2 done, Phase 2.5 (Webflow ID) partially done
+Status: IN PROGRESS - Phases 1-2.5 done, moving to Phase 3
 Branch: main (merged after each phase)
 
 ## Context
@@ -43,33 +43,39 @@ Completed:
 - Analysis results shown as prominent card in drawer (not just sidebar text)
 - Webflow ID null check with user-friendly error
 
-## Phase 2.5: Webflow ID in site management - IN PROGRESS
+## Phase 2.5: Site management + platform awareness - DONE
 
-### Done
-- `findWebflowSiteByDomain()` in src/lib/api/webflow.ts - matches by customDomain, defaultDomain, or shortName
-- `listAllSites()` with pagination in src/lib/api/webflow.ts
-- Retry with backoff (3 attempts) for 429 rate limits in webflowFetch
-- `detectSiteIds` now looks up Webflow site when WEBFLOW_API_TOKEN is configured
-- Webflow Site ID field in add-site-dialog.tsx (visible when platform = webflow)
-- Webflow Site ID field in edit-site-dialog.tsx (visible when platform = webflow)
-- Auto-fill Webflow ID from detect results
-- User-friendly error messages for all Webflow API errors (rate limit, scopes, auth, forbidden)
-- Detect button helper text updated: "Scans the URL to find IDs automatically"
-- Webflow OAuth app created with scopes: sites:read, custom_code:read, custom_code:write
-- New token exchanged and set in Coolify
+### Completed
+- Webflow API: OAuth token with sites:read, custom_code:read, custom_code:write scopes
+- GTM API: OAuth2 refresh token obtained, GOOGLE_CLIENT_ID/SECRET/REFRESH_TOKEN in Coolify
+- "Sync from Webflow" button imports all 446 sites (34 active with custom domains)
+- `active` boolean on Site model - universal across platforms (not Webflow-specific)
+- Active/Inactive/All filter badges on site list (consistent with status/platform filters)
+- Sidebar shows only active sites
+- Table layout: fixed columns, truncation, all columns visible
+- Webflow ID auto-detected from local DB (no live API call per detect)
+- Auto-detect IDs on site creation (best-effort, doesn't block creation)
+- Auto-detect Webflow ID during scan (was only doing GTM/Cookiebot)
+- HubSpot Hub ID: new DB column, auto-detection from site HTML, conditional field in dialogs
+- Platform-conditional ID fields: Webflow ID for webflow, HubSpot Hub ID for hubspot
+- GTM and Cookiebot fields remain universal (all platforms use them)
 
-### Remaining - must fix before moving on
-- **listAllSites() fetches all 446 Webflow sites on every detect call** - this hits rate limits and is wasteful. Only 34 sites have custom domains and are real clients. Need a caching strategy:
-  - Option A: Cache the Webflow sites list in DB (one-time sync, refresh on demand)
-  - Option B: Skip Webflow lookup entirely if the site already has a webflowId in our DB
-  - Option C: In-memory cache with TTL (simplest but lost on restart)
-  - Recommended: Option A (store Webflow site mapping in DB) combined with Option B (skip lookup if already known). This also sets up the 34-site import flow.
-- Verify detect actually finds and fills Webflow ID once rate limit issue is resolved
-- Test end-to-end: add site -> detect -> Webflow ID auto-fills -> save -> ID persisted
+### Key architecture decisions
+- Webflow ID is NOT needed for scanning/auditing - only for fix flow (Phase 3) when pushing changes via Webflow API
+- GTM and Cookiebot IDs are detected from live HTML during scan, no pre-configuration needed
+- HubSpot Hub ID detected from hs-scripts.com/HUBID pattern in HTML
+- Checks are currently not tagged by platform - categories A, B, H are Webflow/GTM-specific; E, F, I, J, K are universal. Platform tagging is a future improvement.
+- Fix flows will be platform-specific (Webflow API vs HubSpot API vs manual)
 
 ## Phase 3: Enhanced scan results drawer (Tier 3 guided flow)
 
 Add interactive fix flow to the scan results drawer for A1 (script cleanup).
+
+### Prerequisites check
+Before entering the fix flow, check and warn if:
+- **Webflow sites**: Webflow ID is missing (needed for API-based fixes). Show: "Connect this site to Webflow to enable automated fixes. Use Detect IDs or enter it manually."
+- **HubSpot sites**: Fix steps will be different (manual for now, HubSpot API integration is future work). Show platform-appropriate instructions.
+- **Other platforms**: Show manual-only fix steps (no API integration available).
 
 ### New component: FixFlowPanel
 Lives inside the scan results drawer, replaces the current static "How to fix" steps for checks that need guided flows.
@@ -142,7 +148,7 @@ Do one phase at a time, commit after each, verify before moving on.
 
 1. ~~Phase 1 (docs + reference)~~ - DONE
 2. ~~Phase 2 (rework fixes)~~ - DONE
-3. Phase 2.5 (Webflow ID) - fix caching, verify detection works
+3. ~~Phase 2.5 (site management + platform awareness)~~ - DONE
 4. Phase 3 (guided flow UI) - the big one, A1 script cleanup
 5. Phase 4 (simpler fix buttons) - improvements to other checks
 6. Phase 5 (chatbot) - dynamic knowledge + web search
@@ -164,6 +170,7 @@ Do one phase at a time, commit after each, verify before moving on.
 
 ## Infrastructure status
 
-- **Webflow API**: OAuth token active with sites:read + custom_code:read + custom_code:write scopes. Token in Coolify env as WEBFLOW_API_TOKEN.
-- **GTM API**: OAuth2 flow ready (scripts/get-google-token.js), blocked on boss's 2FA code for Google account authorization.
-- **Cookiebot**: No API integration yet. Cookiebot IDs detected from HTML or from inside GTM container (when GTM API is connected). Many sites load Cookiebot through GTM (recommended setup) so HTML scanning won't find it.
+- **Webflow API**: OAuth token active with sites:read + custom_code:read + custom_code:write scopes. Token in Coolify env as WEBFLOW_API_TOKEN. 446 sites synced to DB.
+- **GTM API**: OAuth2 credentials active. GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN all set in Coolify. Can look inside GTM containers to find Cookiebot IDs.
+- **Cookiebot**: IDs detected from HTML or from inside GTM container via GTM API. No direct Cookiebot API integration yet.
+- **HubSpot**: Hub ID auto-detected from site HTML. No HubSpot API integration yet (future scope for fix flows).

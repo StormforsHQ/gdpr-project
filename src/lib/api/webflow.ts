@@ -69,6 +69,15 @@ export async function getRegisteredScripts(siteId: string): Promise<
   return data.registeredScripts || [];
 }
 
+export async function deleteRegisteredScript(
+  siteId: string,
+  scriptId: string
+): Promise<void> {
+  await webflowFetch(`/sites/${siteId}/registered_scripts/${scriptId}`, {
+    method: "DELETE",
+  });
+}
+
 export async function getSiteInfo(siteId: string): Promise<{
   id: string;
   displayName: string;

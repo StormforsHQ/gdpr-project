@@ -26,6 +26,23 @@ export interface FixAnalysisResult {
   existingGtmSnippet?: { apiManaged: boolean; detail: string } | null;
 }
 
+export interface GtmVerificationResult {
+  success: boolean;
+  containerName?: string;
+  totalTags: number;
+  consentConfigured: number;
+  missingConsent: { name: string; type: string }[];
+  hasCookiebot: boolean;
+  cookiebotTriggerCorrect: boolean;
+  message: string;
+}
+
+export interface PushGtmResult {
+  success: boolean;
+  message: string;
+  snippet?: string;
+}
+
 export async function getFixAvailability(): Promise<Record<string, FixAvailability>> {
   const webflowReady = isWebflowConfigured();
   const gtmReady = isGtmConfigured();
@@ -466,4 +483,151 @@ async function applyB3Fix(gtmContainerId: string) {
 
 async function applyB4Fix(_gtmContainerId: string) {
   return { success: false, message: "Trigger reassignment requires manual review - each tag needs the correct consent-specific trigger based on its purpose" };
+}
+
+// --- Fix flow actions ---
+
+export async function verifyGtmSetup(gtmContainerId: string): Promise<GtmVerificationResult> {
+  if (!isGtmConfigured()) {
+    return {
+      success: false,
+      totalTags: 0,
+      consentConfigured: 0,
+      missingConsent: [],
+      hasCookiebot: false,
+      cookiebotTriggerCorrect: false,
+      message: "GTM API not configured. Check manually in GTM.",
+    };
+  }
+
+  const { getContainerInfo, listTags, listTriggers, listWorkspaces } = await import("@/lib/api/gtm");
+  const container = await getContainerInfo(gtmContainerId);
+  const workspaces = await listWorkspaces(container.accountId, container.containerId);
+  const defaultWs = workspaces.find((w) => w.name === "Default Workspace") || workspaces[0];
+  if (!defaultWs) {
+    return {
+      success: false,
+      containerName: container.name,
+      totalTags: 0,
+      consentConfigured: 0,
+      missingConsent: [],
+      hasCookiebot: false,
+      cookiebotTriggerCorrect: false,
+      message: "No workspace found in GTM container.",
+    };
+  }
+
+  const tags = await listTags(container.accountId, container.containerId, defaultWs.workspaceId);
+  const triggers = await listTriggers(container.accountId, container.containerId, defaultWs.workspaceId);
+  const consentInitTrigger = triggers.find((t) => t.type === "consentInit");
+
+  const googleBuiltInTypes = ["gaawc", "gaawe", "gclidw", "awct", "sp", "flc"];
+  const cookiebotTag = tags.find(
+    (t) => /cookiebot/i.test(t.type) || /cookiebot/i.test(t.name)
+  );
+
+  const nonSystemTags = tags.filter(
+    (t) => t.type !== "cvt_cbt_cmp" && !/cookiebot/i.test(t.name)
+  );
+
+  let consentConfigured = 0;
+  const missingConsent: { name: string; type: string }[] = [];
+
+  for (const tag of nonSystemTags) {
+    const isGoogleBuiltIn = googleBuiltInTypes.includes(tag.type);
+    if (isGoogleBuiltIn) {
+      consentConfigured++;
+      continue;
+    }
+
+    if (tag.consentSettings?.consentStatus === "needed") {
+      consentConfigured++;
+    } else {
+      missingConsent.push({ name: tag.name, type: tag.type });
+    }
+  }
+
+  const cookiebotTriggerCorrect = !!(
+    cookiebotTag &&
+    consentInitTrigger &&
+    cookiebotTag.firingTriggerId?.includes(consentInitTrigger.triggerId)
+  );
+
+  const parts: string[] = [];
+  parts.push(`${tags.length} tags in container "${container.name}".`);
+  if (cookiebotTag) {
+    parts.push(cookiebotTriggerCorrect
+      ? "Cookiebot fires on Consent Initialization (correct)."
+      : "Cookiebot trigger is NOT set to Consent Initialization."
+    );
+  } else {
+    parts.push("No Cookiebot CMP tag found.");
+  }
+  if (missingConsent.length > 0) {
+    parts.push(`${missingConsent.length} tag(s) missing consent settings.`);
+  } else {
+    parts.push("All non-Google tags have consent settings.");
+  }
+
+  return {
+    success: true,
+    containerName: container.name,
+    totalTags: tags.length,
+    consentConfigured,
+    missingConsent,
+    hasCookiebot: !!cookiebotTag,
+    cookiebotTriggerCorrect,
+    message: parts.join(" "),
+  };
+}
+
+export async function pushGtmSnippetToSite(
+  webflowId: string,
+  gtmContainerId: string,
+): Promise<PushGtmResult> {
+  if (!isWebflowConfigured()) {
+    return { success: false, message: "Webflow API not configured." };
+  }
+
+  const { getCustomCode, updateCustomCode } = await import("@/lib/api/webflow");
+  const { headCode, footerCode } = await getCustomCode(webflowId);
+
+  if (/googletagmanager\.com\/gtm\.js/i.test(headCode)) {
+    return {
+      success: false,
+      message: "A GTM snippet already exists in the site header. Comment it out in the Webflow Designer first, then try again.",
+    };
+  }
+
+  const snippet = generateGtmSnippet(gtmContainerId);
+  await updateCustomCode(webflowId, snippet + "\n" + headCode, footerCode);
+  return {
+    success: true,
+    message: `Pushed GTM snippet for container ${gtmContainerId} to site header.`,
+    snippet,
+  };
+}
+
+export async function deleteApiManagedScript(
+  webflowId: string,
+  scriptId: string,
+): Promise<{ success: boolean; message: string }> {
+  if (!isWebflowConfigured()) {
+    return { success: false, message: "Webflow API not configured." };
+  }
+
+  try {
+    const { deleteRegisteredScript } = await import("@/lib/api/webflow");
+    await deleteRegisteredScript(webflowId, scriptId);
+    return { success: true, message: "API-managed script deleted." };
+  } catch (err) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Failed to delete script.",
+    };
+  }
+}
+
+export async function generateGtmSnippetHtml(gtmId: string): Promise<string> {
+  return generateGtmSnippet(gtmId);
 }

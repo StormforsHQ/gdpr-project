@@ -243,12 +243,12 @@ export async function syncWebflowSites(): Promise<SyncWebflowResult> {
     return { created: 0, updated: 0, total: 0, activeCount: 0, error: `Webflow API error: ${msg}` };
   }
 
-  const existingByWebflowId = new Map<string, { id: string; url: string }>();
-  const existingByUrl = new Map<string, { id: string; webflowId: string | null }>();
-
   const allExisting = await prisma.site.findMany({
     select: { id: true, url: true, webflowId: true },
   });
+
+  const existingByWebflowId = new Map<string, { id: string; url: string }>();
+  const existingByUrl = new Map<string, { id: string; webflowId: string | null }>();
   for (const site of allExisting) {
     if (site.webflowId) existingByWebflowId.set(site.webflowId, site);
     if (site.url) existingByUrl.set(site.url.toLowerCase(), site);
@@ -257,6 +257,9 @@ export async function syncWebflowSites(): Promise<SyncWebflowResult> {
   let created = 0;
   let updated = 0;
   let activeCount = 0;
+
+  const creates: Parameters<typeof prisma.site.create>[0]["data"][] = [];
+  const updates: { id: string; data: Record<string, unknown> }[] = [];
 
   for (const wf of wfSites) {
     const hasCustomDomain = (wf.customDomains?.length ?? 0) > 0;
@@ -267,13 +270,7 @@ export async function syncWebflowSites(): Promise<SyncWebflowResult> {
 
     const existingById = existingByWebflowId.get(wf.id);
     if (existingById) {
-      await prisma.site.update({
-        where: { id: existingById.id },
-        data: {
-          name: wf.displayName,
-          url: url.toLowerCase(),
-        },
-      });
+      updates.push({ id: existingById.id, data: { name: wf.displayName, url: url.toLowerCase() } });
       updated++;
       continue;
     }
@@ -283,28 +280,25 @@ export async function syncWebflowSites(): Promise<SyncWebflowResult> {
       || (wf.defaultDomain ? existingByUrl.get(wf.defaultDomain.toLowerCase()) : null);
 
     if (existingByDomain) {
-      await prisma.site.update({
-        where: { id: existingByDomain.id },
-        data: {
-          webflowId: wf.id,
-          name: wf.displayName,
-        },
-      });
+      updates.push({ id: existingByDomain.id, data: { webflowId: wf.id, name: wf.displayName } });
       updated++;
       continue;
     }
 
-    await prisma.site.create({
-      data: {
-        name: wf.displayName,
-        url: url.toLowerCase(),
-        platform: "webflow",
-        webflowId: wf.id,
-        active: hasCustomDomain,
-      },
+    creates.push({
+      name: wf.displayName,
+      url: url.toLowerCase(),
+      platform: "webflow",
+      webflowId: wf.id,
+      active: hasCustomDomain,
     });
     created++;
   }
+
+  await prisma.$transaction([
+    ...updates.map((u) => prisma.site.update({ where: { id: u.id }, data: u.data })),
+    ...creates.map((c) => prisma.site.create({ data: c })),
+  ]);
 
   revalidatePath("/sites");
   revalidatePath("/");

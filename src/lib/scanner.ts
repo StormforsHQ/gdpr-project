@@ -194,10 +194,25 @@ function isFrameworkScript($el: ReturnType<cheerio.CheerioAPI>, src: string): bo
   if (type === "application/json") return true;
   if ($el.attr("id") === "__NEXT_DATA__") return true;
   if (/\/_next\/static/i.test(src)) return true;
+
+  // Webflow platform scripts
   if (/webflow\.js|webflow-.*\.js/i.test(src)) return true;
   if (/Webflow\.push/i.test(src)) return true;
+  if (/cdn\.prod\.website-files\.com\/.+\.js/i.test(src)) return true;
+  if (/d3e54v103j8qbb\.cloudfront\.net\/js\/jquery/i.test(src)) return true;
+  if (/use\.typekit\.net/i.test(src)) return true;
+  if (/Typekit\.load/i.test(src)) return true;
+  if (/w-mod-/i.test(src) && src.length < 200) return true;
+  if (/\.wf-force-outline-none/i.test(src)) return true;
+
+  // Other platforms
   if (/assets\.squarespace/i.test(src)) return true;
   if (/cdn\.shopify\.com\/s\/files/i.test(src)) return true;
+
+  // HubSpot platform scripts (not tracking)
+  if (/js\.hsforms\.net/i.test(src)) return true;
+  if (/js\.hscollectedforms\.net/i.test(src)) return true;
+
   return false;
 }
 

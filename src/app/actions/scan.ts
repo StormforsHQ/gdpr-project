@@ -105,7 +105,7 @@ export async function runPageScan(url: string, siteId?: string): Promise<ScanRes
   }
 }
 
-export async function runCookiebotScan(cookiebotId: string): Promise<CheckResult[]> {
+export async function runCookiebotScan(cookiebotId: string, siteUrl?: string): Promise<CheckResult[]> {
   if (!cookiebotId || cookiebotId.trim().length === 0) {
     return [{
       checkKey: "C1",
@@ -116,7 +116,8 @@ export async function runCookiebotScan(cookiebotId: string): Promise<CheckResult
   }
 
   try {
-    const data = await fetchCookiebotData(cookiebotId.trim());
+    const referer = siteUrl ? new URL(siteUrl.startsWith("http") ? siteUrl : `https://${siteUrl}`).hostname : undefined;
+    const data = await fetchCookiebotData(cookiebotId.trim(), referer);
     if (!data) {
       return [{
         checkKey: "C1",

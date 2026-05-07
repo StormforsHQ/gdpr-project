@@ -153,7 +153,7 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
       <CardHeader className="space-y-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">
-            {filtered.length} {showAll ? "sites" : "active site"}{filtered.length !== 1 ? "s" : ""}
+            {filtered.length} {filtered.length === 1 ? (showAll ? "site" : "active site") : (showAll ? "sites" : "active sites")}
             {showAll && <span className="text-muted-foreground font-normal"> (total)</span>}
             {!showAll && inactiveCount > 0 && <span className="text-muted-foreground font-normal"> of {sites.length} total</span>}
           </CardTitle>
@@ -221,31 +221,31 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
       <CardContent className="p-0">
         {filtered.length > 0 ? (
           <div className="overflow-x-auto">
-          <Table>
+          <Table className="table-fixed w-full">
             <TableHeader>
               <TableRow>
-                <TableHead>
+                <TableHead className="w-[30%]">
                   <button className="flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort("name")}>
                     Name
                     {sortField === "name" && <ArrowUpDown className="h-3 w-3" />}
                   </button>
                 </TableHead>
-                <TableHead>URL</TableHead>
-                <TableHead>
+                <TableHead className="w-[25%]">URL</TableHead>
+                <TableHead className="w-[10%]">
                   <button className="flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort("platform")}>
                     Platform
                     {sortField === "platform" && <ArrowUpDown className="h-3 w-3" />}
                   </button>
                 </TableHead>
-                <TableHead>Audit</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>
+                <TableHead className="w-[7%]">Audit</TableHead>
+                <TableHead className="w-[10%]">Progress</TableHead>
+                <TableHead className="w-[10%]">
                   <button className="flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort("status")}>
                     Status
                     {sortField === "status" && <ArrowUpDown className="h-3 w-3" />}
                   </button>
                 </TableHead>
-                <TableHead className="w-12"></TableHead>
+                <TableHead className="w-[8%]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -255,14 +255,15 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
                 return (
                   <TableRow key={site.id} className={`group relative cursor-pointer ${!site.active && showAll ? "opacity-50" : ""}`}>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         <span
                           className={`h-2 w-2 rounded-full shrink-0 ${dot}`}
                           title={badge.label}
                         />
                         <Link
                           href={`/sites/${site.id}`}
-                          className="text-sm font-medium after:absolute after:inset-0"
+                          className="text-sm font-medium truncate after:absolute after:inset-0"
+                          title={site.name}
                         >
                           {site.name}
                         </Link>
@@ -273,7 +274,8 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
                         href={site.url.startsWith("http") ? site.url : `https://${site.url}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="relative z-10 hover:underline"
+                        className="relative z-10 hover:underline truncate block"
+                        title={site.url}
                       >
                         {site.url}
                       </a>

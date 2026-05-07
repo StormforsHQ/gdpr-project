@@ -92,10 +92,12 @@ export async function listAllSites(): Promise<WebflowSite[]> {
   const limit = 100;
 
   while (true) {
+    console.log(`[Webflow API] Fetching sites page offset=${offset}`);
     const data = await webflowFetch(`/sites?offset=${offset}&limit=${limit}`);
     const batch = data.sites || data;
     if (!Array.isArray(batch) || batch.length === 0) break;
     sites.push(...batch);
+    console.log(`[Webflow API] Got ${batch.length} sites (total: ${sites.length})`);
     if (batch.length < limit) break;
     offset += limit;
   }

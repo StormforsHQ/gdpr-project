@@ -4,6 +4,7 @@ import { join } from "path";
 import { prisma } from "@/lib/db";
 import { CHECKLIST } from "@/lib/checklist";
 import { CHECK_GUIDES } from "@/lib/check-guides";
+import { REMEDIATION } from "@/lib/remediation";
 import { MCP_SERVERS } from "@/lib/mcp-servers";
 import { getEffectiveAPIKey, getAISettings } from "@/app/actions/ai-settings";
 
@@ -44,7 +45,7 @@ const TOOLS = [
     function: {
       name: "getCheckGuide",
       description:
-        "Get the detailed guide for a specific check: why it matters, step-by-step audit instructions, tools to use, and practical tips. Use this when the user asks how to check or fix something, or wants to understand why a check matters.",
+        "Get the detailed guide for a specific check: why it matters, step-by-step audit instructions, tools to use, practical tips, AND how to fix issues (remediation steps with platform-specific instructions). Use this when the user asks how to check or fix something, or wants to understand why a check matters.",
       parameters: {
         type: "object",
         properties: {
@@ -214,6 +215,7 @@ function executeGetCheckGuide(checkKey: string): string {
   const key = checkKey.toUpperCase();
   const guide = CHECK_GUIDES[key];
   const check = CHECKLIST.flatMap((cat) => cat.checks).find((c) => c.key === key);
+  const remediation = REMEDIATION[key];
 
   if (!guide && !check) {
     return JSON.stringify({ error: `Check '${checkKey}' not found. Use searchChecks to find the right key.` });
@@ -232,6 +234,18 @@ function executeGetCheckGuide(checkKey: string): string {
     result.steps = guide.steps;
     result.tools = guide.tools || [];
     result.tips = guide.tips || [];
+  }
+  if (remediation) {
+    result.remediation = {
+      explanation: remediation.plainExplanation,
+      fixSteps: remediation.steps.map((s) => ({
+        instruction: s.instruction,
+        platform: s.platform || "all",
+        needsDevOrLegal: s.needsDevOrLegal || false,
+      })),
+      devLegalNote: remediation.devLegalNote || null,
+      docLinks: remediation.docLinks || [],
+    };
   }
   return JSON.stringify(result);
 }

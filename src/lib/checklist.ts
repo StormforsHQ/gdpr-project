@@ -3,6 +3,7 @@ export type CheckStatus = "not_checked" | "ok" | "issue" | "na";
 export type AutomationType =
   | "page-scan"
   | "browser-test"
+  | "browser-manual"
   | "ai-agent"
   | "gtm-api"
   | "cookiebot-api"
@@ -37,6 +38,7 @@ export interface CheckCategory {
 export const AUTOMATION_CONFIG: Record<AutomationType, { label: string; className: string }> = {
   "page-scan": { label: "Auto", className: "bg-green-500/15 text-green-600 dark:text-green-400" },
   "browser-test": { label: "Browser", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
+  "browser-manual": { label: "Browser/Manual", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
   "ai-agent": { label: "AI", className: "bg-purple-500/15 text-purple-600 dark:text-purple-400" },
   "gtm-api": { label: "GTM API", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
   "cookiebot-api": { label: "Cookiebot", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
@@ -417,7 +419,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "G5", label: "Consent remembered on return", description: "When a visitor returns to the site, their previous consent choice should be remembered. The banner should not appear again on every visit - that's annoying and undermines trust.", automation: "browser-test", tier: "basic",
+        key: "G5", label: "Consent remembered on return", description: "When a visitor returns to the site, their previous consent choice should be remembered. The banner should not appear again on every visit - that's annoying and undermines trust.", automation: "browser-manual", tier: "basic",
         legalBasis: "The site must be able to prove that consent was given. Storing the consent choice in a cookie is the standard way to do this.",
         references: [
           { label: "GDPR Art. 7(1) - Demonstrating consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
@@ -724,7 +726,7 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Geo-targeting",
     checks: [
       {
-        key: "K1", label: "EU/EEA visitors get opt-in banner", description: "Visitors from EU/EEA countries must see a full consent banner that blocks all non-essential cookies until they actively choose to accept. This is the strictest consent model.", automation: "browser-test", tier: "basic",
+        key: "K1", label: "EU/EEA visitors get opt-in banner", description: "Visitors from EU/EEA countries must see a full consent banner that blocks all non-essential cookies until they actively choose to accept. This is the strictest consent model.", automation: "browser-manual", tier: "basic",
         legalBasis: "EU rules require opt-in consent - nothing tracks until the visitor says yes. This applies to any website that targets EU visitors, even if the company is based elsewhere.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
@@ -733,7 +735,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "K2", label: "US visitors get appropriate notice", description: "US visitors use an opt-out model (tracking can start, but visitors can say stop). The site needs a 'Do Not Sell/Share My Personal Information' link and must honor the Global Privacy Control (GPC) browser signal.", automation: "browser-test", tier: "full",
+        key: "K2", label: "US visitors get appropriate notice", description: "US visitors use an opt-out model (tracking can start, but visitors can say stop). The site needs a 'Do Not Sell/Share My Personal Information' link and must honor the Global Privacy Control (GPC) browser signal.", automation: "browser-manual", tier: "full",
         legalBasis: "California (CCPA) and 20+ other US states require an opt-out option. GPC browser signals must be treated as a valid opt-out request.",
         references: [
           { label: "CCPA - California Consumer Privacy Act", url: "https://oag.ca.gov/privacy/ccpa" },
@@ -743,7 +745,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "K3", label: "UK visitors handled correctly", description: "UK rules differ from EU: marketing cookies still need opt-in, but analytics cookies can load without consent if they're only used for service improvement, visitors are informed, an opt-out is provided, and the analytics provider doesn't use the data for their own purposes (since Feb 2026).", automation: "browser-test", tier: "full",
+        key: "K3", label: "UK visitors handled correctly", description: "UK rules differ from EU: marketing cookies still need opt-in, but analytics cookies can load without consent if they're only used for service improvement, visitors are informed, an opt-out is provided, and the analytics provider doesn't use the data for their own purposes (since Feb 2026).", automation: "browser-manual", tier: "full",
         legalBasis: "The UK relaxed analytics cookie rules in 2025 but kept strict rules for marketing. If you serve UK visitors, your consent banner should reflect these different requirements.",
         references: [
           { label: "UK PECR - Cookie consent rules", url: "https://www.legislation.gov.uk/uksi/2003/2426" },
@@ -754,7 +756,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "K4", label: "GPC browser signal honored", description: "Some visitors have Global Privacy Control (GPC) enabled in their browser, which signals 'do not sell/share my data'. The site must detect and honor this signal. Required by law in 11+ US states. Test with the GPC browser extension.", automation: "browser-test", tier: "full",
+        key: "K4", label: "GPC browser signal honored", description: "Some visitors have Global Privacy Control (GPC) enabled in their browser, which signals 'do not sell/share my data'. The site must detect and honor this signal. Required by law in 11+ US states. Test with the GPC browser extension.", automation: "browser-manual", tier: "full",
         legalBasis: "California, Colorado, Texas, and 8+ other US states legally require websites to honor GPC signals as a valid opt-out of data sale/sharing.",
         references: [
           { label: "Global Privacy Control (GPC)", url: "https://globalprivacycontrol.org/" },

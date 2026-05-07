@@ -16,7 +16,7 @@ import { AUTOMATION_CONFIG } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { GlossaryText } from "@/components/glossary-text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench, Search, StickyNote } from "lucide-react";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench, Search, StickyNote, ClipboardList } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -130,7 +130,7 @@ export function CheckItem({
             }}
             aria-label={`Scan results for ${check.key}`}
           >
-            <Wrench className="h-4 w-4 text-primary" />
+            <ClipboardList className="h-4 w-4 text-primary" />
           </Button>
         )}
         <Button

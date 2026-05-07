@@ -36,6 +36,7 @@ interface EditSiteDialogProps {
     cookiebotId?: string | null;
     gtmId?: string | null;
     webflowId?: string | null;
+    hubspotId?: string | null;
   };
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -54,6 +55,7 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
   const [cookiebotId, setCookiebotId] = useState(site.cookiebotId || "");
   const [gtmId, setGtmId] = useState(site.gtmId || "");
   const [webflowId, setWebflowId] = useState(site.webflowId || "");
+  const [hubspotId, setHubspotId] = useState(site.hubspotId || "");
 
   const handleDetect = async () => {
     if (!url.trim()) return;
@@ -73,6 +75,10 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
         found.push(`Webflow: ${result.webflowSource || result.webflowId}`);
       } else if (result.webflowSource) {
         warnings.push(result.webflowSource);
+      }
+      if (result.hubspotId) {
+        setHubspotId(result.hubspotId);
+        found.push(`HubSpot: ${result.hubspotId}`);
       }
       if (result.gtmId) {
         setGtmId(result.gtmId);
@@ -113,7 +119,8 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
         platform,
         cookiebotId: cookiebotId.trim() || null,
         gtmId: gtmId.trim() || null,
-        webflowId: webflowId.trim() || null,
+        webflowId: platform === "webflow" ? (webflowId.trim() || null) : null,
+        hubspotId: platform === "hubspot" ? (hubspotId.trim() || null) : null,
       });
 
       toast.success("Site updated");
@@ -272,6 +279,30 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
                 placeholder="Auto-detected or paste from Webflow"
                 value={webflowId}
                 onChange={(e) => setWebflowId(e.target.value)}
+              />
+            </div>
+          )}
+          {platform === "hubspot" && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="edit-hubspotId">HubSpot Hub ID</Label>
+                <Tooltip>
+                  <TooltipTrigger className="cursor-help">
+                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[280px] text-xs leading-relaxed !block">
+                    <div>
+                      <p>The HubSpot Hub ID (also called Portal ID) identifies the HubSpot account that manages this site. It's a number like 12345678.</p>
+                      <p className="mt-1.5">Click "Detect IDs from site" to find it automatically (it's embedded in the HubSpot tracking script). You can also find it in HubSpot under Settings &gt; Account Defaults.</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Input
+                id="edit-hubspotId"
+                placeholder="Auto-detected or paste from HubSpot"
+                value={hubspotId}
+                onChange={(e) => setHubspotId(e.target.value)}
               />
             </div>
           )}

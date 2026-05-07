@@ -298,18 +298,8 @@ export async function applyFix(
       return applyA1Fix(siteWebflowId!);
     case "A2":
       return applyA2Fix(siteWebflowId!);
-    case "A3":
-      return applyA3Fix(siteGtmId!);
-    case "A4":
-      return applyA4Fix(siteGtmId!);
-    case "A5":
-      return applyA5Fix(siteGtmId!);
     case "B1":
       return applyB1Fix(siteWebflowId!, siteGtmId);
-    case "B3":
-      return applyB3Fix(siteGtmId!);
-    case "B4":
-      return applyB4Fix(siteGtmId!);
     case "D1":
       return applyD1Fix(siteWebflowId!);
     case "D3":
@@ -390,100 +380,6 @@ async function applyI4Fix(_webflowId: string) {
 }
 
 // --- GTM fixes ---
-
-async function applyA3Fix(gtmContainerId: string) {
-  const { getContainerInfo, listTags, listTriggers, updateTag } = await import("@/lib/api/gtm");
-  const container = await getContainerInfo(gtmContainerId);
-
-  const tags = await listTags(container.accountId, container.containerId, "default");
-  const cbTag = tags.find((t) =>
-    t.name.toLowerCase().includes("cookiebot") || t.type === "cvt_cbt_cmp"
-  );
-  if (!cbTag) return { success: false, message: "Cookiebot CMP tag not found in GTM" };
-
-  const triggers = await listTriggers(container.accountId, container.containerId, "default");
-  const consentInitTrigger = triggers.find((t) => t.type === "consentInit");
-  if (!consentInitTrigger) {
-    return { success: false, message: "Consent Initialization trigger not found - create it in GTM first" };
-  }
-
-  await updateTag(cbTag.path, {
-    ...cbTag,
-    firingTriggerId: [consentInitTrigger.triggerId],
-  });
-
-  return { success: true, message: "Updated Cookiebot CMP tag to fire on Consent Initialization" };
-}
-
-async function applyA4Fix(gtmContainerId: string) {
-  const { getContainerInfo, listTags } = await import("@/lib/api/gtm");
-  const container = await getContainerInfo(gtmContainerId);
-  const tags = await listTags(container.accountId, container.containerId, "default");
-
-  const cbTag = tags.find((t) =>
-    t.name.toLowerCase().includes("cookiebot") && t.type === "html"
-  );
-  if (!cbTag) return { success: true, message: "No Custom HTML Cookiebot tag found - may already use official template" };
-
-  return { success: false, message: "Switching tag type from Custom HTML to official template requires manual setup in GTM (template must be installed from Community Gallery first)" };
-}
-
-async function applyA5Fix(gtmContainerId: string) {
-  const { getContainerInfo, listTags, updateTag } = await import("@/lib/api/gtm");
-  const container = await getContainerInfo(gtmContainerId);
-  const tags = await listTags(container.accountId, container.containerId, "default");
-
-  const cbTag = tags.find((t) => t.type === "cvt_cbt_cmp");
-  if (!cbTag) return { success: false, message: "Cookiebot CMP template tag not found in GTM" };
-
-  const params = cbTag.parameter || [];
-  const autoBlockParam = params.find((p) => p.key === "AutoBlockingMode");
-  if (autoBlockParam) {
-    autoBlockParam.value = "false";
-  } else {
-    params.push({ key: "AutoBlockingMode", value: "false", type: "boolean" });
-  }
-
-  await updateTag(cbTag.path, { ...cbTag, parameter: params });
-  return { success: true, message: "Disabled AutoBlock in Cookiebot CMP tag" };
-}
-
-async function applyB3Fix(gtmContainerId: string) {
-  const { getContainerInfo, listTags, updateTag } = await import("@/lib/api/gtm");
-  const container = await getContainerInfo(gtmContainerId);
-  const tags = await listTags(container.accountId, container.containerId, "default");
-
-  const googleTypes = ["gaawc", "gaawe", "gclidw", "awct", "sp", "flc"];
-  const nonGoogleTags = tags.filter((t) => !googleTypes.includes(t.type) && t.type !== "cvt_cbt_cmp");
-
-  let fixed = 0;
-  for (const tag of nonGoogleTags) {
-    if (!tag.consentSettings || tag.consentSettings.consentStatus !== "needed") {
-      await updateTag(tag.path, {
-        ...tag,
-        consentSettings: {
-          consentStatus: "needed",
-          consentType: [
-            { type: "ad_storage", status: "needed" },
-            { type: "analytics_storage", status: "needed" },
-          ],
-        },
-      });
-      fixed++;
-    }
-  }
-
-  return {
-    success: true,
-    message: fixed > 0
-      ? `Added consent requirements to ${fixed} non-Google tag(s)`
-      : "All non-Google tags already have consent settings",
-  };
-}
-
-async function applyB4Fix(_gtmContainerId: string) {
-  return { success: false, message: "Trigger reassignment requires manual review - each tag needs the correct consent-specific trigger based on its purpose" };
-}
 
 // --- Fix flow actions ---
 

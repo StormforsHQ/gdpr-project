@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -19,6 +20,36 @@ interface CheckGuideDrawerProps {
   checkKey: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+function RequirementsBox({ requirements }: { requirements: { label: string; reason: string }[] }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="rounded-md bg-amber-500/10 px-3 py-2">
+      <button
+        className="flex items-center gap-2 w-full text-left"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+        <span className="text-xs text-amber-600 dark:text-amber-400">
+          Required:{" "}
+          {requirements.map((r, i) => (
+            <span key={i}>
+              {i > 0 && ", "}
+              <span className="underline">{r.label}</span>
+            </span>
+          ))}
+        </span>
+      </button>
+      {expanded && (
+        <div className="mt-1.5 pl-[22px] text-xs text-amber-600/80 dark:text-amber-400/80 space-y-1">
+          {requirements.map((req, i) => (
+            <p key={i}>{req.reason}</p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function CheckGuideDrawer({
@@ -48,15 +79,7 @@ export function CheckGuideDrawer({
         <ScrollArea className="h-[calc(100vh-5rem)]">
           <div className="px-6 py-5 space-y-5">
             {checkKey && CHECK_REQUIREMENTS[checkKey] && (
-              <div className="flex items-start gap-2 rounded-md bg-amber-500/10 px-3 py-2">
-                <AlertTriangle className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
-                <div className="text-xs text-amber-600 dark:text-amber-400 space-y-1">
-                  <p className="font-medium">Required to run this check:</p>
-                  {CHECK_REQUIREMENTS[checkKey].map((req, i) => (
-                    <p key={i}>{req.label} - {req.reason}</p>
-                  ))}
-                </div>
-              </div>
+              <RequirementsBox requirements={CHECK_REQUIREMENTS[checkKey]} />
             )}
 
             <div>

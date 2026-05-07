@@ -69,7 +69,7 @@ export function checkA3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
         detail: "Fires on Consent Initialization - All Pages (correct)",
         severity: "info",
       }],
-      summary: "Cookiebot CMP tag on correct trigger",
+      summary: "Cookiebot loads before all other tags (correct setup)",
     };
   }
 
@@ -90,7 +90,7 @@ export function checkA3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
       detail: `Cookiebot fires on: ${actualTriggerNames}. Must fire on "Consent Initialization - All Pages" to load before any other tags.`,
       severity: "error",
     }],
-    summary: "Cookiebot not on Consent Initialization trigger",
+    summary: "Cookiebot may load too late - other tags could fire before consent is collected",
   };
 }
 
@@ -114,7 +114,7 @@ export function checkA4(tags: GtmTag[]): CheckResult {
         detail: "Cookiebot is set up as Custom HTML instead of the official GTM template. Custom HTML misses Consent Mode v2 fields. Install the official Cookiebot CMP template from the GTM Template Gallery.",
         severity: "error",
       }],
-      summary: "Cookiebot using Custom HTML instead of official template",
+      summary: "Cookiebot set up as custom code instead of the official template - may miss consent features",
     };
   }
 
@@ -126,7 +126,7 @@ export function checkA4(tags: GtmTag[]): CheckResult {
       detail: `Using official template (type: ${cookiebotTag.type})`,
       severity: "info",
     }],
-    summary: "Official Cookiebot GTM template in use",
+    summary: "Cookiebot uses the official GTM template (correct setup)",
   };
 }
 
@@ -153,7 +153,7 @@ export function checkA5(tags: GtmTag[]): CheckResult {
         detail: "AutoBlock is ON. This breaks Advanced Consent Mode cookieless pings because it intercepts script loading before consent signals are sent. Disable AutoBlock in the Cookiebot tag settings.",
         severity: "error",
       }],
-      summary: "AutoBlock is enabled (should be off)",
+      summary: "AutoBlock is on - this can break analytics tracking before consent",
     };
   }
 
@@ -165,7 +165,7 @@ export function checkA5(tags: GtmTag[]): CheckResult {
       detail: autoBlockParam ? "AutoBlock is OFF (correct)" : "AutoBlock parameter not set (defaults to off)",
       severity: "info",
     }],
-    summary: "AutoBlock is off",
+    summary: "AutoBlock is off (correct setup)",
   };
 }
 
@@ -207,8 +207,8 @@ export function checkB2(tags: GtmTag[]): CheckResult {
     status: issueCount > 0 ? "issue" : "ok",
     findings,
     summary: issueCount > 0
-      ? `${issueCount} Google tag(s) with unnecessary consent requirement`
-      : `${googleTags.length} Google tag(s) correctly configured`,
+      ? `${issueCount} Google tag${issueCount !== 1 ? "s" : ""} have an extra consent setting that may block data collection`
+      : `${googleTags.length} Google tag${googleTags.length !== 1 ? "s" : ""} correctly configured`,
   };
 }
 
@@ -272,8 +272,8 @@ export function checkB3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
     status: issueCount > 0 ? "issue" : "ok",
     findings,
     summary: issueCount > 0
-      ? `${issueCount} non-Google tag(s) missing consent requirement`
-      : `${nonGoogleNonSystem.length} non-Google tag(s) correctly consent-gated`,
+      ? `${issueCount} tag${issueCount !== 1 ? "s" : ""} can fire without visitor consent`
+      : `All ${nonGoogleNonSystem.length} non-Google tag${nonGoogleNonSystem.length !== 1 ? "s" : ""} wait for visitor consent before firing`,
   };
 }
 
@@ -333,8 +333,8 @@ export function checkB4(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
     status: issueCount > 0 ? "issue" : "ok",
     findings,
     summary: issueCount > 0
-      ? `${issueCount} non-Google tag(s) firing on "All Pages" instead of consent-aware trigger`
-      : `${nonGoogleNonSystem.length} non-Google tag(s) using correct triggers`,
+      ? `${issueCount} tag${issueCount !== 1 ? "s" : ""} fire on every page load regardless of consent`
+      : `All ${nonGoogleNonSystem.length} non-Google tag${nonGoogleNonSystem.length !== 1 ? "s" : ""} use consent-aware triggers`,
   };
 }
 

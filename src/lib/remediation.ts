@@ -298,4 +298,120 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
     ],
     devLegalNote: "Simplifying a privacy policy doesn't mean removing legally required content. It means restructuring and rewording so a non-lawyer can understand it. Consider a layered approach: a simple overview first, then the full legal detail below.",
   },
+
+  G4: {
+    plainExplanation: "The consent banner is only useful if it actually controls what happens. If tracking scripts and cookies still fire after a visitor clicks 'Decline', the banner is just decoration - and the site is collecting data without permission.",
+    steps: [
+      { instruction: "Open the site in a fresh incognito/private window with DevTools open (F12 > Network tab)", platform: "all" },
+      { instruction: "When the consent banner appears, click 'Decline' or 'Reject All'", platform: "all" },
+      { instruction: "Check the Network tab for requests to tracking domains (google-analytics.com, facebook.net, linkedin.com, etc.) - there should be none", platform: "all" },
+      { instruction: "Check DevTools > Application > Cookies - only the CookieConsent cookie (and necessary cookies like __cf_bm) should exist", platform: "all" },
+      { instruction: "If tracking requests or cookies appear after declining: check GTM consent settings for each tag that fired*", platform: "all", needsDevOrLegal: true },
+      { instruction: "In GTM: open each non-Google tag > Advanced Settings > Consent Settings > enable 'Require additional consent' with the correct type*", platform: "all", needsDevOrLegal: true },
+    ],
+    devLegalNote: "Each tag in GTM needs the correct consent type: 'ad_storage' for marketing/advertising tags, 'analytics_storage' for analytics tags. Google's own tags handle this automatically via Consent Mode, but all third-party tags need manual configuration.",
+    docLinks: [
+      { label: "GTM: Consent overview for tags", url: "https://support.google.com/tagmanager/answer/10718549" },
+    ],
+  },
+
+  G5: {
+    plainExplanation: "When a visitor makes a consent choice and comes back later, they shouldn't see the banner again. The choice is stored in a cookie (usually called 'CookieConsent'). If it's not persisting, either the cookie is being cleared or the consent manager isn't configured correctly.",
+    steps: [
+      { instruction: "Open the site in a normal (non-incognito) browser window", platform: "all" },
+      { instruction: "Make a consent choice (accept or decline) on the banner", platform: "all" },
+      { instruction: "Close the tab completely, then reopen the site", platform: "all" },
+      { instruction: "The banner should NOT reappear - the previous choice should be remembered", platform: "all" },
+      { instruction: "If the banner reappears: check DevTools > Application > Cookies for a 'CookieConsent' cookie and verify its expiry date", platform: "all" },
+      { instruction: "In Cookiebot admin: check that the consent cookie lifetime is set (typically 12 months)", platform: "all" },
+      { instruction: "Check that no other script or cache plugin is clearing cookies on each visit", platform: "all" },
+    ],
+  },
+
+  H6: {
+    plainExplanation: "This is the direct check - looking at what cookies actually exist in the browser at each stage. Before consent: only essential cookies. After declining: still only essential cookies. After accepting: tracking cookies appear. If tracking cookies show up before or after declining consent, something is wrong.",
+    steps: [
+      { instruction: "Open a fresh incognito window and go to DevTools > Application > Cookies (before interacting with the banner)", platform: "all" },
+      { instruction: "Only the CookieConsent cookie and necessary cookies (like __cf_bm from Cloudflare) should exist at this point", platform: "all" },
+      { instruction: "Click 'Decline All' on the consent banner, then check cookies again - no new tracking cookies should appear", platform: "all" },
+      { instruction: "Tracking cookies to look for: _ga, _gid (Google Analytics), _fbp (Meta), _gcl_au (Google Ads), li_fat_id (LinkedIn), _hjSession (HotJar)", platform: "all" },
+      { instruction: "Open a new incognito window, accept all cookies, and verify tracking cookies now appear", platform: "all" },
+      { instruction: "If tracking cookies appear before consent or after declining: the corresponding scripts need consent gating in GTM*", platform: "all", needsDevOrLegal: true },
+    ],
+    devLegalNote: "Each tracking cookie comes from a specific script/tag. Identify which tag sets the cookie, then configure that tag's consent settings in GTM. Google tags use Consent Mode automatically; non-Google tags need 'Require additional consent' enabled manually.",
+  },
+
+  H8: {
+    plainExplanation: "Cookies aren't the only way websites store data on your device. localStorage, sessionStorage, and IndexedDB can also be used for tracking - and the same consent rules apply. Some scripts use these instead of cookies specifically to avoid cookie consent checks, which is not allowed.",
+    steps: [
+      { instruction: "Open a fresh incognito window with DevTools > Application panel open", platform: "all" },
+      { instruction: "Before interacting with the consent banner, check Local Storage, Session Storage, and IndexedDB", platform: "all" },
+      { instruction: "Look for entries from known tracking services (analytics IDs, marketing pixel data, session replay tools)", platform: "all" },
+      { instruction: "Click 'Decline All', then check again - no new tracking-related entries should appear", platform: "all" },
+      { instruction: "Common tracking storage to look for: _ga (Google Analytics), amplitude_*, _hjSession*, crisp-client/*", platform: "all" },
+      { instruction: "If tracking storage appears before consent: the script setting it needs to be moved behind consent gating in GTM*", platform: "all", needsDevOrLegal: true },
+    ],
+    devLegalNote: "The ePrivacy rules cover all 'storage and access' on the user's device, not just cookies. Scripts that write to localStorage or IndexedDB for tracking purposes need the same consent controls as cookie-based tracking.",
+  },
+
+  K1: {
+    plainExplanation: "EU and EEA visitors must see a full opt-in consent banner. This means all non-essential cookies and scripts are blocked until the visitor actively clicks 'Accept'. This is the strictest consent model and is required by EU law. Most consent managers like Cookiebot handle this via geo-targeting settings.",
+    steps: [
+      { instruction: "Open the Cookiebot admin panel > Settings > Geo-targeting", platform: "all" },
+      { instruction: "Verify that EU/EEA regions are configured with the 'Opt-in' consent model", platform: "all" },
+      { instruction: "If geo-targeting is not set up: the safe default is to apply opt-in rules to all visitors globally", platform: "all" },
+      { instruction: "Test by visiting the site from an EU location (or use a VPN/browser extension to simulate EU)", platform: "all" },
+      { instruction: "Verify the banner shows: Accept All, Reject All, and a way to customize individual categories", platform: "all" },
+      { instruction: "After declining: verify no non-essential cookies are set (check DevTools > Application > Cookies)", platform: "all" },
+    ],
+    docLinks: [
+      { label: "Cookiebot: Geo-targeting consent models", url: "https://www.cookiebot.com/en/help/regional-consent/" },
+    ],
+  },
+
+  K2: {
+    plainExplanation: "US privacy laws (like California's CCPA/CPRA) use an opt-out model instead of opt-in. This means tracking can start by default, but visitors must be able to say 'stop'. The site needs a visible 'Do Not Sell or Share My Personal Information' link, and must honor the browser's Global Privacy Control (GPC) signal.",
+    steps: [
+      { instruction: "Check Cookiebot admin > Settings > Geo-targeting for US region configuration", platform: "all" },
+      { instruction: "Verify the US region uses an 'Opt-out' or 'Informational' consent model (not the strict EU opt-in)", platform: "all" },
+      { instruction: "Check for a 'Do Not Sell or Share My Personal Information' link on the site (usually in the footer)", platform: "all" },
+      { instruction: "Verify the link opens a working opt-out mechanism", platform: "all" },
+      { instruction: "Test with a VPN set to a US location to confirm the correct banner appears", platform: "all" },
+      { instruction: "If the site has minimal US traffic: this check may be N/A, but document the decision", platform: "all" },
+    ],
+    docLinks: [
+      { label: "Cookiebot: CCPA compliance", url: "https://www.cookiebot.com/en/ccpa-compliance/" },
+    ],
+  },
+
+  K3: {
+    plainExplanation: "UK rules changed in February 2026. Marketing cookies still need opt-in consent, but analytics cookies can now load without consent IF four conditions are all met: they're only used for service improvement, visitors are informed, an opt-out is provided, and the analytics provider doesn't use the data for its own purposes. If any condition isn't met, opt-in consent is still required.",
+    steps: [
+      { instruction: "Check Cookiebot admin > Settings > Geo-targeting for UK region configuration", platform: "all" },
+      { instruction: "Marketing and advertising cookies: must still require opt-in consent for UK visitors", platform: "all" },
+      { instruction: "Analytics cookies: check if all 4 exemption conditions are met before allowing without consent*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Condition 1: analytics data is used solely for service improvement (not ads or profiling)", platform: "all" },
+      { instruction: "Condition 2: visitors are given clear information about the analytics cookies", platform: "all" },
+      { instruction: "Condition 3: a simple, free opt-out mechanism is provided", platform: "all" },
+      { instruction: "Condition 4: the analytics provider (e.g. Google) does NOT use the data for its own purposes - check Google Analytics data sharing settings*", platform: "all", needsDevOrLegal: true },
+      { instruction: "When in doubt: apply the stricter EU opt-in rules to UK visitors as well", platform: "all" },
+    ],
+    devLegalNote: "The UK analytics exemption is new (Feb 2026) and nuanced. Google Analytics typically shares data with Google for benchmarking and ads by default - if those settings are enabled, the exemption does NOT apply. Check GA admin > Data settings > Data sharing to verify.",
+  },
+
+  K4: {
+    plainExplanation: "Global Privacy Control (GPC) is a setting in some browsers and extensions that sends a 'do not sell or share my data' signal to every website. As of 2026, at least 11 US states legally require websites to honor this signal. Cookiebot can detect GPC automatically - but it needs to be enabled.",
+    steps: [
+      { instruction: "Check Cookiebot admin panel for GPC detection settings - verify it's enabled", platform: "all" },
+      { instruction: "Install a GPC browser extension (like Privacy Badger or OptMeowt) for testing", platform: "all" },
+      { instruction: "Visit the site with GPC enabled and verify the consent manager detects the signal", platform: "all" },
+      { instruction: "With GPC active: marketing and advertising scripts should not fire", platform: "all" },
+      { instruction: "Check for a visible 'Do Not Sell/Share' link on the site for US visitors (often combined with K2)", platform: "all" },
+      { instruction: "If the site doesn't target US audiences: this check may be N/A, but document the decision", platform: "all" },
+    ],
+    docLinks: [
+      { label: "Global Privacy Control specification", url: "https://globalprivacycontrol.github.io/gpc-spec/" },
+      { label: "Cookiebot: GPC support", url: "https://www.cookiebot.com/en/help/gpc-global-privacy-control/" },
+    ],
+  },
 };

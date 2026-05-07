@@ -11,7 +11,7 @@ import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
-import { saveCheckResult, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType } from "@/app/actions/audits";
+import { saveCheckResult, saveInternalNote, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType } from "@/app/actions/audits";
 import { getFixAvailability, applyFix, analyzeFix, verifyGtmSetup, pushGtmSnippetToSite, deleteApiManagedScript, type FixAvailability, type FixAnalysisResult } from "@/app/actions/fixes";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
 import {
@@ -29,7 +29,7 @@ import { ChecklistLegend } from "@/components/checklist-legend";
 import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X } from "lucide-react";
 
 
-type CheckEntry = { status: CheckStatus; notes: string; source: "manual" | "scan" | "ai" };
+type CheckEntry = { status: CheckStatus; notes: string; internalNote: string; source: "manual" | "scan" | "ai" };
 type CheckState = Record<string, CheckEntry>;
 
 export type ScanRunEntry = {
@@ -47,7 +47,7 @@ interface ChecklistViewProps {
   siteId?: string;
   auditId?: string;
   auditType?: "basic" | "full";
-  initialStates?: Record<string, { status: string; notes: string; source: string }>;
+  initialStates?: Record<string, { status: string; notes: string; internalNote?: string; source: string }>;
   initialScanRuns?: ScanRunEntry[];
   siteFields?: { platform?: string | null; webflowId?: string | null; cookiebotId?: string | null; gtmId?: string | null };
 }
@@ -64,6 +64,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       states[key] = {
         status: value.status as CheckStatus,
         notes: value.notes,
+        internalNote: value.internalNote || "",
         source: (value.source as "manual" | "scan" | "ai") || "manual",
       };
     }
@@ -133,7 +134,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   };
 
   const getCheckState = (key: string): CheckEntry =>
-    checkStates[key] ?? { status: "not_checked" as CheckStatus, notes: "", source: "manual" as const };
+    checkStates[key] ?? { status: "not_checked" as CheckStatus, notes: "", internalNote: "", source: "manual" as const };
 
   const persistCheck = useCallback(
     (key: string, status: CheckStatus, notes: string, source: "manual" | "scan" | "ai" = "manual") => {
@@ -154,18 +155,35 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
   const updateCheck = (key: string, field: "status" | "notes", value: string) => {
     setCheckStates((prev) => {
-      const current = prev[key] ?? { status: "not_checked" as CheckStatus, notes: "", source: "manual" as const };
+      const current = prev[key] ?? { status: "not_checked" as CheckStatus, notes: "", internalNote: "", source: "manual" as const };
       const updated = { ...current, [field]: value, source: "manual" as const };
-      if (updated.status === "not_checked" && !updated.notes.trim()) {
+      if (updated.status === "not_checked" && !updated.notes.trim() && !updated.internalNote.trim()) {
         const { [key]: _, ...rest } = prev;
         return rest;
       }
       return { ...prev, [key]: updated };
     });
 
-    const current = checkStates[key] ?? { status: "not_checked" as CheckStatus, notes: "", source: "manual" as const };
+    const current = checkStates[key] ?? { status: "not_checked" as CheckStatus, notes: "", internalNote: "", source: "manual" as const };
     const updated = { ...current, [field]: value };
     persistCheck(key, updated.status as CheckStatus, updated.notes, "manual");
+  };
+
+  const updateInternalNote = (key: string, value: string) => {
+    setCheckStates((prev) => {
+      const current = prev[key] ?? { status: "not_checked" as CheckStatus, notes: "", internalNote: "", source: "manual" as const };
+      return { ...prev, [key]: { ...current, internalNote: value } };
+    });
+
+    if (!auditId) return;
+    if (saveTimers.current[`internal-${key}`]) {
+      clearTimeout(saveTimers.current[`internal-${key}`]);
+    }
+    saveTimers.current[`internal-${key}`] = setTimeout(() => {
+      saveInternalNote(auditId, key, value).catch((err) => {
+        addError("save", `Failed to save internal note for ${key}`, err instanceof Error ? err.message : "Unknown error");
+      });
+    }, 500);
   };
 
   const applyCheckResults = (results: CheckResult[], source: "scan" | "ai"): number => {
@@ -179,7 +197,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           continue;
         }
         const status = check.status as CheckStatus;
-        next[check.checkKey] = { status, notes: "", source };
+        const existingInternalNote = prev[check.checkKey]?.internalNote || "";
+        next[check.checkKey] = { status, notes: "", internalNote: existingInternalNote, source };
         persistCheck(check.checkKey, status, "", source);
       }
       return next;
@@ -497,6 +516,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const totalNa = Object.values(checkStates).filter((s) => s.status === "na").length;
   const totalNotChecked = totalChecks - totalChecked;
   const totalWithComments = Object.values(checkStates).filter((s) => s.notes.trim()).length;
+  const totalWithInternalNotes = Object.values(checkStates).filter((s) => s.internalNote.trim()).length;
 
   const toggleFilter = (filter: string) => {
     setActiveFilters((prev) => {
@@ -512,6 +532,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     const state = getCheckState(key);
     for (const filter of activeFilters) {
       if (filter === "has_comments" && state.notes.trim()) return true;
+      if (filter === "has_internal_note" && state.internalNote.trim()) return true;
       if (filter === state.status) return true;
     }
     return false;
@@ -724,6 +745,14 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             Has comments ({totalWithComments})
           </Badge>
         </button>
+        <button onClick={() => toggleFilter("has_internal_note")}>
+          <Badge
+            variant="outline"
+            className={`cursor-pointer text-xs bg-violet-500/10 text-violet-600 dark:text-violet-400 ${activeFilters.has("has_internal_note") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+          >
+            Flagged ({totalWithInternalNotes})
+          </Badge>
+        </button>
         {activeFilters.size > 0 && (
           <button
             onClick={() => setActiveFilters(new Set())}
@@ -800,6 +829,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                       check={check}
                       status={state.status}
                       notes={state.notes}
+                      internalNote={state.internalNote}
                       scanResult={scanCheck}
                       isRunning={runningChecks.has(check.key)}
                       isFixing={fixingChecks.has(check.key)}
@@ -807,6 +837,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                       fixInfo={fixInfo}
                       onStatusChange={(s) => updateCheck(check.key, "status", s)}
                       onNotesChange={(n) => updateCheck(check.key, "notes", n)}
+                      onInternalNoteChange={(n) => updateInternalNote(check.key, n)}
                       onOpenGuide={openGuide}
                       onViewScanDetails={scanCheck ? openScanDetails : undefined}
                       onRunCheck={(check.automation === "ai-agent" || check.automation === "page-scan" || check.automation === "cookiebot-api") ? (key) => handleRunCheck(key, check.automation) : undefined}

@@ -89,6 +89,22 @@ export async function saveCheckResult(
   return result;
 }
 
+export async function saveInternalNote(
+  auditId: string,
+  checkKey: string,
+  internalNote: string,
+) {
+  const result = await prisma.checkResult.upsert({
+    where: {
+      auditId_checkKey: { auditId, checkKey },
+    },
+    update: { internalNote },
+    create: { auditId, checkKey, status: "not_checked", notes: "", internalNote },
+  });
+
+  return result;
+}
+
 export async function saveCheckResults(
   auditId: string,
   checks: { checkKey: string; status: CheckStatus; notes: string }[]

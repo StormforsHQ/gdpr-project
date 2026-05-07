@@ -119,7 +119,7 @@ export function ScanResultsDrawer({
               {effectiveKey}
             </Badge>
             <SheetTitle className="text-base">
-              {isGuidedWithAnalysis ? "Fix Flow" : hasAnalysis && !checkResult ? "Script Analysis" : "Scan Results"}
+              {isGuidedWithAnalysis ? "Fix Flow" : hasAnalysis && !checkResult ? "Script Analysis" : "Findings & Fixes"}
             </SheetTitle>
             {checkResult?.status === "ok" ? (
               <Badge variant="secondary" className="text-xs bg-green-500/15 text-green-600 dark:text-green-400">OK</Badge>

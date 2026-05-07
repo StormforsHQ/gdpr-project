@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { normalizeUrl } from "@/lib/url";
-import { detectGtmId, detectCookiebotId } from "@/lib/scanner";
+import { detectGtmId, detectCookiebotId, detectHubspotId } from "@/lib/scanner";
 import { isGtmConfigured, findCookiebotIdInContainer } from "@/lib/api/gtm";
 import { isWebflowConfigured, listAllSites, type WebflowSite } from "@/lib/api/webflow";
 import * as cheerio from "cheerio";
@@ -42,6 +42,7 @@ export async function createSite(data: {
   url: string;
   platform?: string;
   webflowId?: string;
+  hubspotId?: string;
   cookiebotId?: string;
   gtmId?: string;
 }) {
@@ -67,10 +68,26 @@ export async function createSite(data: {
       url: cleanUrl,
       platform: data.platform || "webflow",
       webflowId: data.webflowId || null,
+      hubspotId: data.hubspotId || null,
       cookiebotId: data.cookiebotId || null,
       gtmId: data.gtmId || null,
     },
   });
+
+  if (!data.cookiebotId || !data.gtmId || (!data.webflowId && (data.platform || "webflow") === "webflow")) {
+    try {
+      const detected = await detectSiteIds(cleanUrl);
+      const updates: Record<string, string> = {};
+      if (!data.gtmId && detected.gtmId) updates.gtmId = detected.gtmId;
+      if (!data.cookiebotId && detected.cookiebotId) updates.cookiebotId = detected.cookiebotId;
+      if (!data.webflowId && detected.webflowId) updates.webflowId = detected.webflowId;
+      if (Object.keys(updates).length > 0) {
+        await prisma.site.update({ where: { id: site.id }, data: updates });
+      }
+    } catch {
+      // Auto-detect is best-effort, don't block site creation
+    }
+  }
 
   revalidatePath("/sites");
   revalidatePath("/");
@@ -84,6 +101,7 @@ export async function updateSite(
     url?: string;
     platform?: string;
     webflowId?: string | null;
+    hubspotId?: string | null;
     cookiebotId?: string | null;
     gtmId?: string | null;
     active?: boolean;
@@ -134,6 +152,8 @@ export async function bulkCreateSites(
 export interface DetectIdsResult {
   webflowId: string | null;
   webflowSource: string | null;
+  hubspotId: string | null;
+  hubspotSource: string | null;
   gtmId: string | null;
   cookiebotId: string | null;
   gtmSource: string | null;
@@ -144,6 +164,7 @@ export interface DetectIdsResult {
 export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
   const result: DetectIdsResult = {
     webflowId: null, webflowSource: null,
+    hubspotId: null, hubspotSource: null,
     gtmId: null, cookiebotId: null,
     gtmSource: null, cookiebotSource: null,
     error: null,
@@ -170,6 +191,9 @@ export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
 
     result.cookiebotId = detectCookiebotId($);
     if (result.cookiebotId) result.cookiebotSource = "Found in site HTML";
+
+    result.hubspotId = detectHubspotId($, html);
+    if (result.hubspotId) result.hubspotSource = "Found in site HTML";
 
     if (result.gtmId && !result.cookiebotId && isGtmConfigured()) {
       try {

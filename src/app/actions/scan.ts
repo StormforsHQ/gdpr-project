@@ -60,16 +60,29 @@ export async function runPageScan(url: string, siteId?: string): Promise<ScanRes
       }
     }
 
-    if (siteId && (result.detectedCookiebotId || result.detectedGtmId)) {
+    if (siteId) {
       try {
         const site = await prisma.site.findUnique({ where: { id: siteId } });
         if (site) {
-          const updates: { cookiebotId?: string; gtmId?: string } = {};
+          const updates: { cookiebotId?: string; gtmId?: string; webflowId?: string } = {};
           if (result.detectedCookiebotId && !site.cookiebotId) {
             updates.cookiebotId = result.detectedCookiebotId;
           }
           if (result.detectedGtmId && !site.gtmId) {
             updates.gtmId = result.detectedGtmId;
+          }
+          if (!site.webflowId && site.platform === "webflow") {
+            const domain = site.url.replace(/^www\./, "").toLowerCase();
+            const match = await prisma.site.findFirst({
+              where: {
+                platform: "webflow",
+                webflowId: { not: null },
+                url: { contains: domain },
+                id: { not: site.id },
+              },
+              select: { webflowId: true },
+            });
+            if (match?.webflowId) updates.webflowId = match.webflowId;
           }
           if (Object.keys(updates).length > 0) {
             await prisma.site.update({ where: { id: siteId }, data: updates });

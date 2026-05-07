@@ -12,6 +12,7 @@ model Site {
   url         String   @default("")
   platform    String   @default("webflow")
   webflowId   String?  @unique @map("webflow_id")
+  hubspotId   String?  @map("hubspot_id")
   cookiebotId String?  @map("cookiebot_id")
   gtmId       String?  @map("gtm_id")
   active      Boolean  @default(true)

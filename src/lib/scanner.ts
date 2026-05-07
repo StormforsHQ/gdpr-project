@@ -901,3 +901,26 @@ export function detectCookiebotId($: cheerio.CheerioAPI): string | null {
 
   return cbid;
 }
+
+export function detectHubspotId($: cheerio.CheerioAPI, html: string): string | null {
+  let hubId: string | null = null;
+
+  $("script[src]").each((_, el) => {
+    const src = $(el).attr("src") || "";
+    const match = src.match(/js\.hs-scripts\.com\/(\d+)/i)
+      || src.match(/js\.hsforms\.net\/forms\/embed\/v2\.js/i) && null;
+    if (match && match[1]) hubId = match[1];
+  });
+
+  if (!hubId) {
+    const inlineMatch = html.match(/js\.hs-scripts\.com\/(\d+)/i);
+    if (inlineMatch) hubId = inlineMatch[1];
+  }
+
+  if (!hubId) {
+    const analyticsMatch = html.match(/js\.hs-analytics\.net\/analytics\/\d+\/(\d+)/i);
+    if (analyticsMatch) hubId = analyticsMatch[1];
+  }
+
+  return hubId;
+}

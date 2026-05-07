@@ -20,6 +20,7 @@ interface SiteHeaderProps {
     cookiebotId?: string | null;
     gtmId?: string | null;
     webflowId?: string | null;
+    hubspotId?: string | null;
   };
   auditId: string;
   reportVersions: ReportListItem[];

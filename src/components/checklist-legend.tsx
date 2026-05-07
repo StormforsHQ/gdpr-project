@@ -75,10 +75,6 @@ export function ChecklistLegend() {
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 bg-blue-500/15 text-blue-600 dark:text-blue-400 mt-0.5">Browser</span>
-                <p>Runs a real browser against the site to check what happens before any consent interaction - catches tracking that fires without permission. Partially automated.</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 bg-blue-500/15 text-blue-600 dark:text-blue-400 mt-0.5">Browser/Manual</span>
                 <p>Requires opening the site in a real browser and interacting with it (clicking buttons, simulating locations, checking DevTools). Follow the step-by-step guide for each check.</p>
               </div>
               <div className="flex items-start gap-2">

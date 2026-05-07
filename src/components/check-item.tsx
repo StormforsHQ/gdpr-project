@@ -223,7 +223,7 @@ export function CheckItem({
                       <span className="shrink-0">-</span>
                       <span>
                         {f.element && f.element !== "page" && <span className="font-medium">{f.element}: </span>}
-                        {f.detail.length > 120 ? f.detail.slice(0, 120) + "..." : f.detail}
+                        {f.detail}
                       </span>
                     </li>
                   ))}

@@ -14,7 +14,7 @@ import { CHECK_GUIDES } from "@/lib/check-guides";
 import { CHECKLIST } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { GlossaryText } from "@/components/glossary-text";
-import { Wrench, Lightbulb, Scale, Landmark, AlertTriangle } from "lucide-react";
+import { Wrench, Lightbulb, AlertTriangle } from "lucide-react";
 
 interface CheckGuideDrawerProps {
   checkKey: string | null;
@@ -91,67 +91,6 @@ export function CheckGuideDrawer({
               </p>
             </div>
 
-            {check?.legalBasis && (
-              <>
-                <Separator />
-                <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
-                    <Scale className="h-3 w-3" />
-                    Legal basis
-                  </h3>
-                  <p className="text-sm leading-relaxed text-amber-600 dark:text-amber-400">
-                    {check.legalBasis}
-                  </p>
-                  {check.references && check.references.length > 0 && (
-                    <ul className="mt-2 space-y-1">
-                      {check.references.map((ref, i) => (
-                        <li key={i}>
-                          <a
-                            href={ref.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-primary hover:underline"
-                          >
-                            {ref.label}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </>
-            )}
-
-            {check?.imyNote && (
-              <>
-                <Separator />
-                <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
-                    <Landmark className="h-3 w-3" />
-                    Sweden / IMY
-                  </h3>
-                  <p className="text-sm leading-relaxed text-blue-600 dark:text-blue-400">
-                    {check.imyNote}
-                  </p>
-                  {check.imyReferences && check.imyReferences.length > 0 && (
-                    <ul className="mt-2 space-y-1">
-                      {check.imyReferences.map((ref, i) => (
-                        <li key={i}>
-                          <a
-                            href={ref.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-500 hover:underline"
-                          >
-                            {ref.label}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </>
-            )}
 
             <Separator />
 

@@ -134,7 +134,7 @@ export function CheckGuideDrawer({
 
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-                Step-by-step
+                Where to check
               </h3>
               <ol className="space-y-2">
                 {guide.steps.map((step, i) => {

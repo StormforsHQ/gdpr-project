@@ -1,6 +1,6 @@
 # Plan: Fix Flow UI
 
-Status: IN PROGRESS - Phases 1-2.5 done, moving to Phase 3
+Status: IN PROGRESS - Phases 1-3 done, moving to Phase 4
 Branch: main (merged after each phase)
 
 ## Context
@@ -67,7 +67,7 @@ Completed:
 - Checks are currently not tagged by platform - categories A, B, H are Webflow/GTM-specific; E, F, I, J, K are universal. Platform tagging is a future improvement.
 - Fix flows will be platform-specific (Webflow API vs HubSpot API vs manual)
 
-## Phase 3: Enhanced scan results drawer (Tier 3 guided flow)
+## Phase 3: Enhanced scan results drawer (Tier 3 guided flow) - DONE
 
 Add interactive fix flow to the scan results drawer for A1 (script cleanup).
 
@@ -149,7 +149,7 @@ Do one phase at a time, commit after each, verify before moving on.
 1. ~~Phase 1 (docs + reference)~~ - DONE
 2. ~~Phase 2 (rework fixes)~~ - DONE
 3. ~~Phase 2.5 (site management + platform awareness)~~ - DONE
-4. Phase 3 (guided flow UI) - the big one, A1 script cleanup
+4. ~~Phase 3 (guided flow UI)~~ - DONE - FixFlowPanel, internal notes, flagged filter
 5. Phase 4 (simpler fix buttons) - improvements to other checks
 6. Phase 5 (chatbot) - dynamic knowledge + web search
 7. Phase 6 (final doc update) - capture everything learned

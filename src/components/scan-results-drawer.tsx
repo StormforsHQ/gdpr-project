@@ -343,14 +343,9 @@ export function ScanResultsDrawer({
             {scanResult && (
               <>
                 <Separator />
-                <div className="space-y-2">
-                  <div className="text-xs text-muted-foreground">
-                    <p>Scanned: {scanResult.url}</p>
-                    <p>Time: {scanResult.scannedAt ? new Date(scanResult.scannedAt).toLocaleString() : "-"}</p>
-                  </div>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    For more details, click the <Info className="h-3 w-3 inline" /> icon on this check in the checklist.
-                  </p>
+                <div className="text-xs text-muted-foreground">
+                  <p>Scanned: {scanResult.url}</p>
+                  <p>Time: {scanResult.scannedAt ? new Date(scanResult.scannedAt).toLocaleString() : "-"}</p>
                 </div>
               </>
             )}

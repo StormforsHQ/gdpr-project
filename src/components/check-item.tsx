@@ -75,6 +75,7 @@ export function CheckItem({
   onAnalyzeFix,
 }: CheckItemProps) {
   const [expanded, setExpanded] = useState(false);
+  const [reportNoteOpen, setReportNoteOpen] = useState(!!notes.trim());
   const [internalNoteOpen, setInternalNoteOpen] = useState(!!internalNote.trim());
   const automationInfo = AUTOMATION_CONFIG[check.automation];
 
@@ -158,7 +159,7 @@ export function CheckItem({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-xs text-black dark:text-black">
-            What this check means and how to do it manually
+            What this check means and where to find it
           </TooltipContent>
         </Tooltip>
       </div>
@@ -228,23 +229,23 @@ export function CheckItem({
             </div>
           )}
           {scanResult && scanResult.findings.length > 0 && (() => {
-            const grouped = new Map<string, { severity: string; count: number }>();
-            for (const f of scanResult.findings) {
-              const existing = grouped.get(f.detail);
-              if (existing) {
-                existing.count++;
-              } else {
-                grouped.set(f.detail, { severity: f.severity, count: 1 });
-              }
-            }
-            const entries = [...grouped.entries()];
+            const errorFindings = scanResult.findings.filter((f) => f.severity === "error");
+            const errorElements = errorFindings
+              .map((f) => f.element)
+              .filter((e) => e && e !== "page");
+            const uniqueElements = [...new Set(errorElements)];
+
             return (
               <div className="space-y-1">
-                {entries.map(([detail, { severity, count }], i) => (
-                  <p key={i} className={`text-xs ${severity === "error" ? "text-destructive" : severity === "warning" ? "text-amber-500" : "text-muted-foreground"}`}>
-                    {detail}{count > 1 && ` (${count})`}
+                {scanResult.status === "issue" && uniqueElements.length > 0 ? (
+                  <p className="text-xs text-destructive">
+                    {errorFindings.length} issue{errorFindings.length !== 1 ? "s" : ""}: {uniqueElements.join(", ")}
                   </p>
-                ))}
+                ) : scanResult.status === "issue" ? (
+                  <p className="text-xs text-destructive">{scanResult.summary}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{scanResult.summary}</p>
+                )}
                 {onViewScanDetails && (
                   <button
                     className="text-xs text-primary hover:underline"
@@ -253,7 +254,7 @@ export function CheckItem({
                       onViewScanDetails(check.key);
                     }}
                   >
-                    View details
+                    View details and how to fix
                   </button>
                 )}
               </div>
@@ -290,7 +291,7 @@ export function CheckItem({
                 </TooltipContent>
               </Tooltip>
             )}
-            {fixInfo && status === "issue" && fixInfo.safetyLevel === "guided" && (
+            {fixInfo && status === "issue" && fixInfo.safetyLevel === "guided" && !scanResult && (
               <Tooltip>
                 <TooltipTrigger>
                   <Button
@@ -381,38 +382,54 @@ export function CheckItem({
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <textarea
-              placeholder="Add notes (shown in report appendix)..."
-              value={notes}
-              onChange={(e) => onNotesChange(e.target.value)}
-              rows={2}
-              className="w-full rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 resize-y min-h-[2rem]"
-            />
-          </div>
-          {onInternalNoteChange && (
+          <div className="space-y-2">
             <div>
               <button
-                className="flex items-center gap-1.5 text-[11px] text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                className="flex items-center gap-1.5 text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors mb-1"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setInternalNoteOpen(!internalNoteOpen);
+                  setReportNoteOpen(!reportNoteOpen);
                 }}
               >
                 <StickyNote className="h-3 w-3" />
-                {internalNoteOpen ? "Hide internal note" : internalNote.trim() ? "Edit internal note" : "Add internal note"}
+                {reportNoteOpen ? "Hide note" : notes.trim() ? "Edit report note" : "Add report note"}
+                <span className="opacity-60">(included in client report)</span>
               </button>
-              {internalNoteOpen && (
+              {reportNoteOpen && (
                 <textarea
-                  placeholder="Private note - not included in reports. Use for reminders, things to double-check, or questions for the team."
-                  value={internalNote}
-                  onChange={(e) => onInternalNoteChange(e.target.value)}
+                  placeholder="Note for this check - will be shown in the client report appendix."
+                  value={notes}
+                  onChange={(e) => onNotesChange(e.target.value)}
                   rows={2}
-                  className="mt-1.5 w-full rounded-lg border border-violet-300 dark:border-violet-700 bg-violet-50/50 dark:bg-violet-950/20 px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-violet-500 focus-visible:ring-3 focus-visible:ring-violet-500/30 resize-y min-h-[2rem]"
+                  className="w-full rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20 px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-blue-500 focus-visible:ring-3 focus-visible:ring-blue-500/30 resize-y min-h-[2rem]"
                 />
               )}
             </div>
-          )}
+            {onInternalNoteChange && (
+              <div>
+                <button
+                  className="flex items-center gap-1.5 text-[11px] text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors mb-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setInternalNoteOpen(!internalNoteOpen);
+                  }}
+                >
+                  <StickyNote className="h-3 w-3" />
+                  {internalNoteOpen ? "Hide note" : internalNote.trim() ? "Edit internal note" : "Add internal note"}
+                  <span className="opacity-60">(not included in client report)</span>
+                </button>
+                {internalNoteOpen && (
+                  <textarea
+                    placeholder="Private note - for reminders, things to double-check, or questions for the team."
+                    value={internalNote}
+                    onChange={(e) => onInternalNoteChange(e.target.value)}
+                    rows={2}
+                    className="w-full rounded-lg border border-violet-300 dark:border-violet-700 bg-violet-50/50 dark:bg-violet-950/20 px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-violet-500 focus-visible:ring-3 focus-visible:ring-violet-500/30 resize-y min-h-[2rem]"
+                  />
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

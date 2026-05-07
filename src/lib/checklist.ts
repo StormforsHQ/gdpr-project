@@ -38,7 +38,7 @@ export interface CheckCategory {
 export const AUTOMATION_CONFIG: Record<AutomationType, { label: string; className: string }> = {
   "page-scan": { label: "Auto", className: "bg-green-500/15 text-green-600 dark:text-green-400" },
   "browser-test": { label: "Browser", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-  "browser-manual": { label: "Browser/Manual", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
+  "browser-manual": { label: "Browser", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
   "ai-agent": { label: "AI", className: "bg-purple-500/15 text-purple-600 dark:text-purple-400" },
   "gtm-api": { label: "GTM API", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
   "cookiebot-api": { label: "Cookiebot", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
@@ -411,7 +411,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "G4", label: "Declining actually blocks scripts", description: "When a visitor clicks 'Decline' or 'Reject all', non-essential scripts (analytics, marketing) must actually stop. Verify in browser DevTools that no tracking scripts fire after declining.", automation: "browser-test", tier: "basic",
+        key: "G4", label: "Declining actually blocks scripts", description: "When a visitor clicks 'Decline' or 'Reject all', non-essential scripts (analytics, marketing) must actually stop. Verify in browser DevTools that no tracking scripts fire after declining.", automation: "browser-manual", tier: "basic",
         legalBasis: "A decline button that doesn't actually block tracking is worse than no button at all - it gives visitors a false sense of control.",
         references: [
           { label: "GDPR Art. 7(3) - Withdrawal of consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
@@ -509,7 +509,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "H6", label: "Cookie tab check in DevTools", description: "Open browser DevTools > Application > Cookies. Before any consent choice: only the CookieConsent cookie should exist. After declining: no analytics or marketing cookies should appear.", automation: "browser-test", tier: "full",
+        key: "H6", label: "Cookie tab check in DevTools", description: "Open browser DevTools > Application > Cookies. Before any consent choice: only the CookieConsent cookie should exist. After declining: no analytics or marketing cookies should appear.", automation: "browser-manual", tier: "full",
         legalBasis: "The ultimate proof that consent works - if tracking cookies appear before or after declining consent, something is broken regardless of what GTM Preview shows.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
@@ -528,7 +528,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "H8", label: "Non-cookie tracking checked", description: "Tracking isn't limited to cookies. Check localStorage, sessionStorage, and IndexedDB in browser DevTools for tracking data. Also check for fingerprinting scripts. The same consent rules apply to all of these.", automation: "browser-test", tier: "full",
+        key: "H8", label: "Non-cookie tracking checked", description: "Tracking isn't limited to cookies. Check localStorage, sessionStorage, and IndexedDB in browser DevTools for tracking data. Also check for fingerprinting scripts. The same consent rules apply to all of these.", automation: "browser-manual", tier: "full",
         legalBasis: "EU consent rules apply to ALL data stored on the visitor's device, not just cookies. localStorage tracking without consent is just as illegal as cookie tracking without consent.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },

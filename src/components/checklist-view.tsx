@@ -611,12 +611,11 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
               <span>{lastScanType === "ai-agent" ? "AI scan" : lastScanType === "page-scan" ? "Page scan" : "Scanned"}: {scanResult.url}</span>
               <span>{scannedCheckCount} checks run</span>
-              {scanIssueCount > 0 && (
-                <Badge variant="destructive" className="text-xs">
-                  {scanFullIssues > 0
-                    ? `${scanBasicIssues} basic + ${scanFullIssues} full issue${scanIssueCount !== 1 ? "s" : ""}`
-                    : `${scanIssueCount} issue${scanIssueCount !== 1 ? "s" : ""}`}
-                </Badge>
+              {scanBasicIssues > 0 && (
+                <Badge variant="destructive" className="text-xs">{scanBasicIssues} basic issue{scanBasicIssues !== 1 ? "s" : ""}</Badge>
+              )}
+              {scanFullIssues > 0 && (
+                <Badge variant="destructive" className="text-xs opacity-70">{scanFullIssues} full issue{scanFullIssues !== 1 ? "s" : ""}</Badge>
               )}
               {scanFailedCount > 0 && (
                 <Badge variant="secondary" className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400">{scanFailedCount} failed</Badge>
@@ -750,16 +749,36 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             OK ({totalOk})
           </Badge>
         </button>
-        <button onClick={() => toggleFilter("issue")}>
-          <Badge
-            variant="destructive"
-            className={`cursor-pointer text-xs ${activeFilters.has("issue") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
-          >
-            {fullIssues > 0
-              ? `Issues (${basicIssues} basic + ${fullIssues} full)`
-              : `Issues (${basicIssues} basic)`}
-          </Badge>
-        </button>
+        {basicIssues > 0 && (
+          <button onClick={() => toggleFilter("issue")}>
+            <Badge
+              variant="destructive"
+              className={`cursor-pointer text-xs ${activeFilters.has("issue") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+            >
+              {basicIssues} basic issue{basicIssues !== 1 ? "s" : ""}
+            </Badge>
+          </button>
+        )}
+        {fullIssues > 0 && (
+          <button onClick={() => toggleFilter("issue")}>
+            <Badge
+              variant="destructive"
+              className={`cursor-pointer text-xs opacity-70 ${activeFilters.has("issue") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+            >
+              {fullIssues} full issue{fullIssues !== 1 ? "s" : ""}
+            </Badge>
+          </button>
+        )}
+        {totalIssues === 0 && (
+          <button onClick={() => toggleFilter("issue")}>
+            <Badge
+              variant="destructive"
+              className={`cursor-pointer text-xs opacity-50 ${activeFilters.has("issue") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+            >
+              Issues (0)
+            </Badge>
+          </button>
+        )}
         <button onClick={() => toggleFilter("na")}>
           <Badge
             variant="secondary"

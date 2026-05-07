@@ -56,6 +56,11 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const { errors, addError, clearErrors } = useErrorLog();
   const [auditType, setAuditType] = useState<"basic" | "full">(initialAuditType);
   const [siteFields, setSiteFields] = useState(initialSiteFields);
+
+  useEffect(() => {
+    setSiteFields(initialSiteFields);
+  }, [initialSiteFields?.cookiebotId, initialSiteFields?.gtmId, initialSiteFields?.webflowId, initialSiteFields?.platform]);
+
   const [scanRuns, setScanRuns] = useState<ScanRunEntry[]>(initialScanRuns ?? []);
   const [checkStates, setCheckStates] = useState<CheckState>(() => {
     if (!initialStates) return {};

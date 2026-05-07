@@ -14,6 +14,7 @@ model Site {
   webflowId   String?  @unique @map("webflow_id")
   cookiebotId String?  @map("cookiebot_id")
   gtmId       String?  @map("gtm_id")
+  active      Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

@@ -23,13 +23,17 @@ export async function fetchSitemapUrls(siteUrl: string): Promise<string[]> {
   try {
     const res = await fetch(sitemapUrl, {
       headers: { "User-Agent": "StormforsGDPRAudit/1.0" },
+      redirect: "follow",
       signal: AbortSignal.timeout(10000),
     });
 
     if (!res.ok) return [base];
 
+    const actualOrigin = new URL(res.url).origin;
+    const allowedOrigins = new Set([origin, actualOrigin]);
+
     const xml = await res.text();
-    const urls = extractUrls(xml, origin);
+    const urls = extractUrls(xml, allowedOrigins);
 
     if (urls.length === 0) return [base];
 
@@ -43,15 +47,20 @@ export async function fetchSitemapUrls(siteUrl: string): Promise<string[]> {
   }
 }
 
-function extractUrls(xml: string, origin: string): string[] {
+function extractUrls(xml: string, allowedOrigins: Set<string>): string[] {
   const urls: string[] = [];
   const locRegex = /<loc>\s*(.*?)\s*<\/loc>/gi;
   let match;
 
   while ((match = locRegex.exec(xml)) !== null) {
     const url = match[1].trim();
-    if (url.startsWith(origin)) {
-      urls.push(url);
+    try {
+      const urlOrigin = new URL(url).origin;
+      if (allowedOrigins.has(urlOrigin)) {
+        urls.push(url);
+      }
+    } catch {
+      // skip malformed URLs
     }
   }
 

@@ -238,8 +238,8 @@ ${forms.slice(0, 8000)}`
     if (!bannerHtml) {
       return {
         status: "na" as const,
-        findings: [{ detail: "No consent banner HTML detected in page source", severity: "info" as const }],
-        summary: "Consent banner not found in static HTML (may load dynamically)",
+        findings: [{ detail: "No consent banner detected in page source - prominence check not applicable (see G1)", severity: "info" as const }],
+        summary: "No consent banner found to check button prominence",
       };
     }
 
@@ -263,7 +263,26 @@ ${bannerHtml.slice(0, 6000)}`
     return parseAIResponse(raw);
   },
 
-  G6: async (_html, text, url) => {
+  G6: async (html, text, url) => {
+    const $ = cheerio.load(html);
+    const bannerSelectors = [
+      "[class*='cookie']", "[class*='consent']", "[class*='gdpr']",
+      "[id*='cookie']", "[id*='consent']", "[id*='CybotCookiebot']",
+    ];
+    let bannerHtml = "";
+    for (const sel of bannerSelectors) {
+      const el = $(sel);
+      if (el.length > 0) bannerHtml += $.html(el) + "\n";
+    }
+
+    if (!bannerHtml) {
+      return {
+        status: "na" as const,
+        findings: [{ detail: "No consent banner detected in page source - language check not applicable (see G1)", severity: "info" as const }],
+        summary: "No consent banner found to check language",
+      };
+    }
+
     const raw = await callOpenRouter(
       `You are a GDPR compliance auditor checking if a website's cookie consent banner language matches the site's content language.
 ${RESPONSE_FORMAT_INSTRUCTION}`,
@@ -291,6 +310,14 @@ ${text.slice(0, 6000)}`
     for (const sel of bannerSelectors) {
       const el = $(sel);
       if (el.length > 0) bannerHtml += $.html(el) + "\n";
+    }
+
+    if (!bannerHtml) {
+      return {
+        status: "na" as const,
+        findings: [{ detail: "No consent banner detected in page source - dark pattern check not applicable (see G1)", severity: "info" as const }],
+        summary: "No consent banner found to check for dark patterns",
+      };
     }
 
     const raw = await callOpenRouter(

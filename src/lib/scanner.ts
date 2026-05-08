@@ -103,6 +103,8 @@ async function fetchPage(url: string): Promise<{ $: cheerio.CheerioAPI; html: st
 const PAGE_SPECIFIC_KEYS = new Set(["E1", "E3", "E4", "E5", "F1", "F3", "F5"]);
 
 function runSiteWideChecks($: cheerio.CheerioAPI, html: string, detectedGtmId: string | null): CheckResult[] {
+  const g1Result = checkG1($, html, detectedGtmId);
+  const hasBanner = g1Result.status === "ok";
   return [
     checkA1($, html),
     checkA2($, html),
@@ -112,8 +114,8 @@ function runSiteWideChecks($: cheerio.CheerioAPI, html: string, detectedGtmId: s
     checkE2($, html),
     checkI3($),
     checkI4($),
-    checkG1($, html, detectedGtmId),
-    checkG8($, html),
+    g1Result,
+    checkG8($, html, hasBanner),
     checkB5($, html),
   ];
 }
@@ -879,7 +881,16 @@ function checkG1($: cheerio.CheerioAPI, html: string, detectedGtmId: string | nu
   return { checkKey: "G1", status: "issue", findings, summary: "No cookie consent banner found" };
 }
 
-function checkG8($: cheerio.CheerioAPI, html: string): CheckResult {
+function checkG8($: cheerio.CheerioAPI, html: string, hasBanner: boolean): CheckResult {
+  if (!hasBanner) {
+    return {
+      checkKey: "G8",
+      status: "na",
+      findings: [{ element: "", detail: "No consent banner detected (see G1) - withdrawal mechanism check not applicable", severity: "info" }],
+      summary: "No consent banner found (see G1)",
+    };
+  }
+
   const findings: ScanFinding[] = [];
 
   const hasCookiebotWidget = /CookiebotWidget|CookieConsent\.renew|Cookiebot\.renew/i.test(html);

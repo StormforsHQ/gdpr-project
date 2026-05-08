@@ -579,6 +579,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const totalNa = visibleStates.filter(([, s]) => s.status === "na").length;
   const totalNotChecked = totalChecks - totalChecked;
   const totalBlocked = visibleStates.filter(([key, s]) => {
+    if (s.status === "blocked") return true;
     if (s.status !== "not_checked") return false;
     const reqs = CHECK_REQUIREMENTS[key];
     if (!reqs || reqs.length === 0) return false;
@@ -609,6 +610,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       if (f === "has_comments") return state.notes.trim().length > 0;
       if (f === "has_internal_note") return state.internalNote.trim().length > 0;
       if (f === "blocked") {
+        if (state.status === "blocked") return true;
         if (state.status !== "not_checked") return false;
         const reqs = CHECK_REQUIREMENTS[key];
         if (!reqs || reqs.length === 0) return false;

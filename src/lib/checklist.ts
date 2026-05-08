@@ -1,4 +1,4 @@
-export type CheckStatus = "not_checked" | "ok" | "issue" | "na";
+export type CheckStatus = "not_checked" | "ok" | "issue" | "na" | "blocked";
 
 export type AutomationType =
   | "page-scan"
@@ -782,4 +782,5 @@ export const STATUS_CONFIG: Record<CheckStatus, { label: string; color: string }
   ok: { label: "OK", color: "text-green-500" },
   issue: { label: "Issue", color: "text-destructive" },
   na: { label: "N/A", color: "text-muted-foreground" },
+  blocked: { label: "Blocked", color: "text-amber-500" },
 };

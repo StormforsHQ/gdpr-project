@@ -5,6 +5,7 @@ export interface ScanFinding {
   element: string;
   detail: string;
   severity: "error" | "warning" | "info";
+  pageUrl?: string;
 }
 
 export interface CheckResult {
@@ -21,6 +22,7 @@ export interface ScanResult {
   error?: string;
   detectedCookiebotId?: string;
   detectedGtmId?: string;
+  pagesScanned?: number;
 }
 
 const KNOWN_TRACKING_SCRIPTS = [
@@ -81,74 +83,142 @@ const SOCIAL_EMBEDS = [
 ];
 
 
-export async function scanSite(url: string): Promise<ScanResult> {
-  const normalizedUrl = normalizeUrl(url);
-
+async function fetchPage(url: string): Promise<{ $: cheerio.CheerioAPI; html: string } | null> {
   try {
-    const response = await fetch(normalizedUrl, {
+    const response = await fetch(url, {
       headers: { "User-Agent": "StormforsGDPRAudit/1.0" },
       redirect: "follow",
       signal: AbortSignal.timeout(15000),
     });
-
-    if (!response.ok) {
-      return {
-        url: normalizedUrl,
-        scannedAt: new Date().toISOString(),
-        checks: [],
-        error: `HTTP ${response.status}: ${response.statusText}`,
-      };
-    }
-
+    if (!response.ok) return null;
     const html = await response.text();
-    const $ = cheerio.load(html);
+    return { $: cheerio.load(html), html };
+  } catch {
+    return null;
+  }
+}
 
-    const detectedCookiebotId = detectCookiebotId($);
-    const detectedGtmId = detectGtmId($, html);
+const PAGE_SPECIFIC_KEYS = new Set(["E1", "E3", "E4", "E5", "F1", "F3", "F5"]);
 
-    const checks: CheckResult[] = [
-      checkA1($, html),
-      checkA2($, html),
-      checkB1($, html),
-      checkD1($, html),
-      checkD3($, html),
-      checkE1($),
-      checkE2($, html),
-      checkE3($),
-      checkE4($, html),
-      checkE5($, html),
-      checkF1($),
-      checkF3($),
-      checkF5($),
-      checkI3($),
-      checkI4($),
-      checkG1($, html, detectedGtmId),
-      checkG8($, html),
-      checkB5($, html),
-    ];
+function runSiteWideChecks($: cheerio.CheerioAPI, html: string, detectedGtmId: string | null): CheckResult[] {
+  return [
+    checkA1($, html),
+    checkA2($, html),
+    checkB1($, html),
+    checkD1($, html),
+    checkD3($, html),
+    checkE2($, html),
+    checkI3($),
+    checkI4($),
+    checkG1($, html, detectedGtmId),
+    checkG8($, html),
+    checkB5($, html),
+  ];
+}
 
-    return {
-      url: normalizedUrl,
-      scannedAt: new Date().toISOString(),
-      checks,
-      detectedCookiebotId: detectedCookiebotId || undefined,
-      detectedGtmId: detectedGtmId || undefined,
-    };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    let userError = message;
-    if (/fetch failed|ENOTFOUND|getaddrinfo/i.test(message)) {
-      userError = `Could not reach ${normalizedUrl}. Check that the URL is correct and the site is online.`;
-    } else if (/timed? ?out|aborted/i.test(message)) {
-      userError = `The site at ${normalizedUrl} took too long to respond (15s timeout).`;
+function runPageSpecificChecks($: cheerio.CheerioAPI, html: string, pageUrl: string): CheckResult[] {
+  const checks = [
+    checkE1($),
+    checkE3($),
+    checkE4($, html),
+    checkE5($, html),
+    checkF1($),
+    checkF3($),
+    checkF5($),
+  ];
+
+  for (const check of checks) {
+    for (const finding of check.findings) {
+      finding.pageUrl = pageUrl;
     }
+  }
+
+  return checks;
+}
+
+function mergePageSpecificResults(allResults: CheckResult[][]): CheckResult[] {
+  const merged = new Map<string, CheckResult>();
+
+  for (const pageResults of allResults) {
+    for (const result of pageResults) {
+      const existing = merged.get(result.checkKey);
+      if (!existing) {
+        merged.set(result.checkKey, { ...result });
+      } else {
+        existing.findings.push(...result.findings);
+        if (result.status === "issue") existing.status = "issue";
+      }
+    }
+  }
+
+  for (const result of merged.values()) {
+    const issueFindings = result.findings.filter((f) => f.severity === "error" || f.severity === "warning");
+    if (result.checkKey === "F1") {
+      result.summary = result.findings.length === 0
+        ? "No forms found on scanned pages"
+        : `${result.findings.length} form(s) found across scanned pages`;
+    } else if (result.checkKey === "F3") {
+      const issues = result.findings.filter((f) => f.severity === "error");
+      result.summary = issues.length === 0
+        ? "All forms have privacy policy links nearby"
+        : `${issues.length} form(s) missing privacy policy link`;
+      result.status = issues.length > 0 ? "issue" : "ok";
+    } else if (result.checkKey === "F5") {
+      const issues = result.findings.filter((f) => f.severity === "error");
+      result.summary = issues.length === 0
+        ? "All form submissions use HTTPS or relative URLs"
+        : `${issues.length} form(s) submit over unencrypted HTTP`;
+      result.status = issues.length > 0 ? "issue" : "ok";
+    } else if (issueFindings.length > 0) {
+      result.summary = `${issueFindings.length} issue(s) found across scanned pages`;
+    }
+  }
+
+  return [...merged.values()];
+}
+
+export async function scanSite(url: string): Promise<ScanResult> {
+  const normalizedUrl = normalizeUrl(url);
+
+  const homePage = await fetchPage(normalizedUrl);
+  if (!homePage) {
     return {
       url: normalizedUrl,
       scannedAt: new Date().toISOString(),
       checks: [],
-      error: userError,
+      error: `Could not reach ${normalizedUrl}. Check that the URL is correct and the site is online.`,
     };
   }
+
+  const { $: home$, html: homeHtml } = homePage;
+  const detectedCookiebotId = detectCookiebotId(home$);
+  const detectedGtmId = detectGtmId(home$, homeHtml);
+
+  const siteWideChecks = runSiteWideChecks(home$, homeHtml, detectedGtmId);
+  const homePageSpecific = runPageSpecificChecks(home$, homeHtml, normalizedUrl);
+
+  const { fetchSitemapUrls } = await import("@/lib/sitemap");
+  const sitemapUrls = await fetchSitemapUrls(normalizedUrl);
+  const subpageUrls = sitemapUrls.filter((u) => u !== normalizedUrl);
+
+  const allPageSpecific: CheckResult[][] = [homePageSpecific];
+
+  for (const pageUrl of subpageUrls) {
+    const page = await fetchPage(pageUrl);
+    if (!page) continue;
+    allPageSpecific.push(runPageSpecificChecks(page.$, page.html, pageUrl));
+  }
+
+  const mergedPageChecks = mergePageSpecificResults(allPageSpecific);
+
+  return {
+    url: normalizedUrl,
+    scannedAt: new Date().toISOString(),
+    checks: [...siteWideChecks, ...mergedPageChecks],
+    detectedCookiebotId: detectedCookiebotId || undefined,
+    detectedGtmId: detectedGtmId || undefined,
+    pagesScanned: 1 + subpageUrls.length,
+  };
 }
 
 function getScriptSources($: cheerio.CheerioAPI): { src: string; location: string; outerHtml: string }[] {

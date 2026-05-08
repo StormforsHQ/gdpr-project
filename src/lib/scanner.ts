@@ -136,6 +136,30 @@ function runPageSpecificChecks($: cheerio.CheerioAPI, html: string, pageUrl: str
   return checks;
 }
 
+function deduplicateFindings(findings: ScanFinding[]): ScanFinding[] {
+  const groups = new Map<string, { finding: ScanFinding; pages: string[] }>();
+
+  for (const f of findings) {
+    const key = `${f.element}||${f.detail}||${f.severity}`;
+    const existing = groups.get(key);
+    if (existing) {
+      if (f.pageUrl && !existing.pages.includes(f.pageUrl)) {
+        existing.pages.push(f.pageUrl);
+      }
+    } else {
+      groups.set(key, { finding: { ...f }, pages: f.pageUrl ? [f.pageUrl] : [] });
+    }
+  }
+
+  return [...groups.values()].map(({ finding, pages }) => {
+    if (pages.length > 1) {
+      finding.detail = `${finding.detail} (found on ${pages.length} pages)`;
+      finding.pageUrl = pages[0];
+    }
+    return finding;
+  });
+}
+
 function mergePageSpecificResults(allResults: CheckResult[][]): CheckResult[] {
   const merged = new Map<string, CheckResult>();
 
@@ -153,6 +177,8 @@ function mergePageSpecificResults(allResults: CheckResult[][]): CheckResult[] {
   }
 
   for (const result of merged.values()) {
+    result.findings = deduplicateFindings(result.findings);
+
     const issueFindings = result.findings.filter((f) => f.severity === "error" || f.severity === "warning");
     if (result.checkKey === "F1") {
       result.summary = result.findings.length === 0
@@ -162,7 +188,7 @@ function mergePageSpecificResults(allResults: CheckResult[][]): CheckResult[] {
       const issues = result.findings.filter((f) => f.severity === "error");
       result.summary = issues.length === 0
         ? "All forms have privacy policy links nearby"
-        : `${issues.length} form(s) missing privacy policy link`;
+        : `${issues.length} unique form(s) missing privacy policy link`;
       result.status = issues.length > 0 ? "issue" : "ok";
     } else if (result.checkKey === "F5") {
       const issues = result.findings.filter((f) => f.severity === "error");

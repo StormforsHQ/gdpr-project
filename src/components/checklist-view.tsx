@@ -232,7 +232,14 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           skipped++;
           continue;
         }
-        const status = check.status as CheckStatus;
+        if (source === "ai" && check.status === "na" && existing?.source === "scan" && existing.status !== "not_checked") {
+          skipped++;
+          continue;
+        }
+        let status = check.status as CheckStatus;
+        if (source === "ai" && existing?.source === "scan" && existing.status === "issue" && status !== "issue") {
+          status = "issue";
+        }
         const existingInternalNote = prev[check.checkKey]?.internalNote || "";
         next[check.checkKey] = { status, notes: "", internalNote: existingInternalNote, source };
         persistCheck(check.checkKey, status, "", source);
@@ -263,7 +270,13 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       const newChecks = results.filter((r) => !existingKeys.has(r.checkKey));
       const updatedChecks = prev.checks.map((c) => {
         const updated = results.find((r) => r.checkKey === c.checkKey);
-        return updated || c;
+        if (!updated) return c;
+        if (source === "ai" && updated.status === "na" && c.status !== "na") return c;
+        if (source === "ai" && c.findings.length > 0) {
+          const mergedStatus = (c.status === "issue" || updated.status === "issue") ? "issue" as const : updated.status;
+          return { ...updated, status: mergedStatus, findings: [...c.findings, ...updated.findings] };
+        }
+        return updated;
       });
       return {
         url: scanUrl,

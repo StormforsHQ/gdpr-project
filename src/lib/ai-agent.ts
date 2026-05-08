@@ -189,7 +189,88 @@ function formatScanContext(priorResults: CheckResult[]): string {
 
 type AICheckHandler = (html: string, text: string, url: string, scanContext: string) => Promise<AICheckResult>;
 
+function extractScripts($: cheerio.CheerioAPI, location: "head" | "body"): string[] {
+  const scripts: string[] = [];
+  $(`${location} script`).each((_, el) => {
+    const src = $(el).attr("src") || "";
+    const inline = $(el).html() || "";
+    const content = src || inline.slice(0, 300);
+    if (!content.trim()) return;
+    if (/googletagmanager\.com\/gtm\.js/i.test(content)) return;
+    if (/gtm\.start/i.test(content)) return;
+    if (/consent\.cookiebot\.com|consentcdn\.cookiebot\.com/i.test(content)) return;
+    if ($(el).attr("type") === "application/ld+json") return;
+    if ($(el).attr("type") === "application/json") return;
+    scripts.push(src ? `External: ${src}` : `Inline (${inline.length} chars): ${inline.slice(0, 300)}`);
+  });
+  return scripts;
+}
+
+const SCRIPT_CLASSIFICATION_SYSTEM = `You are a GDPR compliance auditor classifying scripts found on a website.
+${RESPONSE_FORMAT_INSTRUCTION}
+
+Classification rules:
+- TRACKING: analytics, advertising pixels, session recording, heatmaps, A/B testing that collects personal data, retargeting
+- PRIVACY_CONCERN: chat widgets that set cookies, social media embeds that track users, services that transmit user data to third parties without consent
+- BENIGN: UI/animation libraries (Finsweet, GSAP, Swiper, Lottie, etc.), CSS frameworks, font loaders, CMS platform scripts (Webflow, jQuery, Next.js), utility libraries, payment processing, accessibility tools
+
+Return status "issue" ONLY if you find TRACKING or PRIVACY_CONCERN scripts. List each one as a finding with severity "error" and explain what it does and that it should be loaded through GTM to respect consent.
+
+For BENIGN scripts, do NOT include them in findings. Just mention the count in your summary.
+
+If ALL scripts are benign, return status "ok" with empty findings.`;
+
 const AI_CHECKS: Record<string, AICheckHandler> = {
+  A1: async (html, _text, _url, scanContext) => {
+    const $ = cheerio.load(html);
+    const scripts = extractScripts($, "head");
+
+    if (scripts.length === 0) {
+      return {
+        status: "ok" as const,
+        findings: [],
+        summary: "Only GTM/Cookiebot/JSON-LD scripts found in <head>",
+      };
+    }
+
+    const raw = await callOpenRouter(
+      SCRIPT_CLASSIFICATION_SYSTEM,
+      `These scripts were found in the <head> section of a website, loaded outside of Google Tag Manager. GTM and Cookiebot scripts have already been excluded.
+
+Classify each script and flag any that are tracking or privacy concerns. These should be loaded through GTM so they respect the visitor's consent choice.
+
+Scripts found in <head>:
+${scripts.map((s, i) => `${i + 1}. ${s}`).join("\n")}
+${scanContext}`
+    );
+    return parseAIResponse(raw);
+  },
+
+  A2: async (html, _text, _url, scanContext) => {
+    const $ = cheerio.load(html);
+    const scripts = extractScripts($, "body");
+
+    if (scripts.length === 0) {
+      return {
+        status: "ok" as const,
+        findings: [],
+        summary: "No hardcoded scripts in <body> (outside GTM)",
+      };
+    }
+
+    const raw = await callOpenRouter(
+      SCRIPT_CLASSIFICATION_SYSTEM,
+      `These scripts were found in the <body> section of a website, loaded outside of Google Tag Manager. GTM and Cookiebot scripts have already been excluded.
+
+Classify each script and flag any that are tracking or privacy concerns. These should be loaded through GTM so they respect the visitor's consent choice.
+
+Scripts found in <body>:
+${scripts.map((s, i) => `${i + 1}. ${s}`).join("\n")}
+${scanContext}`
+    );
+    return parseAIResponse(raw);
+  },
+
   F2: async (_html, text, _url, scanContext) => {
     const raw = await callOpenRouter(
       `You are a GDPR compliance auditor analyzing web forms for data minimization (GDPR Art. 5(1)(c)).

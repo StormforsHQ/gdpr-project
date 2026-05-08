@@ -131,7 +131,7 @@ export function CheckItem({
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs text-xs text-black dark:text-black">
-              Blocked - needs: {missingRequirements.map((r) => r.label).join(", ")}
+              Blocked - {missingRequirements.map((r) => r.label).join(" and ")} not set. Click to expand for details.
             </TooltipContent>
           </Tooltip>
         )}
@@ -182,7 +182,7 @@ export function CheckItem({
             <div className="flex items-start gap-1.5">
               <AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-600 dark:text-amber-400">
-                Needs {missingRequirements.map((r) => r.label).join(" and ")} to run this check
+                {missingRequirements[0].reason}
               </p>
             </div>
           )}

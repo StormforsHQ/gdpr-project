@@ -66,23 +66,27 @@ export interface CheckFieldRequirement {
   reason: string;
 }
 
+const GTM_REASON = "Needs the GTM Container ID to connect to the GTM API. Click 'Scan Site' or 'Detect IDs' in Edit Site - if GTM is installed, the ID is detected automatically. If nothing is found, this site may not have GTM. You can verify manually: open the site in an incognito browser, open DevTools > Console, type google_tag_manager - if it returns an object, GTM is running. The Container ID (format: GTM-XXXXXXX) is in your Google Tag Manager account under Admin > Container Settings.";
+
+const COOKIEBOT_REASON = "Needs the Cookiebot ID. Click 'Scan Site' or 'Detect IDs' in Edit Site - if Cookiebot is loaded directly, the ID is detected automatically. If not found, Cookiebot may be loaded through GTM (the recommended setup). To check: open the site in an incognito browser - if a Cookiebot consent banner appears, it's active. The Cookiebot ID is in the Cookiebot admin panel under Settings. You can also enter it manually in Edit Site.";
+
 export const CHECK_REQUIREMENTS: Record<string, CheckFieldRequirement[]> = {
-  A3: [{ field: "gtmId", label: "GTM Container ID", reason: "Requires GTM Container ID. Find it in Google Tag Manager (format: GTM-XXXXXXX)." }],
-  A4: [{ field: "gtmId", label: "GTM Container ID", reason: "Requires GTM Container ID. Find it in Google Tag Manager (format: GTM-XXXXXXX)." }],
-  A5: [{ field: "gtmId", label: "GTM Container ID", reason: "Requires GTM Container ID. Find it in Google Tag Manager (format: GTM-XXXXXXX)." }],
-  B2: [{ field: "gtmId", label: "GTM Container ID", reason: "Requires GTM Container ID. Find it in Google Tag Manager (format: GTM-XXXXXXX)." }],
-  B3: [{ field: "gtmId", label: "GTM Container ID", reason: "Requires GTM Container ID. Find it in Google Tag Manager (format: GTM-XXXXXXX)." }],
-  B4: [{ field: "gtmId", label: "GTM Container ID", reason: "Requires GTM Container ID. Find it in Google Tag Manager (format: GTM-XXXXXXX)." }],
-  B5: [{ field: "gtmId", label: "GTM Container ID", reason: "Requires GTM Container ID. Find it in Google Tag Manager (format: GTM-XXXXXXX)." }],
-  C1: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Requires Cookiebot ID. If 'Detect IDs' didn't find it, Cookiebot may be loaded through GTM (the recommended setup) - connect the GTM API to check. Or enter the ID manually from the Cookiebot admin panel." }],
-  C2: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Requires Cookiebot ID. If 'Detect IDs' didn't find it, Cookiebot may be loaded through GTM (the recommended setup) - connect the GTM API to check. Or enter the ID manually from the Cookiebot admin panel." }],
-  C3: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Requires Cookiebot ID. If 'Detect IDs' didn't find it, Cookiebot may be loaded through GTM (the recommended setup) - connect the GTM API to check. Or enter the ID manually from the Cookiebot admin panel." }],
-  C4: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Requires Cookiebot ID. If 'Detect IDs' didn't find it, Cookiebot may be loaded through GTM (the recommended setup) - connect the GTM API to check. Or enter the ID manually from the Cookiebot admin panel." }],
-  C5: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Requires Cookiebot ID. If 'Detect IDs' didn't find it, Cookiebot may be loaded through GTM (the recommended setup) - connect the GTM API to check. Or enter the ID manually from the Cookiebot admin panel." }],
-  G3: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Requires Cookiebot ID. If 'Detect IDs' didn't find it, Cookiebot may be loaded through GTM (the recommended setup) - connect the GTM API to check. Or enter the ID manually from the Cookiebot admin panel." }],
-  H1: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Requires Cookiebot ID. If 'Detect IDs' didn't find it, Cookiebot may be loaded through GTM (the recommended setup) - connect the GTM API to check. Or enter the ID manually from the Cookiebot admin panel." }],
-  H2: [{ field: "cookiebotId", label: "Cookiebot ID", reason: "Requires Cookiebot ID. If 'Detect IDs' didn't find it, Cookiebot may be loaded through GTM (the recommended setup) - connect the GTM API to check. Or enter the ID manually from the Cookiebot admin panel." }],
-  H3: [{ field: "gtmId", label: "GTM Container ID", reason: "Requires GTM Container ID. Find it in Google Tag Manager (format: GTM-XXXXXXX)." }],
-  H4: [{ field: "gtmId", label: "GTM Container ID", reason: "Requires GTM Container ID. Find it in Google Tag Manager (format: GTM-XXXXXXX)." }],
-  H5: [{ field: "gtmId", label: "GTM Container ID", reason: "Requires GTM Container ID. Find it in Google Tag Manager (format: GTM-XXXXXXX)." }],
+  A3: [{ field: "gtmId", label: "GTM Container ID", reason: GTM_REASON }],
+  A4: [{ field: "gtmId", label: "GTM Container ID", reason: GTM_REASON }],
+  A5: [{ field: "gtmId", label: "GTM Container ID", reason: GTM_REASON }],
+  B2: [{ field: "gtmId", label: "GTM Container ID", reason: GTM_REASON }],
+  B3: [{ field: "gtmId", label: "GTM Container ID", reason: GTM_REASON }],
+  B4: [{ field: "gtmId", label: "GTM Container ID", reason: GTM_REASON }],
+  B5: [{ field: "gtmId", label: "GTM Container ID", reason: GTM_REASON }],
+  C1: [{ field: "cookiebotId", label: "Cookiebot ID", reason: COOKIEBOT_REASON }],
+  C2: [{ field: "cookiebotId", label: "Cookiebot ID", reason: COOKIEBOT_REASON }],
+  C3: [{ field: "cookiebotId", label: "Cookiebot ID", reason: COOKIEBOT_REASON }],
+  C4: [{ field: "cookiebotId", label: "Cookiebot ID", reason: COOKIEBOT_REASON }],
+  C5: [{ field: "cookiebotId", label: "Cookiebot ID", reason: COOKIEBOT_REASON }],
+  G3: [{ field: "cookiebotId", label: "Cookiebot ID", reason: COOKIEBOT_REASON }],
+  H1: [{ field: "cookiebotId", label: "Cookiebot ID", reason: COOKIEBOT_REASON }],
+  H2: [{ field: "cookiebotId", label: "Cookiebot ID", reason: COOKIEBOT_REASON }],
+  H3: [{ field: "gtmId", label: "GTM Container ID", reason: GTM_REASON }],
+  H4: [{ field: "gtmId", label: "GTM Container ID", reason: GTM_REASON }],
+  H5: [{ field: "gtmId", label: "GTM Container ID", reason: GTM_REASON }],
 };

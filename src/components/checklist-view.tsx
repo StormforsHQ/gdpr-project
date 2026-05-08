@@ -87,13 +87,13 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   useEffect(() => {
     if (!scanning) return;
     const messages = [
-      "Scanning homepage...",
-      "Checking sitemap...",
-      "Scanning subpages...",
-      "Checking forms and embeds...",
-      "Analyzing consent setup...",
-      "Reviewing scripts...",
-      "Almost done...",
+      "Analyzing page...",
+      "Checking scripts and embeds...",
+      "Scanning for forms...",
+      "Reviewing consent setup...",
+      "Checking cookie configuration...",
+      "Verifying tag management...",
+      "Wrapping up...",
     ];
     let index = 0;
     setScanStatus(messages[0]);

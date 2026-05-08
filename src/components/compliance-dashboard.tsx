@@ -32,6 +32,13 @@ const chartConfig = {
   notChecked: { label: "Not checked", color: "#60a5fa99" },
 } satisfies ChartConfig;
 
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function formatDate(dateStr: string): string {
+  const [, m, d] = dateStr.split("-");
+  return `${MONTHS[parseInt(m, 10) - 1]} ${parseInt(d, 10)}`;
+}
+
 export function ComplianceDashboard({ data }: { data: DashboardData }) {
   const { current, baseline, history, auditType } = data;
   const checkedCount = current.total - current.notChecked;
@@ -107,7 +114,7 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
                   <XAxis
                     dataKey="date"
                     tick={{ fontSize: 11 }}
-                    tickFormatter={(v) => v.slice(5)}
+                    tickFormatter={formatDate}
                   />
                   <YAxis tick={{ fontSize: 11 }} />
                   <ChartTooltip content={<ChartTooltipContent />} />
@@ -161,7 +168,7 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
             )}
             {baseline && history.length > 1 && (
               <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground border-t pt-3">
-                <span>Since baseline ({baseline.date.slice(5)}):</span>
+                <span>Since baseline ({formatDate(baseline.date)}):</span>
                 <span className="text-green-600 dark:text-green-400 font-medium">
                   +{current.ok - baseline.ok} compliant
                 </span>

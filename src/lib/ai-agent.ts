@@ -420,18 +420,19 @@ ${text.slice(0, 8000)}`
 
   I2: async (_html, text, url) => {
     const raw = await callOpenRouter(
-      `You are a GDPR compliance auditor checking if a privacy policy is available in all languages the website uses.
+      `You are a GDPR compliance auditor checking if a website is multilingual, and if so, whether the privacy policy is available in all languages.
 ${RESPONSE_FORMAT_INSTRUCTION}`,
-      `Analyze this page to determine:
-1. What language(s) does the site content use?
-2. Are there language switcher links visible?
-3. If the site has content in multiple languages, is there evidence of a translated privacy policy?
+      `First, determine if this website is multilingual. Look for:
+- Language switcher elements (flags, "EN/SV/DE" links, language dropdowns)
+- hreflang meta tags indicating multiple language versions
+- Navigation items or content in multiple languages
+- URL patterns like /en/, /sv/, /de/
 
-Look for:
-- Language switcher elements (flags, "EN/SV/DE" links)
-- hreflang meta tags
-- Multiple language versions of navigation items
-- Privacy policy links in different languages
+DECISION LOGIC:
+- If the site is SINGLE-LANGUAGE (no signs of multiple languages): return status "ok" with summary explaining the site appears to be single-language so no translation is needed.
+- If the site IS multilingual: check whether the privacy policy is available in each language. If translations are missing, return status "issue" with findings listing which languages lack a privacy policy.
+
+IMPORTANT: A site being in only one language (whether Swedish, English, or any other) is perfectly fine. The check only fails when a site serves content in multiple languages but the privacy policy is not available in all of them.
 
 URL: ${url}
 Page content:

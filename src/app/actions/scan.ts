@@ -50,7 +50,8 @@ export async function runPageScan(url: string, siteId?: string): Promise<ScanRes
   }
 
   try {
-    const result = await scanSite(url);
+    const site = siteId ? await prisma.site.findUnique({ where: { id: siteId }, select: { id: true, platform: true, cookiebotId: true, gtmId: true, webflowId: true, url: true } }) : null;
+    const result = await scanSite(url, site?.platform);
 
     // If GTM ID found but no Cookiebot ID in HTML, try the GTM API
     if (result.detectedGtmId && !result.detectedCookiebotId && isGtmConfigured()) {
@@ -62,34 +63,31 @@ export async function runPageScan(url: string, siteId?: string): Promise<ScanRes
       }
     }
 
-    if (siteId) {
+    if (siteId && site) {
       try {
-        const site = await prisma.site.findUnique({ where: { id: siteId } });
-        if (site) {
-          const updates: { cookiebotId?: string; gtmId?: string; webflowId?: string } = {};
-          if (result.detectedCookiebotId && site.cookiebotId !== result.detectedCookiebotId) {
-            updates.cookiebotId = result.detectedCookiebotId;
-          }
-          if (result.detectedGtmId && site.gtmId !== result.detectedGtmId) {
-            updates.gtmId = result.detectedGtmId;
-          }
-          if (!site.webflowId && site.platform === "webflow") {
-            const domain = site.url.replace(/^www\./, "").toLowerCase();
-            const match = await prisma.site.findFirst({
-              where: {
-                platform: "webflow",
-                webflowId: { not: null },
-                url: { contains: domain },
-                id: { not: site.id },
-              },
-              select: { webflowId: true },
-            });
-            if (match?.webflowId) updates.webflowId = match.webflowId;
-          }
-          if (Object.keys(updates).length > 0) {
-            await prisma.site.update({ where: { id: siteId }, data: updates });
-            revalidatePath(`/sites/${siteId}`);
-          }
+        const updates: { cookiebotId?: string; gtmId?: string; webflowId?: string } = {};
+        if (result.detectedCookiebotId && site.cookiebotId !== result.detectedCookiebotId) {
+          updates.cookiebotId = result.detectedCookiebotId;
+        }
+        if (result.detectedGtmId && site.gtmId !== result.detectedGtmId) {
+          updates.gtmId = result.detectedGtmId;
+        }
+        if (!site.webflowId && site.platform === "webflow") {
+          const domain = site.url.replace(/^www\./, "").toLowerCase();
+          const match = await prisma.site.findFirst({
+            where: {
+              platform: "webflow",
+              webflowId: { not: null },
+              url: { contains: domain },
+              id: { not: site.id },
+            },
+            select: { webflowId: true },
+          });
+          if (match?.webflowId) updates.webflowId = match.webflowId;
+        }
+        if (Object.keys(updates).length > 0) {
+          await prisma.site.update({ where: { id: siteId }, data: updates });
+          revalidatePath(`/sites/${siteId}`);
         }
       } catch (dbErr) {
         console.error("Failed to auto-save detected IDs:", dbErr);

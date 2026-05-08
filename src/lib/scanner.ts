@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { normalizeUrl } from "@/lib/url";
+import { detectVendors, type DetectedVendor } from "@/lib/vendors";
 
 export interface ScanFinding {
   element: string;
@@ -23,6 +24,7 @@ export interface ScanResult {
   detectedCookiebotId?: string;
   detectedGtmId?: string;
   pagesScanned?: number;
+  detectedVendors?: DetectedVendor[];
 }
 
 const KNOWN_TRACKING_SCRIPTS = [
@@ -204,7 +206,7 @@ function mergePageSpecificResults(allResults: CheckResult[][]): CheckResult[] {
   return [...merged.values()];
 }
 
-export async function scanSite(url: string): Promise<ScanResult> {
+export async function scanSite(url: string, platform?: string | null): Promise<ScanResult> {
   const normalizedUrl = normalizeUrl(url);
 
   const homePage = await fetchPage(normalizedUrl);
@@ -221,7 +223,12 @@ export async function scanSite(url: string): Promise<ScanResult> {
   const detectedCookiebotId = detectCookiebotId(home$);
   const detectedGtmId = detectGtmId(home$, homeHtml);
 
+  const allScripts = getScriptSources(home$);
+  const vendors = detectVendors(allScripts, platform);
+
   const siteWideChecks = runSiteWideChecks(home$, homeHtml, detectedGtmId);
+  siteWideChecks.push(checkJ1(vendors), checkJ3(vendors));
+
   const homePageSpecific = runPageSpecificChecks(home$, homeHtml, normalizedUrl);
 
   const { fetchSitemapUrls } = await import("@/lib/sitemap");
@@ -245,6 +252,7 @@ export async function scanSite(url: string): Promise<ScanResult> {
     detectedCookiebotId: detectedCookiebotId || undefined,
     detectedGtmId: detectedGtmId || undefined,
     pagesScanned: 1 + subpageUrls.length,
+    detectedVendors: vendors.length > 0 ? vendors : undefined,
   };
 }
 
@@ -961,6 +969,96 @@ function checkB5($: cheerio.CheerioAPI, html: string): CheckResult {
     severity: "info",
   });
   return { checkKey: "B5", status: "na", findings, summary: "Cannot determine Consent Mode V2 from HTML alone - verify in GTM" };
+}
+
+function checkJ1(vendors: DetectedVendor[]): CheckResult {
+  const findings: ScanFinding[] = [];
+
+  if (vendors.length === 0) {
+    return {
+      checkKey: "J1",
+      status: "na",
+      findings: [{ element: "", detail: "No third-party services detected on the site", severity: "info" }],
+      summary: "No vendors detected to check",
+    };
+  }
+
+  const covered = vendors.filter((v) => v.dpaStatus === "covered-by-tos");
+  const needsCheck = vendors.filter((v) => v.dpaStatus === "needs-verification");
+
+  for (const v of covered) {
+    findings.push({
+      element: "",
+      detail: `${v.name} - DPA already covered by their terms of service`,
+      severity: "info",
+    });
+  }
+
+  for (const v of needsCheck) {
+    findings.push({
+      element: "",
+      detail: `${v.name} - needs verification. ${v.dpaNote}`,
+      severity: "warning",
+    });
+  }
+
+  const status = needsCheck.length > 0 ? "issue" : "ok";
+  const summary = needsCheck.length > 0
+    ? `${vendors.length} service(s) detected: ${covered.length} covered by ToS, ${needsCheck.length} need client verification`
+    : `${vendors.length} service(s) detected, all have DPAs covered by their terms of service`;
+
+  return { checkKey: "J1", status, findings, summary };
+}
+
+function checkJ3(vendors: DetectedVendor[]): CheckResult {
+  const findings: ScanFinding[] = [];
+  const usVendors = vendors.filter((v) => v.country === "us");
+
+  if (usVendors.length === 0) {
+    return {
+      checkKey: "J3",
+      status: "ok",
+      findings: [{ element: "", detail: "No US-based services detected on the site", severity: "info" }],
+      summary: "No US vendors detected - no data transfer concerns",
+    };
+  }
+
+  const certified = usVendors.filter((v) => v.dpfCertified === true);
+  const notCertified = usVendors.filter((v) => v.dpfCertified === false);
+  const unknown = usVendors.filter((v) => v.dpfCertified === undefined);
+
+  for (const v of certified) {
+    findings.push({
+      element: "",
+      detail: `${v.name} - DPF-certified. ${v.dpfNote || ""}`.trim(),
+      severity: "info",
+    });
+  }
+
+  for (const v of notCertified) {
+    findings.push({
+      element: "",
+      detail: `${v.name} - NOT DPF-certified. ${v.dpfNote || "Alternative transfer mechanisms (SCCs) are needed."}`.trim(),
+      severity: "error",
+    });
+  }
+
+  for (const v of unknown) {
+    findings.push({
+      element: "",
+      detail: `${v.name} - DPF status unknown. Check dataprivacyframework.gov manually.`,
+      severity: "warning",
+    });
+  }
+
+  const status = notCertified.length > 0 || unknown.length > 0 ? "issue" : "ok";
+  const parts: string[] = [];
+  if (certified.length > 0) parts.push(`${certified.length} certified`);
+  if (notCertified.length > 0) parts.push(`${notCertified.length} not certified`);
+  if (unknown.length > 0) parts.push(`${unknown.length} unknown`);
+  const summary = `${usVendors.length} US service(s) detected: ${parts.join(", ")}`;
+
+  return { checkKey: "J3", status, findings, summary };
 }
 
 export function detectGtmId($: cheerio.CheerioAPI, html: string): string | null {

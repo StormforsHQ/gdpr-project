@@ -358,7 +358,6 @@ ${forms.slice(0, 8000)}${scanContext}`
     const bannerSelectors = [
       "[class*='cookie']", "[class*='consent']", "[class*='gdpr']",
       "[id*='cookie']", "[id*='consent']", "[id*='CybotCookiebot']",
-      "[class*='banner']", "[class*='notice']",
     ];
     let bannerHtml = "";
     for (const sel of bannerSelectors) {
@@ -373,7 +372,7 @@ ${forms.slice(0, 8000)}${scanContext}`
       if (g1Ok) {
         return {
           status: "blocked" as const,
-          findings: [{ detail: "The consent banner can't be checked automatically because it loads after the page renders. Open the site in a browser and check that the Accept and Reject buttons are the same size and equally easy to find.", severity: "warning" as const }],
+          findings: [{ detail: "The consent banner can't be checked automatically because it loads after the page renders. Open the site in a browser and check: is 'Allow all' a big colorful button while 'Deny' is just an outline or text link? They must look equally clickable - same size, same visual weight. IMY fined companies in 2025 for exactly this.", severity: "warning" as const }],
           summary: "Check in browser: are Accept and Reject buttons equally visible?",
         };
       }

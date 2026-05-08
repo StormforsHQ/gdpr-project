@@ -86,6 +86,7 @@ export async function saveCheckResult(
     create: { auditId, checkKey, status, notes, source },
   });
 
+  revalidatePath("/", "layout");
   return result;
 }
 
@@ -126,6 +127,7 @@ export async function saveCheckResults(
     )
   );
 
+  revalidatePath("/", "layout");
   return results;
 }
 
@@ -188,6 +190,7 @@ export async function resetAllChecks(auditId: string): Promise<{ success: boolea
     await prisma.scanRun.deleteMany({ where: { auditId } });
     await prisma.auditSnapshot.deleteMany({ where: { auditId } });
     revalidatePath("/sites");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch {
     return { success: false };

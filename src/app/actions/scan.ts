@@ -180,11 +180,11 @@ export async function runGtmScan(gtmId: string): Promise<CheckResult[]> {
     return runGtmChecks(tags, triggers);
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
-    const isAccessDenied = /forbidden|403|permission|access/i.test(msg);
-    const detail = isAccessDenied
-      ? `Our Google account probably doesn't have access to this GTM container (${gtmId}). This usually means the client manages their own GTM. To run these checks: ask the client to grant read access to our Google account, or log into their GTM at tagmanager.google.com and check these items manually.`
+    const isNoAccess = /forbidden|403|permission|access|not found/i.test(msg);
+    const detail = isNoAccess
+      ? `Our Google account doesn't have access to this GTM container (${gtmId}). This usually means the client manages their own GTM. To run these checks: ask the client to grant read access to our Google account, or log into their GTM at tagmanager.google.com and check these items manually.`
       : `GTM API error: ${msg}`;
-    return gtmFailureResults(detail, isAccessDenied ? "GTM access denied" : "GTM scan failed");
+    return gtmFailureResults(detail, isNoAccess ? "No access to GTM container" : "GTM scan failed");
   }
 }
 

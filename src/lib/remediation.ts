@@ -302,7 +302,7 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   A3: {
     plainExplanation: "Cookiebot needs to be the very first thing that runs on the page so visitors see the consent banner before any tracking starts. In GTM, this means using the 'Consent Initialization' trigger, which fires before 'All Pages' and everything else.",
     steps: [
-      { instruction: "Open GTM > Tags > find the Cookiebot CMP tag", platform: "all" },
+      { instruction: "In GTM, open the site's container workspace and go to Tags. Find the Cookiebot CMP tag", platform: "all" },
       { instruction: "Click on the tag and check its trigger - it should be 'Consent Initialization - All Pages'", platform: "all" },
       { instruction: "If the trigger is 'All Pages' or something else: change it to 'Consent Initialization - All Pages'*", platform: "all", needsDevOrLegal: true },
       { instruction: "If no 'Consent Initialization' trigger exists: create one (Trigger Type > Other > Consent Initialization)", platform: "all" },
@@ -317,7 +317,7 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   A4: {
     plainExplanation: "Cookiebot offers an official GTM template in the Template Gallery that handles Google Consent Mode V2 automatically. Custom HTML implementations often miss consent signals, meaning Google doesn't know whether the visitor consented or not.",
     steps: [
-      { instruction: "Open GTM > Tags > find the Cookiebot tag", platform: "all" },
+      { instruction: "In GTM, open the site's container workspace and go to Tags. Find the Cookiebot tag", platform: "all" },
       { instruction: "Check if it's a 'Custom HTML' tag or uses the official 'Cookiebot CMP' template", platform: "all" },
       { instruction: "If Custom HTML: go to Templates > Search Gallery > search 'Cookiebot CMP' and add it", platform: "all" },
       { instruction: "Create a new tag using the Cookiebot CMP template with your Cookiebot ID*", platform: "all", needsDevOrLegal: true },
@@ -347,7 +347,7 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   B2: {
     plainExplanation: "Google's own tags (GA4, Google Ads, Floodlight) already understand Consent Mode - they automatically adjust their behavior based on consent state. Setting them to 'No additional consent required' lets them send anonymous pings even when consent is denied, which is allowed and useful for modeling.",
     steps: [
-      { instruction: "Open GTM > Tags", platform: "all" },
+      { instruction: "In GTM, open the site's container workspace and go to Tags", platform: "all" },
       { instruction: "For each Google tag (GA4, Google Ads, Conversion Linker, etc.): click the tag", platform: "all" },
       { instruction: "Go to Advanced Settings > Consent Settings", platform: "all" },
       { instruction: "Set to 'No additional consent required' (not 'Require additional consent')*", platform: "all", needsDevOrLegal: true },
@@ -360,7 +360,7 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   B3: {
     plainExplanation: "Unlike Google tags, third-party tags (LinkedIn, HotJar, Meta, etc.) don't understand Consent Mode. They fire whenever their trigger activates, regardless of consent. You must explicitly tell GTM to block them until the visitor agrees.",
     steps: [
-      { instruction: "Open GTM > Tags", platform: "all" },
+      { instruction: "In GTM, open the site's container workspace and go to Tags", platform: "all" },
       { instruction: "For each non-Google tag: click the tag > Advanced Settings > Consent Settings", platform: "all" },
       { instruction: "Enable 'Require additional consent'*", platform: "all", needsDevOrLegal: true },
       { instruction: "Add the correct consent type: 'ad_storage' for marketing tags (LinkedIn, Meta, etc.) or 'analytics_storage' for analytics tags (HotJar, Clarity, etc.)*", platform: "all", needsDevOrLegal: true },
@@ -375,7 +375,7 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   B4: {
     plainExplanation: "If a non-Google tag's trigger is 'All Pages', it fires on every page load immediately - before the visitor has seen the consent banner. Even with consent settings on the tag, the 'All Pages' trigger can cause timing issues. Use a consent-aware trigger instead.",
     steps: [
-      { instruction: "Open GTM > Tags > find each non-Google tag", platform: "all" },
+      { instruction: "In GTM, open the site's container workspace and go to Tags. Find each non-Google tag", platform: "all" },
       { instruction: "Check the trigger - if it says 'All Pages', it needs to change", platform: "all" },
       { instruction: "Option 1: Keep 'All Pages' but ensure 'Require additional consent' is set on the tag (simpler, usually sufficient)*", platform: "all", needsDevOrLegal: true },
       { instruction: "Option 2: Create a custom trigger that fires on a consent-granted event (more robust)*", platform: "all", needsDevOrLegal: true },
@@ -387,7 +387,7 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   B5: {
     plainExplanation: "Google Consent Mode V2 is the system that tells Google services whether a visitor has consented. Without it, Google doesn't know the consent state and may either track without permission or block everything. All 4 signals must be transmitting: ad_storage, analytics_storage, ad_user_data, and ad_personalization.",
     steps: [
-      { instruction: "Open GTM > Tags > find the Cookiebot CMP tag", platform: "all" },
+      { instruction: "In GTM, open the site's container workspace and go to Tags. Find the Cookiebot CMP tag", platform: "all" },
       { instruction: "Verify it uses the official Cookiebot template (not Custom HTML) - see check A4", platform: "all" },
       { instruction: "In the tag settings, verify Google Consent Mode is enabled", platform: "all" },
       { instruction: "Check that all 4 default consent states are set: ad_storage=denied, analytics_storage=denied, ad_user_data=denied, ad_personalization=denied", platform: "all" },
@@ -570,7 +570,7 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   H3: {
     plainExplanation: "GTM Preview Mode lets you see exactly which tags fire and which are blocked in real time. The 'decline all' test is the most important one - it proves that rejecting cookies actually prevents tracking.",
     steps: [
-      { instruction: "Open GTM > click 'Preview' in the top right", platform: "all" },
+      { instruction: "In GTM, open the site's container workspace and click 'Preview' (top right)", platform: "all" },
       { instruction: "Enter the site URL and start the preview session", platform: "all" },
       { instruction: "When the consent banner appears: decline all cookies", platform: "all" },
       { instruction: "In the GTM debugger panel: check the 'Consent' tab - all types should show 'Denied'", platform: "all" },

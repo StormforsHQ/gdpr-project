@@ -54,7 +54,7 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
     title: "Official Cookiebot GTM template used",
     why: "The official template from the GTM Template Gallery (by Usercentrics) automatically handles Consent Mode V2 integration. Custom HTML tags miss V2 consent fields and don't receive template updates.",
     steps: [
-      "Open GTM > Tags > click the Cookiebot CMP tag",
+      "In GTM, open the site's container workspace and go to Tags. Click the Cookiebot CMP tag",
       "Check the tag type - it should say 'Cookiebot CMP' (template icon)",
       "If it says 'Custom HTML', it's wrong - the tag needs to be recreated",
       "To fix: delete the Custom HTML tag, go to Templates > Tag Templates > Search Gallery, search 'Cookiebot CMP', add it, then create a new tag using the template",
@@ -67,7 +67,7 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
     title: "AutoBlock is OFF",
     why: "AutoBlock is Cookiebot's own script-blocking mechanism. When using Advanced Consent Mode inside GTM, AutoBlock can prevent Google tags from sending cookieless pings - defeating the purpose of Advanced Mode entirely (you lose conversion modeling data). Consent-aware tags manage their own blocking, so AutoBlock is redundant and potentially harmful. Turning it off is the simpler, recommended approach.",
     steps: [
-      "Open GTM > Tags > click the Cookiebot CMP tag",
+      "In GTM, open the site's container workspace and go to Tags. Click the Cookiebot CMP tag",
       "Look for the AutoBlock setting in the tag configuration",
       "Verify it is set to OFF",
       "If AutoBlock must stay ON (client requirement), ensure GTM and CMP scripts have data-cookieconsent=\"ignore\" attribute to prevent them from being accidentally blocked",
@@ -97,7 +97,7 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
     title: "Google tags: consent overview set",
     why: "Google tags (GA4, Google Ads, Floodlight) support Advanced Consent Mode natively. They self-adapt to the consent state, sending cookieless pings when consent is denied. Setting 'No additional consent required' lets them function in this mode.",
     steps: [
-      "Open GTM > Tags list",
+      "In GTM, open the site's container workspace and go to Tags",
       "Click the shield icon (Consent Overview) at the top of the Tags list",
       "Find all Google tags (GA4 Configuration, Google Ads Conversion, Google Ads Remarketing, Floodlight)",
       "Each should show 'No additional consent required'",
@@ -110,7 +110,7 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
     title: "Non-Google tags: consent gated",
     why: "Non-Google tags (Meta Pixel, LinkedIn, HotJar, etc.) don't support Google's Consent Mode. They must be blocked until the user grants consent. There are two ways to do this: via consent settings (Consent Overview) or via consent-aware triggers. Both work, but using consent settings is recommended as defense in depth.",
     steps: [
-      "Open GTM and click the shield icon (top right) to open Consent Overview",
+      "In GTM, open the site's container workspace, go to Tags, and click the shield icon (top right) to open Consent Overview",
       "Look at the 'Consent Not Configured' section for tags without consent settings",
       "Click a tag name to configure it",
       "Set 'Additional Consent Checks' to 'Require additional consent for tag to fire'",
@@ -131,7 +131,7 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
     title: "Non-Google tag triggers correct",
     why: "Non-Google tags must use the cookie_consent_update trigger, not 'All Pages'. The cookie_consent_update event fires only after the user makes a consent choice, ensuring these tags only run with explicit permission.",
     steps: [
-      "Open GTM > Tags list",
+      "In GTM, open the site's container workspace and go to Tags",
       "Click each non-Google tag",
       "Check the Triggering section",
       "The trigger must be 'cookie_consent_update' (custom event), NOT 'All Pages'",
@@ -555,7 +555,7 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
     title: "GTM Preview Mode test: decline all",
     why: "This is the definitive test that consent denial actually works. GTM Preview Mode shows exactly which tags fired and which didn't, and the consent state at each point.",
     steps: [
-      "Open GTM > Preview (connects Tag Assistant at tagassistant.google.com)",
+      "In GTM, open the site's container workspace and click Preview (top right) to connect Tag Assistant",
       "Enter the site URL and click Connect",
       "In a new incognito window, the site opens with GTM Preview connected",
       "Click the 'Consent Initialization' event in Tag Assistant",

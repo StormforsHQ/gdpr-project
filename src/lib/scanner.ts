@@ -976,10 +976,10 @@ function checkB5($: cheerio.CheerioAPI, html: string): CheckResult {
 
   findings.push({
     element: "page",
-    detail: "No Google Consent Mode V2 configuration detected in page HTML. Needs GTM Container ID to check the Cookiebot template settings.",
+    detail: "No Consent Mode V2 configuration found in the page HTML. This is usually configured inside GTM via the Cookiebot CMP template. To verify: add the GTM Container ID in Edit Site (click 'Detect IDs' or enter it manually), then run 'Scan Site' again - the GTM API scan will check the Cookiebot template settings.",
     severity: "info",
   });
-  return { checkKey: "B5", status: "blocked", findings, summary: "Needs GTM to verify Consent Mode V2" };
+  return { checkKey: "B5", status: "blocked", findings, summary: "Needs GTM Container ID to check Consent Mode" };
 }
 
 function checkJ1(vendors: DetectedVendor[]): CheckResult {

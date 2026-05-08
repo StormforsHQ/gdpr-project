@@ -83,6 +83,7 @@ export function CheckItem({
   const missingRequirements = siteFields
     ? requirements.filter((r) => !siteFields[r.field])
     : [];
+  const isBlocked = missingRequirements.length > 0 && status === "not_checked";
 
   return (
     <div className="border-b last:border-b-0">
@@ -90,7 +91,9 @@ export function CheckItem({
         className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-accent/30 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        {STATUS_ICONS[status]}
+        {isBlocked
+          ? <CircleDashed className="h-4 w-4 text-amber-500" />
+          : STATUS_ICONS[status]}
         <span className="text-xs font-mono text-muted-foreground w-7 shrink-0">
           {check.key}
         </span>
@@ -121,13 +124,13 @@ export function CheckItem({
             </TooltipContent>
           </Tooltip>
         )}
-        {missingRequirements.length > 0 && status === "not_checked" && (
+        {isBlocked && (
           <Tooltip>
             <TooltipTrigger>
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs text-xs text-black dark:text-black">
-              Needs: {missingRequirements.map((r) => r.label).join(", ")}
+              Blocked - needs: {missingRequirements.map((r) => r.label).join(", ")}
             </TooltipContent>
           </Tooltip>
         )}

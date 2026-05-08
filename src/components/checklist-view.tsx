@@ -9,6 +9,7 @@ import { CheckItem, type FixInfo } from "@/components/check-item";
 import { CheckGuideDrawer } from "@/components/check-guide-drawer";
 import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, AUTOMATION_CONFIG, type CheckStatus } from "@/lib/checklist";
+import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan, runGtmScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
 import { saveCheckResult, saveInternalNote, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType, resetAllChecks } from "@/app/actions/audits";
@@ -577,6 +578,12 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const totalOk = visibleStates.filter(([, s]) => s.status === "ok").length;
   const totalNa = visibleStates.filter(([, s]) => s.status === "na").length;
   const totalNotChecked = totalChecks - totalChecked;
+  const totalBlocked = visibleStates.filter(([key, s]) => {
+    if (s.status !== "not_checked") return false;
+    const reqs = CHECK_REQUIREMENTS[key];
+    if (!reqs || reqs.length === 0) return false;
+    return reqs.some((r) => !siteFields?.[r.field]);
+  }).length;
   const totalWithComments = visibleStates.filter(([, s]) => s.notes.trim()).length;
   const totalWithInternalNotes = visibleStates.filter(([, s]) => s.internalNote.trim()).length;
 
@@ -601,6 +608,12 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     const matchesStatus = statusFilters.length === 0 || statusFilters.some((f) => {
       if (f === "has_comments") return state.notes.trim().length > 0;
       if (f === "has_internal_note") return state.internalNote.trim().length > 0;
+      if (f === "blocked") {
+        if (state.status !== "not_checked") return false;
+        const reqs = CHECK_REQUIREMENTS[key];
+        if (!reqs || reqs.length === 0) return false;
+        return reqs.some((r) => !siteFields?.[r.field]);
+      }
       return f === state.status;
     });
     const matchesAuto = autoFilters.length === 0 || autoFilters.includes(checkAutomation.get(key) || "");
@@ -825,6 +838,16 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               className={`cursor-pointer text-xs opacity-50 ${activeFilters.has("issue") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
             >
               Issues (0)
+            </Badge>
+          </button>
+        )}
+        {totalBlocked > 0 && (
+          <button onClick={() => toggleFilter("blocked")}>
+            <Badge
+              variant="secondary"
+              className={`cursor-pointer text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 ${activeFilters.has("blocked") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+            >
+              Blocked ({totalBlocked})
             </Badge>
           </button>
         )}

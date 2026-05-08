@@ -301,6 +301,9 @@ function isFrameworkScript($el: ReturnType<cheerio.CheerioAPI>, src: string): bo
   if (/Typekit\.load/i.test(src)) return true;
   if (/w-mod-/i.test(src) && src.length < 200) return true;
   if (/\.wf-force-outline-none/i.test(src)) return true;
+  if (/ajax\.googleapis\.com\/ajax\/libs\/webfont/i.test(src)) return true;
+  if (/WebFont\.load/i.test(src)) return true;
+  if (/scrollRestoration/i.test(src)) return true;
 
   // Other platforms
   if (/assets\.squarespace/i.test(src)) return true;

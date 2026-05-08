@@ -182,6 +182,18 @@ export async function deleteAllScanRuns(auditId: string): Promise<{ success: boo
   }
 }
 
+export async function resetAllChecks(auditId: string): Promise<{ success: boolean }> {
+  try {
+    await prisma.checkResult.deleteMany({ where: { auditId } });
+    await prisma.scanRun.deleteMany({ where: { auditId } });
+    await prisma.auditSnapshot.deleteMany({ where: { auditId } });
+    revalidatePath("/sites");
+    return { success: true };
+  } catch {
+    return { success: false };
+  }
+}
+
 export async function getAuditProgress(auditId: string) {
   const results = await prisma.checkResult.findMany({
     where: { auditId },

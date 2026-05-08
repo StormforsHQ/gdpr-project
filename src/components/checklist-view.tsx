@@ -11,7 +11,7 @@ import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan, runGtmScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
-import { saveCheckResult, saveInternalNote, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType } from "@/app/actions/audits";
+import { saveCheckResult, saveInternalNote, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType, resetAllChecks } from "@/app/actions/audits";
 import { getFixAvailability, applyFix, analyzeFix, verifyGtmSetup, pushGtmSnippetToSite, deleteApiManagedScript, type FixAvailability, type FixAnalysisResult } from "@/app/actions/fixes";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
 import {
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useErrorLog } from "@/components/error-log";
 import { ChecklistLegend } from "@/components/checklist-legend";
-import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X, RotateCcw } from "lucide-react";
 
 
 type CheckEntry = { status: CheckStatus; notes: string; internalNote: string; source: "manual" | "scan" | "ai" };
@@ -147,6 +147,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const [fixingChecks, setFixingChecks] = useState<Set<string>>(new Set());
   const [lastSkippedCount, setLastSkippedCount] = useState(0);
   const [fixConfirm, setFixConfirm] = useState<{ checkKey: string; warning: string; label: string } | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<FixAnalysisResult | null>(null);
 
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -842,6 +843,15 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             {errors.length} error{errors.length !== 1 ? "s" : ""} - see error log in Settings
           </span>
         )}
+        {auditId && totalChecked > 0 && (
+          <button
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors ml-auto"
+            onClick={() => setShowResetConfirm(true)}
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset all checks
+          </button>
+        )}
       </div>
 
       {filteredChecklist.map((category) => {
@@ -1037,6 +1047,36 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirm}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset all checks?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">This will clear all check results, notes, scan history, and snapshots for this audit. Site information (name, URL, IDs) will be kept.</span>
+              <span className="block text-destructive font-medium">This cannot be undone.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!auditId) return;
+                const result = await resetAllChecks(auditId);
+                if (result.success) {
+                  setCheckStates({});
+                  setScanResult(null);
+                  setScanRuns([]);
+                  setShowResetConfirm(false);
+                }
+              }}
+            >
+              Reset everything
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

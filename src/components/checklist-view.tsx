@@ -26,7 +26,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useErrorLog } from "@/components/error-log";
 import { ChecklistLegend } from "@/components/checklist-legend";
-import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X, RotateCcw } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X, RotateCcw, Filter } from "lucide-react";
 
 
 type CheckEntry = { status: CheckStatus; notes: string; internalNote: string; source: "manual" | "scan" | "ai" };
@@ -846,29 +854,56 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             Internal notes ({totalWithInternalNotes})
           </Badge>
         </button>
-        <span className="text-muted-foreground text-xs">|</span>
-        {Object.entries(
-          Array.from(checkAutomation.values()).reduce<Record<string, number>>((acc, type) => {
+        {(() => {
+          const typeCounts = Array.from(checkAutomation.values()).reduce<Record<string, number>>((acc, type) => {
             acc[type] = (acc[type] || 0) + 1;
             return acc;
-          }, {})
-        )
-          .sort(([, a], [, b]) => b - a)
-          .map(([type, count]) => {
-            const config = AUTOMATION_CONFIG[type as keyof typeof AUTOMATION_CONFIG];
-            if (!config) return null;
-            const filterKey = `auto:${type}`;
-            return (
-              <button key={type} onClick={() => toggleFilter(filterKey)}>
+          }, {});
+          const activeAutoFilters = Array.from(activeFilters).filter((f) => f.startsWith("auto:"));
+          const activeLabel = activeAutoFilters.length === 1
+            ? AUTOMATION_CONFIG[activeAutoFilters[0].slice(5) as keyof typeof AUTOMATION_CONFIG]?.label
+            : activeAutoFilters.length > 1
+              ? `${activeAutoFilters.length} types`
+              : null;
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center gap-1.5 outline-none">
                 <Badge
                   variant="secondary"
-                  className={`cursor-pointer text-xs ${config.className} ${activeFilters.has(filterKey) ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+                  className={`cursor-pointer text-xs gap-1 ${activeAutoFilters.length > 0 ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
                 >
-                  {config.label} ({count})
+                  <Filter className="h-3 w-3" />
+                  {activeLabel ?? "Check type"}
+                  <ChevronDown className="h-3 w-3 opacity-50" />
                 </Badge>
-              </button>
-            );
-          })}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuLabel className="text-xs">Filter by check type</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {Object.entries(typeCounts)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([type, count]) => {
+                    const config = AUTOMATION_CONFIG[type as keyof typeof AUTOMATION_CONFIG];
+                    if (!config) return null;
+                    const filterKey = `auto:${type}`;
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={type}
+                        checked={activeFilters.has(filterKey)}
+                        onCheckedChange={() => toggleFilter(filterKey)}
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <span className={config.className.replace(/bg-\S+/g, "").trim()}>
+                          {config.label}
+                        </span>
+                        <span className="ml-auto text-muted-foreground text-xs">({count})</span>
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        })()}
         {activeFilters.size > 0 && (
           <button
             onClick={() => setActiveFilters(new Set())}

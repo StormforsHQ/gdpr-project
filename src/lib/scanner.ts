@@ -326,6 +326,19 @@ function isFrameworkScript($el: ReturnType<cheerio.CheerioAPI>, src: string): bo
   return false;
 }
 
+function isTrackingOrPrivacyConcern(src: string): string | null {
+  const allPatterns = [
+    ...KNOWN_TRACKING_SCRIPTS,
+    ...GHOST_SCRIPTS,
+    ...CHAT_WIDGETS,
+    ...SOCIAL_EMBEDS,
+  ];
+  for (const p of allPatterns) {
+    if (p.pattern.test(src)) return p.name;
+  }
+  return null;
+}
+
 function checkA1($: cheerio.CheerioAPI, html: string): CheckResult {
   const findings: ScanFinding[] = [];
   const headScripts = $("head script").toArray();
@@ -335,22 +348,35 @@ function checkA1($: cheerio.CheerioAPI, html: string): CheckResult {
     return !isGtmScript(src) && !isCookiebotScript(src) && !isJsonLd($(el)) && !isFrameworkScript($(el), src) && src.trim().length > 0;
   });
 
+  let trackingCount = 0;
   for (const el of nonAllowed) {
     const src = $(el).attr("src") || $(el).html()?.slice(0, 100) || "";
-    findings.push({
-      element: `<script src="${src}">`,
-      detail: "Non-GTM script found in <head>. Should be managed through GTM.",
-      severity: "error",
-    });
+    const trackerName = isTrackingOrPrivacyConcern(src);
+    if (trackerName) {
+      trackingCount++;
+      findings.push({
+        element: `<script src="${src}">`,
+        detail: `${trackerName} found in <head>. This is a tracking/analytics script that should be loaded through GTM so it respects consent settings.`,
+        severity: "error",
+      });
+    } else {
+      findings.push({
+        element: `<script src="${src}">`,
+        detail: "External script in <head> - not a known tracker. Review manually if it sets cookies or collects user data.",
+        severity: "info",
+      });
+    }
   }
 
   return {
     checkKey: "A1",
-    status: findings.length === 0 ? "ok" : "issue",
+    status: trackingCount > 0 ? "issue" : "ok",
     findings,
-    summary: findings.length === 0
-      ? "Only GTM (and Cookiebot/JSON-LD) scripts found in <head>"
-      : `${findings.length} non-GTM script(s) found in <head>`,
+    summary: trackingCount > 0
+      ? `${trackingCount} tracking script(s) found in <head> outside GTM`
+      : findings.length > 0
+        ? `No tracking scripts in <head>, but ${findings.length} other external script(s) present (review manually)`
+        : "Only GTM (and Cookiebot/JSON-LD) scripts found in <head>",
   };
 }
 
@@ -363,22 +389,35 @@ function checkA2($: cheerio.CheerioAPI, html: string): CheckResult {
     return !isGtmScript(src) && !isJsonLd($(el)) && !isFrameworkScript($(el), src) && src.trim().length > 0;
   });
 
+  let trackingCount = 0;
   for (const el of nonAllowed) {
     const src = $(el).attr("src") || $(el).html()?.slice(0, 100) || "";
-    findings.push({
-      element: `<script src="${src}">`,
-      detail: "Script found in <body>. Should be managed through GTM.",
-      severity: "warning",
-    });
+    const trackerName = isTrackingOrPrivacyConcern(src);
+    if (trackerName) {
+      trackingCount++;
+      findings.push({
+        element: `<script src="${src}">`,
+        detail: `${trackerName} found in <body>. This is a tracking/analytics script that should be loaded through GTM so it respects consent settings.`,
+        severity: "error",
+      });
+    } else {
+      findings.push({
+        element: `<script src="${src}">`,
+        detail: "External script in <body> - not a known tracker. Review manually if it sets cookies or collects user data.",
+        severity: "info",
+      });
+    }
   }
 
   return {
     checkKey: "A2",
-    status: findings.length === 0 ? "ok" : "issue",
+    status: trackingCount > 0 ? "issue" : "ok",
     findings,
-    summary: findings.length === 0
-      ? "No hardcoded scripts in body/footer"
-      : `${findings.length} script(s) found outside <head>`,
+    summary: trackingCount > 0
+      ? `${trackingCount} tracking script(s) found in <body> outside GTM`
+      : findings.length > 0
+        ? `No tracking scripts in <body>, but ${findings.length} other external script(s) present`
+        : "No hardcoded scripts in body/footer",
   };
 }
 

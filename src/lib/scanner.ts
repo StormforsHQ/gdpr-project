@@ -11,7 +11,7 @@ export interface ScanFinding {
 
 export interface CheckResult {
   checkKey: string;
-  status: "ok" | "issue" | "na" | "blocked";
+  status: "ok" | "issue" | "na" | "blocked" | "client_managed";
   findings: ScanFinding[];
   summary: string;
 }

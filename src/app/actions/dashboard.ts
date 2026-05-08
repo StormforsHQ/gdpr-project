@@ -66,7 +66,7 @@ export async function createSnapshot(auditId: string, trigger: "scan" | "manual"
       const status = result?.status || "not_checked";
       if (status === "ok") { ok++; catOk++; }
       else if (status === "issue") { issues++; catIssues++; }
-      else if (status === "na" || status === "blocked") { na++; catNa++; }
+      else if (status === "na" || status === "blocked" || status === "client_managed") { na++; catNa++; }
       else { notChecked++; catNotChecked++; }
     }
     categoryData.push({
@@ -117,7 +117,7 @@ export async function getDashboardData(auditId: string): Promise<DashboardData |
       const status = result?.status || "not_checked";
       if (status === "ok") { ok++; catOk++; }
       else if (status === "issue") { issues++; catIssues++; }
-      else if (status === "na" || status === "blocked") { na++; catNa++; }
+      else if (status === "na" || status === "blocked" || status === "client_managed") { na++; catNa++; }
       else { notChecked++; catNotChecked++; }
     }
     categories.push({

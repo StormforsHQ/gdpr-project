@@ -33,8 +33,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X, RotateCcw, Filter, Check, MessageSquare } from "lucide-react";
+import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X, RotateCcw, Filter, Check, MessageSquare, UserCircle } from "lucide-react";
 
+
+const MANUAL_GTM_CHECKS = ["H3", "H4", "H5"];
 
 type CheckEntry = { status: CheckStatus; notes: string; internalNote: string; source: "manual" | "scan" | "ai" };
 type CheckState = Record<string, CheckEntry>;
@@ -227,6 +229,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
   const applyCheckResults = (results: CheckResult[], source: "scan" | "ai"): number => {
     let skipped = 0;
+    const hasClientManaged = results.some((r) => r.status === "client_managed");
+
     setCheckStates((prev) => {
       const next = { ...prev };
       for (const check of results) {
@@ -240,6 +244,17 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         next[check.checkKey] = { status, notes: "", internalNote: existingInternalNote, source };
         persistCheck(check.checkKey, status, "", source);
       }
+
+      if (hasClientManaged) {
+        for (const key of MANUAL_GTM_CHECKS) {
+          const existing = prev[key];
+          if (existing?.source === "manual" && existing.status !== "not_checked") continue;
+          const existingInternalNote = prev[key]?.internalNote || "";
+          next[key] = { status: "client_managed", notes: "", internalNote: existingInternalNote, source };
+          persistCheck(key, "client_managed", "", source);
+        }
+      }
+
       return next;
     });
 
@@ -594,6 +609,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     if (!reqs || reqs.length === 0) return false;
     return reqs.some((r) => !siteFields?.[r.field]);
   }).length;
+  const totalClientManaged = visibleStates.filter(([, s]) => s.status === "client_managed").length;
   const totalWithComments = visibleStates.filter(([, s]) => s.notes.trim()).length;
   const totalWithInternalNotes = visibleStates.filter(([, s]) => s.internalNote.trim()).length;
 
@@ -625,6 +641,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         if (!reqs || reqs.length === 0) return false;
         return reqs.some((r) => !siteFields?.[r.field]);
       }
+      if (f === "client_managed") return state.status === "client_managed";
       return f === state.status;
     });
     const matchesAuto = autoFilters.length === 0 || autoFilters.includes(checkAutomation.get(key) || "");
@@ -893,6 +910,16 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             </Badge>
           </button>
         )}
+        {totalClientManaged > 0 && (
+          <button onClick={() => toggleFilter("client_managed")}>
+            <Badge
+              variant="secondary"
+              className={`cursor-pointer text-xs bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 ${activeFilters.has("client_managed") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+            >
+              Client managed? ({totalClientManaged})
+            </Badge>
+          </button>
+        )}
         <button onClick={() => toggleFilter("na")}>
           <Badge
             variant="secondary"
@@ -1009,6 +1036,37 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           </button>
         )}
       </div>
+
+      {totalClientManaged > 0 && (
+        <Card className="border-cyan-500/30 bg-cyan-500/5">
+          <CardContent className="py-4">
+            <div className="flex items-start gap-3">
+              <UserCircle className="h-5 w-5 text-cyan-500 shrink-0 mt-0.5" />
+              <div className="space-y-2">
+                <div>
+                  <p className="text-sm font-medium">Client-managed consent setup detected</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    This site has a GTM container that isn't in our Google account. This usually means the client manages their own consent and tracking setup.
+                    {totalClientManaged} check{totalClientManaged !== 1 ? "s" : ""} can't be verified through our tools and {totalClientManaged !== 1 ? "have" : "has"} been marked as "Client managed?".
+                  </p>
+                </div>
+                <div className="text-xs text-cyan-700 dark:text-cyan-400 space-y-1.5">
+                  <p className="font-medium">How to verify this is actually client-managed:</p>
+                  <ul className="space-y-1 list-disc pl-4">
+                    <li>Open the site in an incognito browser - does a consent banner appear? If yes, they have a consent setup running.</li>
+                    <li>Check the banner - does it say Cookiebot, OneTrust, CookieYes, or another CMP? That tells you what they're using.</li>
+                    <li>In DevTools Console, type <code className="bg-cyan-500/10 px-1 rounded">google_tag_manager</code> - if it returns an object, GTM is active.</li>
+                    <li>Ask the client: "Do you manage your own cookie consent and GTM setup?" - if yes, these checks are their responsibility.</li>
+                  </ul>
+                  <p className="mt-1.5 text-muted-foreground">
+                    If the client wants us to manage GTM, ask them to invite our Google account as a Reader in GTM (Admin &gt; User Management), then re-scan.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {filteredChecklist.map((category) => {
         const isExpanded = expandedCategories.has(category.id);

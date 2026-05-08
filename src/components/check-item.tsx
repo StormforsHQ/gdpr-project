@@ -16,7 +16,7 @@ import { AUTOMATION_CONFIG, RESPONSIBILITY_CONFIG } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { GlossaryText } from "@/components/glossary-text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench, Search, StickyNote, ClipboardList } from "lucide-react";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench, Search, StickyNote, ClipboardList, UserCircle } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -24,6 +24,7 @@ const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   issue: <AlertCircle className="h-4 w-4 text-destructive" />,
   na: <MinusCircle className="h-4 w-4 text-muted-foreground" />,
   blocked: <CircleDashed className="h-4 w-4 text-amber-500" />,
+  client_managed: <UserCircle className="h-4 w-4 text-cyan-500" />,
 };
 
 export interface FixInfo {
@@ -145,6 +146,16 @@ export function CheckItem({
             </TooltipContent>
           </Tooltip>
         )}
+        {status === "client_managed" && (
+          <Tooltip>
+            <TooltipTrigger>
+              <UserCircle className="h-3.5 w-3.5 text-cyan-500 shrink-0" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs text-black dark:text-black">
+              Likely managed by the client. Click to expand for details.
+            </TooltipContent>
+          </Tooltip>
+        )}
         {scanResult && (
           <Button
             variant="ghost"
@@ -192,6 +203,18 @@ export function CheckItem({
               <p className="text-xs text-amber-600 dark:text-amber-400">
                 {scanResult.summary}
               </p>
+            </div>
+          )}
+          {status === "client_managed" && (
+            <div className="flex items-start gap-1.5 p-2.5 rounded-md bg-cyan-500/10 border border-cyan-500/20">
+              <UserCircle className="h-3 w-3 text-cyan-500 mt-0.5 shrink-0" />
+              <div className="text-xs text-cyan-700 dark:text-cyan-400">
+                <p className="font-medium mb-0.5">Likely managed by the client</p>
+                <p>The GTM container on this site isn't in our Google account, which usually means the client manages their own consent and tag setup. These checks need access to the GTM container to run.</p>
+                {scanResult && scanResult.findings.length > 0 && (
+                  <p className="mt-1.5 whitespace-pre-line">{scanResult.findings[0].detail}</p>
+                )}
+              </div>
             </div>
           )}
           {status === "not_checked" && !isBlockedByRequirement && check.manualHint && (
@@ -385,7 +408,7 @@ export function CheckItem({
             >
               <SelectTrigger className="w-36 h-8 text-xs">
                 <SelectValue placeholder="Not checked">
-                  {{ not_checked: "Not checked", ok: "OK", issue: "Issue", na: "N/A", blocked: "Blocked" }[status] ?? status}
+                  {{ not_checked: "Not checked", ok: "OK", issue: "Issue", na: "N/A", blocked: "Blocked", client_managed: "Client managed?" }[status] ?? status}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -394,6 +417,7 @@ export function CheckItem({
                 <SelectItem value="issue">Issue</SelectItem>
                 <SelectItem value="na">N/A</SelectItem>
                 <SelectItem value="blocked">Blocked</SelectItem>
+                <SelectItem value="client_managed">Client managed?</SelectItem>
               </SelectContent>
             </Select>
           </div>

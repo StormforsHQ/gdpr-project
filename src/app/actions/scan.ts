@@ -143,10 +143,10 @@ export async function runCookiebotScan(cookiebotId: string, siteUrl?: string): P
 
 const GTM_CHECK_KEYS = ["A3", "A4", "A5", "B2", "B3", "B4"];
 
-function gtmFailureResults(detail: string, summary: string): CheckResult[] {
+function gtmFailureResults(detail: string, summary: string, status: "blocked" | "client_managed" = "blocked"): CheckResult[] {
   return GTM_CHECK_KEYS.map((checkKey) => ({
     checkKey,
-    status: "blocked" as const,
+    status,
     findings: [{ element: "", detail, severity: "warning" as const }],
     summary,
   }));
@@ -185,7 +185,7 @@ export async function runGtmScan(gtmId: string): Promise<CheckResult[]> {
     const detail = isNoAccess
       ? `We can't see inside this GTM container (${gtmId}) because it's not in our Google account. The client probably manages it themselves.\n\nWhat you can do:\n- Ask the client to invite our Google account as a reader in their GTM (Admin > User Management)\n- Or ask the client to check these items themselves in tagmanager.google.com\n- Or log into the client's GTM directly if they share access`
       : `Something went wrong connecting to the GTM API: ${msg}. Try scanning again - if it keeps failing, check that the GTM OAuth credentials in Settings are still valid.`;
-    return gtmFailureResults(detail, isNoAccess ? "Can't access this GTM container" : "GTM connection error");
+    return gtmFailureResults(detail, isNoAccess ? "Client managed?" : "GTM connection error", isNoAccess ? "client_managed" : "blocked");
   }
 }
 

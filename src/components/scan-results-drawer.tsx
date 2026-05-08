@@ -260,39 +260,6 @@ export function ScanResultsDrawer({
                   </>
                 )}
 
-                {/* Where to check (from check guides) */}
-                {CHECK_GUIDES[effectiveKey] && (
-                  <>
-                    <Separator />
-                    <div>
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5">
-                        <Search className="h-3 w-3" />
-                        Where to check
-                      </h3>
-                      <ol className="space-y-2">
-                        {CHECK_GUIDES[effectiveKey].steps.map((step, i) => {
-                          const isSubStep = step.startsWith("  -");
-                          if (isSubStep) {
-                            return (
-                              <li key={i} className="text-sm leading-relaxed pl-8 text-muted-foreground">
-                                {step.trim().replace(/^- /, "")}
-                              </li>
-                            );
-                          }
-                          return (
-                            <li key={i} className="text-sm leading-relaxed flex gap-3">
-                              <span className="text-xs font-mono text-muted-foreground mt-0.5 shrink-0 w-5 text-right">
-                                {i + 1}.
-                              </span>
-                              <span>{step}</span>
-                            </li>
-                          );
-                        })}
-                      </ol>
-                    </div>
-                  </>
-                )}
-
                 {/* Static remediation steps (non-guided checks) */}
                 {remediation && (
                   <>

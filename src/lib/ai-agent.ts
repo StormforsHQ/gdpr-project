@@ -189,18 +189,56 @@ function formatScanContext(priorResults: CheckResult[]): string {
 
 type AICheckHandler = (html: string, text: string, url: string, scanContext: string) => Promise<AICheckResult>;
 
+function isBenignScript($el: ReturnType<cheerio.CheerioAPI>, src: string, inline: string): boolean {
+  const content = src || inline;
+  if (!content.trim()) return true;
+  if (/googletagmanager\.com\/gtm\.js/i.test(content)) return true;
+  if (/gtm\.start/i.test(content)) return true;
+  if (/consent\.cookiebot\.com|consentcdn\.cookiebot\.com/i.test(content)) return true;
+  if ($el.attr("type") === "application/ld+json") return true;
+  if ($el.attr("type") === "application/json") return true;
+  if ($el.attr("id") === "__NEXT_DATA__") return true;
+  if (/\/_next\/static/i.test(src)) return true;
+
+  // Platform scripts (Webflow, Squarespace, Shopify, HubSpot)
+  if (/webflow\.js|webflow-.*\.js/i.test(src)) return true;
+  if (/Webflow\.push/i.test(content)) return true;
+  if (/cdn\.prod\.website-files\.com\/.+\.js/i.test(src)) return true;
+  if (/d3e54v103j8qbb\.cloudfront\.net\/js\/jquery/i.test(src)) return true;
+  if (/w-mod-/i.test(content) && content.length < 200) return true;
+  if (/\.wf-force-outline-none/i.test(content)) return true;
+  if (/scrollRestoration/i.test(content)) return true;
+  if (/assets\.squarespace/i.test(src)) return true;
+  if (/cdn\.shopify\.com\/s\/files/i.test(src)) return true;
+  if (/js\.hsforms\.net/i.test(src)) return true;
+  if (/js\.hscollectedforms\.net/i.test(src)) return true;
+
+  // Font loaders (not tracking)
+  if (/use\.typekit\.net/i.test(src)) return true;
+  if (/Typekit\.load/i.test(content)) return true;
+  if (/ajax\.googleapis\.com\/ajax\/libs\/webfont/i.test(src)) return true;
+  if (/WebFont\.load/i.test(content)) return true;
+
+  // Common UI/utility libraries
+  if (/cdn\.jsdelivr\.net/i.test(src)) return true;
+  if (/cdnjs\.cloudflare\.com/i.test(src)) return true;
+  if (/unpkg\.com/i.test(src)) return true;
+  if (/jquery/i.test(src) && !/jquery.*track/i.test(src)) return true;
+  if (/gsap|greensock/i.test(src)) return true;
+  if (/swiper/i.test(src)) return true;
+  if (/lottie/i.test(src)) return true;
+  if (/finsweet/i.test(src)) return true;
+
+  return false;
+}
+
 function extractScripts($: cheerio.CheerioAPI, location: "head" | "body"): string[] {
   const scripts: string[] = [];
   $(`${location} script`).each((_, el) => {
-    const src = $(el).attr("src") || "";
-    const inline = $(el).html() || "";
-    const content = src || inline.slice(0, 300);
-    if (!content.trim()) return;
-    if (/googletagmanager\.com\/gtm\.js/i.test(content)) return;
-    if (/gtm\.start/i.test(content)) return;
-    if (/consent\.cookiebot\.com|consentcdn\.cookiebot\.com/i.test(content)) return;
-    if ($(el).attr("type") === "application/ld+json") return;
-    if ($(el).attr("type") === "application/json") return;
+    const $el = $(el);
+    const src = $el.attr("src") || "";
+    const inline = $el.html() || "";
+    if (isBenignScript($el, src, inline)) return;
     scripts.push(src ? `External: ${src}` : `Inline (${inline.length} chars): ${inline.slice(0, 300)}`);
   });
   return scripts;

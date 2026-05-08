@@ -106,55 +106,61 @@ export async function runPageScan(url: string, siteId?: string): Promise<ScanRes
   }
 }
 
+const COOKIEBOT_CHECK_KEYS = ["C1", "C2", "C3", "C4", "C5", "C6"];
+
+function cookiebotFailureResults(detail: string, summary: string): CheckResult[] {
+  return COOKIEBOT_CHECK_KEYS.map((checkKey) => ({
+    checkKey,
+    status: "blocked" as const,
+    findings: [{ element: "", detail, severity: "warning" as const }],
+    summary,
+  }));
+}
+
 export async function runCookiebotScan(cookiebotId: string, siteUrl?: string): Promise<CheckResult[]> {
   if (!cookiebotId || cookiebotId.trim().length === 0) {
-    return [{
-      checkKey: "C1",
-      status: "na",
-      findings: [{ element: "", detail: "Cookiebot ID is required", severity: "warning" }],
-      summary: "No Cookiebot ID provided",
-    }];
+    return cookiebotFailureResults("Cookiebot ID is required", "No Cookiebot ID provided");
   }
 
   try {
     const referer = siteUrl ? new URL(siteUrl.startsWith("http") ? siteUrl : `https://${siteUrl}`).hostname : undefined;
     const data = await fetchCookiebotData(cookiebotId.trim(), referer);
     if (!data) {
-      return [{
-        checkKey: "C1",
-        status: "na",
-        findings: [{ element: "", detail: `Could not fetch data for Cookiebot ID: ${cookiebotId}`, severity: "warning" }],
-        summary: "Cookiebot data unavailable",
-      }];
+      return cookiebotFailureResults(
+        `Could not fetch data for Cookiebot ID: ${cookiebotId}. Check that the ID is correct and the Cookiebot subscription is active.`,
+        "Cookiebot data unavailable",
+      );
     }
     return runCookiebotChecks(data);
   } catch (error) {
-    return [{
-      checkKey: "C1",
-      status: "na",
-      findings: [{ element: "", detail: error instanceof Error ? error.message : "Cookiebot scan failed", severity: "warning" }],
-      summary: "Cookiebot scan failed",
-    }];
+    return cookiebotFailureResults(
+      error instanceof Error ? error.message : "Cookiebot scan failed",
+      "Cookiebot scan failed",
+    );
   }
+}
+
+const GTM_CHECK_KEYS = ["A3", "A4", "A5", "B2", "B3", "B4"];
+
+function gtmFailureResults(detail: string, summary: string): CheckResult[] {
+  return GTM_CHECK_KEYS.map((checkKey) => ({
+    checkKey,
+    status: "blocked" as const,
+    findings: [{ element: "", detail, severity: "warning" as const }],
+    summary,
+  }));
 }
 
 export async function runGtmScan(gtmId: string): Promise<CheckResult[]> {
   if (!gtmId || gtmId.trim().length === 0) {
-    return [{
-      checkKey: "A3",
-      status: "na",
-      findings: [{ element: "", detail: "GTM ID is required", severity: "warning" }],
-      summary: "No GTM ID provided",
-    }];
+    return gtmFailureResults("GTM ID is required", "No GTM ID provided");
   }
 
   if (!isGtmConfigured()) {
-    return [{
-      checkKey: "A3",
-      status: "na",
-      findings: [{ element: "", detail: "GTM API not configured (missing OAuth credentials)", severity: "warning" }],
-      summary: "GTM API not available",
-    }];
+    return gtmFailureResults(
+      "GTM API not configured (missing OAuth credentials). Set up GTM OAuth in Settings to enable these checks.",
+      "GTM API not available",
+    );
   }
 
   try {
@@ -162,12 +168,10 @@ export async function runGtmScan(gtmId: string): Promise<CheckResult[]> {
     const workspaces = await listWorkspaces(container.accountId, container.containerId);
     const defaultWs = workspaces.find((w) => w.name === "Default Workspace") || workspaces[0];
     if (!defaultWs) {
-      return [{
-        checkKey: "A3",
-        status: "na",
-        findings: [{ element: "", detail: "No workspace found in GTM container", severity: "warning" }],
-        summary: "GTM workspace not found",
-      }];
+      return gtmFailureResults(
+        "No workspace found in this GTM container. The container may be empty or misconfigured.",
+        "GTM workspace not found",
+      );
     }
 
     const tags = await listTags(container.accountId, container.containerId, defaultWs.workspaceId);
@@ -175,12 +179,12 @@ export async function runGtmScan(gtmId: string): Promise<CheckResult[]> {
 
     return runGtmChecks(tags, triggers);
   } catch (error) {
-    return [{
-      checkKey: "A3",
-      status: "na",
-      findings: [{ element: "", detail: error instanceof Error ? error.message : "GTM scan failed", severity: "warning" }],
-      summary: "GTM scan failed",
-    }];
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    const isAccessDenied = /forbidden|403|permission|access/i.test(msg);
+    const detail = isAccessDenied
+      ? `Our Google account doesn't have access to this GTM container (${gtmId}). The client may manage their own GTM. Ask them to grant read access, or check these items manually in their GTM.`
+      : `GTM API error: ${msg}`;
+    return gtmFailureResults(detail, isAccessDenied ? "GTM access denied" : "GTM scan failed");
   }
 }
 

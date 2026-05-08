@@ -17,12 +17,15 @@ export interface LegalReference {
 
 export type AuditTier = "basic" | "full";
 
+export type CheckResponsibility = "agency" | "client" | "content-author";
+
 export interface Check {
   key: string;
   label: string;
   description: string;
   automation: AutomationType;
   tier: AuditTier;
+  responsibility?: CheckResponsibility;
   legalBasis?: string;
   references?: LegalReference[];
   imyNote?: string;
@@ -44,6 +47,12 @@ export const AUTOMATION_CONFIG: Record<AutomationType, { label: string; classNam
   "cookiebot-api": { label: "Cookiebot", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
   "webflow-api": { label: "Webflow", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
   "human": { label: "Manual", className: "bg-muted text-muted-foreground" },
+};
+
+export const RESPONSIBILITY_CONFIG: Record<CheckResponsibility, { label: string; className: string; description: string }> = {
+  agency: { label: "Agency", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400", description: "Technical implementation - the web agency's responsibility" },
+  client: { label: "Client", className: "bg-orange-500/15 text-orange-600 dark:text-orange-400", description: "The client's responsibility as data controller. Our job is to make them aware and document their answer." },
+  "content-author": { label: "Content", className: "bg-violet-500/15 text-violet-600 dark:text-violet-400", description: "Responsibility of whoever writes the content (usually the client or their legal team). We check it, but the content is not ours to write." },
 };
 
 export const CHECKLIST: CheckCategory[] = [
@@ -542,7 +551,7 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Privacy documentation",
     checks: [
       {
-        key: "I1", label: "Privacy Policy complete", description: "The privacy policy must include: who is responsible for the site (company name, contact), what data is collected, why, who it's shared with, how long it's kept, visitor rights (access, delete, object), how to withdraw consent, and how to complain to a data protection authority.", automation: "ai-agent", tier: "basic",
+        key: "I1", label: "Privacy Policy complete", description: "The privacy policy must include: who is responsible for the site (company name, contact), what data is collected, why, who it's shared with, how long it's kept, visitor rights (access, delete, object), how to withdraw consent, and how to complain to a data protection authority.", automation: "ai-agent", tier: "basic", responsibility: "content-author",
         legalBasis: "GDPR lists specific information that must be provided to visitors. Missing any of these items is a violation - IMY fined Klarna SEK 7.5M and Spotify SEK 58M for incomplete privacy notices.",
         references: [
           { label: "GDPR Art. 13 - Information at point of collection", url: "https://gdpr-info.eu/art-13-gdpr/" },
@@ -557,7 +566,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "I2", label: "Privacy Policy in site language(s)", description: "The privacy policy must be available in every language the site uses. A Swedish site needs a Swedish privacy policy. An English-only policy on a Swedish site is not compliant.", automation: "ai-agent", tier: "basic",
+        key: "I2", label: "Privacy Policy in site language(s)", description: "The privacy policy must be available in every language the site uses. A Swedish site needs a Swedish privacy policy. An English-only policy on a Swedish site is not compliant.", automation: "ai-agent", tier: "basic", responsibility: "content-author",
         legalBasis: "Privacy information must be in a language the visitor understands. Using only English on a non-English site fails the transparency requirement.",
         references: [
           { label: "GDPR Art. 12 - Transparent communication", url: "https://gdpr-info.eu/art-12-gdpr/" },
@@ -589,7 +598,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "I6", label: "Automated decision-making disclosed (if applicable)", description: "If the site uses AI or automated systems that make decisions affecting people (e.g. automated loan approvals, content filtering), the privacy policy must explain how it works and the visitor's right to human review. Not applicable to most marketing websites.", automation: "human", tier: "full",
+        key: "I6", label: "Automated decision-making disclosed (if applicable)", description: "If the site uses AI or automated systems that make decisions affecting people (e.g. automated loan approvals, content filtering), the privacy policy must explain how it works and the visitor's right to human review. Not applicable to most marketing websites.", automation: "human", tier: "full", responsibility: "content-author",
         legalBasis: "People have a right to know when decisions about them are made by machines, and to request a human review.",
         references: [
           { label: "GDPR Art. 22 - Automated decision-making", url: "https://gdpr-info.eu/art-22-gdpr/" },
@@ -597,7 +606,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "I7", label: "DPO contact in privacy policy (if applicable)", description: "If the organization has a Data Protection Officer (required for public authorities and companies doing large-scale monitoring or handling sensitive data), their contact details must be in the privacy policy.", automation: "human", tier: "full",
+        key: "I7", label: "DPO contact in privacy policy (if applicable)", description: "If the organization has a Data Protection Officer (required for public authorities and companies doing large-scale monitoring or handling sensitive data), their contact details must be in the privacy policy.", automation: "human", tier: "full", responsibility: "content-author",
         legalBasis: "If a DPO is required and appointed, visitors must be able to contact them. If a DPO is required but not appointed, that's a separate compliance issue to flag.",
         references: [
           { label: "GDPR Art. 37 - Designation of DPO", url: "https://gdpr-info.eu/art-37-gdpr/" },
@@ -605,7 +614,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "I8", label: "Privacy information accessible and layered", description: "Privacy policies should be written in clear, plain language - not legal jargon. Long policies should use a layered approach: a short summary at the top with links to detailed sections. Easy to scan with clear headings.", automation: "ai-agent", tier: "full",
+        key: "I8", label: "Privacy information accessible and layered", description: "Privacy policies should be written in clear, plain language - not legal jargon. Long policies should use a layered approach: a short summary at the top with links to detailed sections. Easy to scan with clear headings.", automation: "ai-agent", tier: "full", responsibility: "content-author",
         legalBasis: "A privacy policy nobody can understand is the same as no privacy policy. Both Klarna and Spotify were fined by IMY partly for dense, unreadable privacy notices.",
         references: [
           { label: "GDPR Art. 12 - Transparent communication", url: "https://gdpr-info.eu/art-12-gdpr/" },
@@ -655,7 +664,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "J4", label: "Data subject rights process exists", description: "There must be a documented process for handling requests from people who want to see, correct, or delete their data. You must be able to respond within 30 days.", automation: "human", tier: "basic",
+        key: "J4", label: "Data subject rights process exists", description: "There must be a documented process for handling requests from people who want to see, correct, or delete their data. You must be able to respond within 30 days.", automation: "human", tier: "full", responsibility: "client",
         legalBasis: "People have the right to access, correct, and delete their personal data. If someone asks and you can't respond within 30 days, that's a violation.",
         references: [
           { label: "GDPR Art. 15 - Right of access", url: "https://gdpr-info.eu/art-15-gdpr/" },
@@ -669,7 +678,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "J5", label: "Data breach response plan exists", description: "There must be a plan for what to do if personal data is leaked or stolen. The data protection authority must be notified within 72 hours. Affected individuals may also need to be told. Keep a log of all breaches.", automation: "human", tier: "basic",
+        key: "J5", label: "Data breach response plan exists", description: "There must be a plan for what to do if personal data is leaked or stolen. The data protection authority must be notified within 72 hours. Affected individuals may also need to be told. Keep a log of all breaches.", automation: "human", tier: "full", responsibility: "client",
         legalBasis: "A data breach without a response plan means slower notification, worse outcomes, and larger fines. IMY received 12,000+ breach reports in 2025 alone.",
         references: [
           { label: "GDPR Art. 33 - Notification to supervisory authority", url: "https://gdpr-info.eu/art-33-gdpr/" },
@@ -684,7 +693,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "J6", label: "Records of Processing Activities (ROPA) exist", description: "The client must maintain a formal record of all personal data processing: what data, why, who receives it, how long it's kept, and what safeguards are in place. Must be available to the data protection authority if they ask.", automation: "human", tier: "basic",
+        key: "J6", label: "Records of Processing Activities (ROPA) exist", description: "The client must maintain a formal record of all personal data processing: what data, why, who receives it, how long it's kept, and what safeguards are in place. Must be available to the data protection authority if they ask.", automation: "human", tier: "full", responsibility: "client",
         legalBasis: "ROPA is mandatory for most organizations. It's the master document that ties together everything else in your data protection setup.",
         references: [
           { label: "GDPR Art. 30 - Records of processing", url: "https://gdpr-info.eu/art-30-gdpr/" },

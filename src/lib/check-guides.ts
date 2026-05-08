@@ -729,26 +729,30 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
   J4: {
     key: "J4",
     title: "Data subject rights process exists",
-    why: "GDPR gives individuals rights to access, rectify, erase, and port their data. The organization must have a process to handle these requests within 30 days.",
+    why: "GDPR gives people the right to ask 'what data do you have on me?' and 'delete my data'. The client must be able to handle these requests within 30 days. This is their responsibility as data controller - not ours. But we should make them aware of it during the audit.",
     steps: [
-      "Ask the client: do you have a process for handling data subject access requests (DSARs)?",
-      "Check if there's a documented procedure: who receives requests, how they're tracked, who fulfills them, response templates",
-      "Check the privacy policy - it should explain how users can exercise their rights",
-      "Verify there's a contact method for data rights requests (email, form, or DPO contact)",
+      "Ask the client: 'If someone emails you asking what data you have on them, who handles it and what's the process?'",
+      "If they have a process: note it. If they don't: flag it as a recommendation in the audit report.",
+      "Check the privacy policy mentions how visitors can exercise their rights (it should have a contact method)",
     ],
-    tips: ["This check may result in N/A if the audit scope is limited to the website only. But note it as a recommendation."],
+    tips: [
+      "This is an organizational process, not a website feature. We just need to verify the client has it.",
+      "The privacy policy should mention the right to access, correct, and delete data - but the actual content is the client's responsibility (see I1).",
+    ],
   },
   J5: {
     key: "J5",
     title: "Data breach response plan exists",
-    why: "GDPR Article 33 requires notifying the supervisory authority within 72 hours of becoming aware of a personal data breach. Without a plan, the 72-hour clock will be missed.",
+    why: "If personal data gets leaked or stolen, the client must notify the data protection authority within 72 hours. Without a plan ready to go, they'll miss that deadline. This is the client's responsibility - we just need to make them aware of it.",
     steps: [
-      "Ask the client: do you have a data breach response plan?",
-      "The plan should include: who to notify internally, assessment procedure, supervisory authority notification template, data subject notification template, breach register",
-      "Check if the plan includes the 72-hour notification requirement",
-      "If no plan exists, flag as an issue and recommend creating one",
+      "Ask the client: 'Do you have a plan for what to do if personal data is leaked or stolen?'",
+      "If they have a plan: note it. If they don't: flag it as a recommendation in the audit report.",
+      "A basic plan should cover: who gets notified internally, how to assess the breach, when to notify the authority, and when to notify affected individuals.",
     ],
-    tips: ["Like J4, this may be outside the website audit scope but should be flagged as a recommendation"],
+    tips: [
+      "This has nothing to do with the website itself - it's an internal organizational process.",
+      "Most small companies don't have a formal breach plan. Flagging this is valuable because it raises awareness before something happens.",
+    ],
   },
 
   // K. Geo-targeting
@@ -916,14 +920,17 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
   J6: {
     key: "J6",
     title: "Records of Processing Activities (ROPA)",
-    why: "GDPR Art. 30 requires controllers to maintain written records of all processing activities. This is one of the most commonly checked items during DPA inspections. It must be available on request.",
+    why: "A ROPA is a master document listing all the personal data the organization processes: what data, why, who gets it, how long it's kept. Data protection authorities check this first during inspections. This is the client's responsibility - we can help by providing the website-specific data processing details from the audit.",
     steps: [
-      "Ask client: do you maintain a Record of Processing Activities?",
-      "ROPA must cover: purposes, data categories, recipients, retention periods, transfer safeguards, security measures",
-      "Verify it includes website-specific processing (analytics, forms, CRM, marketing)",
-      "Confirm it is kept up to date and available on request",
+      "Ask the client: 'Do you maintain a Record of Processing Activities (ROPA)?'",
+      "If they have one: note it. If they don't: flag it as a recommendation in the audit report.",
+      "We can help them with the website portion: the vendor list from J1, cookie categories from Cookiebot, and form data from the scan give them most of what they need for the website's processing activities.",
     ],
-    tips: ["Art. 30(5) exempts organizations with fewer than 250 employees from ROPA only if processing is occasional and doesn't involve special categories - most website processing is NOT occasional, so the exemption rarely applies"],
+    tips: [
+      "This is an internal compliance document, not something on the website.",
+      "The J1 vendor detection and Cookiebot scan results give the client a head start on the website portion of their ROPA.",
+      "Almost every organization needs a ROPA - the exemption for small companies rarely applies because website analytics/marketing is ongoing processing.",
+    ],
   },
   J7: {
     key: "J7",

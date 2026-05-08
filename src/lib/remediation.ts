@@ -689,36 +689,32 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   },
 
   J4: {
-    plainExplanation: "People have the right to ask: 'What data do you have about me?' and 'Delete my data.' The organization must have a process to handle these requests within 30 days. This includes knowing who receives the request, how it's tracked, and who fulfills it.",
+    plainExplanation: "This is the client's responsibility as data controller. People have the right to ask 'what data do you have on me?' and 'delete my data'. The client must have a process to handle these requests within 30 days. Our job in the audit is to ask if they have this process and flag it if they don't.",
     steps: [
-      { instruction: "Ask the client: 'If someone emails you asking what data you have on them, who handles it and what do you do?' If the answer is unclear, they don't have a process", platform: "all" },
-      { instruction: "If they have a process: ask to see it. Check it includes: who receives the request (name/role), how requests are tracked (spreadsheet, ticket system), response templates for access/deletion, and the 30-day deadline", platform: "all" },
-      { instruction: "Open the privacy policy and find the 'Your rights' section. It must include a working contact method (email or form) for exercising rights. Try sending a test email to the address listed", platform: "all" },
-      { instruction: "If no process exists: flag as an issue. At minimum they need: a designated contact person, an email template for acknowledging requests, and a simple log (even a spreadsheet) to track deadlines*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Ask the client: 'If someone emails you asking what data you have on them, who handles it?' Document their answer.", platform: "all" },
+      { instruction: "If they have a process: note it in the audit report. If they don't: flag as a recommendation.", platform: "all" },
+      { instruction: "Check the privacy policy mentions the right to access, correct, and delete data, with a working contact method. The privacy policy content is the responsibility of whoever wrote it (usually the client or their legal team).*", platform: "all", needsDevOrLegal: true },
     ],
-    devLegalNote: "This is primarily a client/organizational responsibility, not a website issue. But the privacy policy must tell visitors how to exercise their rights, and the contact method must actually work.",
+    devLegalNote: "This is the client's organizational responsibility. We flag it for awareness - we don't implement it.",
   },
 
   J5: {
-    plainExplanation: "If personal data is leaked or stolen, the data protection authority must be notified within 72 hours. Without a plan in place before a breach happens, teams scramble, miss the deadline, and face larger fines. The plan doesn't need to be complex - it just needs to exist.",
+    plainExplanation: "This is the client's responsibility as data controller. If personal data gets leaked or stolen, the data protection authority must be notified within 72 hours. The client needs a plan ready before something happens. Our job is to ask if they have one and flag it if they don't.",
     steps: [
-      { instruction: "Ask the client: 'If customer data was leaked tomorrow, what would you do in the first hour?' If they can't answer clearly, they need a plan", platform: "all" },
-      { instruction: "If they have a plan: ask to see it. Check it includes: (1) internal contact list (who to call first), (2) assessment checklist (what data, how many people, how serious), (3) authority notification template with the 72-hour deadline, (4) affected person notification template, (5) a breach log document (even if empty)", platform: "all" },
-      { instruction: "If no plan exists: flag as an issue. A basic plan is a 1-2 page document with the items above. The supervisory authority must be named: IMY for Sweden (imy.se), ICO for UK, CNIL for France*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Check that a breach log exists as a file or spreadsheet - even if it has zero entries. Columns: date, description, data affected, people affected, authority notified (yes/no), actions taken", platform: "all" },
+      { instruction: "Ask the client: 'Do you have a data breach response plan? If customer data was leaked tomorrow, what would you do?' Document their answer.", platform: "all" },
+      { instruction: "If they have a plan: note it in the audit report. If they don't: flag as a recommendation.", platform: "all" },
+      { instruction: "A basic plan should cover: who to notify internally, how to assess what happened, how to notify the authority within 72 hours, and when to notify affected people.*", platform: "all", needsDevOrLegal: true },
     ],
-    devLegalNote: "The breach plan is an organizational document, not something published on the website. But having one is a legal requirement, and its absence is a compliance gap the audit should flag.",
+    devLegalNote: "This is the client's organizational responsibility. We flag it for awareness - we don't implement it.",
   },
 
   J6: {
-    plainExplanation: "Records of Processing Activities (ROPA) is the master document that lists everything the organization does with personal data. It's mandatory for most organizations and is one of the first things a data protection authority asks for during an inspection.",
+    plainExplanation: "This is the client's responsibility as data controller. A ROPA is a master document listing all personal data processing: what data, why, who gets it, how long it's kept. Authorities check this first during inspections. Our job is to ask if they have one. We can help by providing the website-specific details from the audit (vendor list, cookie categories, form data).",
     steps: [
-      { instruction: "Ask the client: 'Do you have a Record of Processing Activities (ROPA) document?' - it's usually a spreadsheet or document maintained by legal/compliance", platform: "all" },
-      { instruction: "If they have one: check that it covers website-related processing: analytics tracking, form data collection, marketing pixels, CRM syncing, email marketing, and hosting", platform: "all" },
-      { instruction: "Each processing activity in the ROPA must list: purpose, categories of data, recipients, retention period, transfer safeguards (if data leaves EU), and security measures. If any of these columns are empty: they need to be filled in*", platform: "all", needsDevOrLegal: true },
-      { instruction: "If no ROPA exists: flag as a compliance gap. Most organizations are required to have one (the <250 employee exemption rarely applies when the site uses analytics and marketing cookies). Recommend the client create one or hire a privacy consultant*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Ask the client: 'Do you maintain a Record of Processing Activities (ROPA)?' Document their answer.", platform: "all" },
+      { instruction: "If they have one: note it. If they don't: flag as a recommendation and mention that the audit results (J1 vendor list, Cookiebot scan, form data) can help them build the website portion.*", platform: "all", needsDevOrLegal: true },
     ],
-    devLegalNote: "The exemption for organizations under 250 employees only applies if processing is 'occasional' - website tracking, analytics, and marketing cookies are not occasional, so the exemption rarely applies in practice.",
+    devLegalNote: "This is the client's organizational responsibility. We can help with the website portion by sharing the vendor list and cookie data from the audit, but the full ROPA is on them.",
   },
 
   J7: {

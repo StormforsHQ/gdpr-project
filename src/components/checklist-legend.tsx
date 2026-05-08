@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, HelpCircle, CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, ClipboardList, Scan, Sparkles, UserCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, HelpCircle, CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, ClipboardList, Scan, UserCircle } from "lucide-react";
 
 export function ChecklistLegend() {
   const [open, setOpen] = useState(false);
@@ -23,11 +23,7 @@ export function ChecklistLegend() {
             <div className="space-y-1.5">
               <div className="flex items-start gap-2">
                 <Scan className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <p><span className="text-foreground">Scan site button</span> - Fetches the page HTML and runs automated checks: script setup, cookie detection, form structure, meta tags. Also runs Cookiebot API checks if a Cookiebot ID is configured.</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <p><span className="text-foreground">AI Analyze button</span> - Sends page content to an LLM to evaluate things automated scanning can't catch: consent language, dark patterns, privacy policy completeness, data minimization. Uses OpenRouter credits.</p>
+                <p><span className="text-foreground">Scan site</span> - Runs all checks in one go: page HTML analysis, Cookiebot API, GTM API, and AI evaluation (consent language, dark patterns, privacy policy). Uses OpenRouter credits for the AI portion.</p>
               </div>
             </div>
           </div>

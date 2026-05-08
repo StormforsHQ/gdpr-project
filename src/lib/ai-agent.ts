@@ -84,7 +84,7 @@ async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise
 }
 
 interface AICheckResult {
-  status: "ok" | "issue" | "na";
+  status: "ok" | "issue" | "na" | "blocked";
   findings: { detail: string; severity: "error" | "warning" | "info" }[];
   summary: string;
 }
@@ -237,7 +237,7 @@ ${forms.slice(0, 8000)}`
 
     if (!bannerHtml) {
       return {
-        status: "na" as const,
+        status: "blocked" as const,
         findings: [{ detail: "No consent banner detected in page source - prominence check not applicable (see G1)", severity: "info" as const }],
         summary: "No consent banner found to check button prominence",
       };
@@ -277,7 +277,7 @@ ${bannerHtml.slice(0, 6000)}`
 
     if (!bannerHtml) {
       return {
-        status: "na" as const,
+        status: "blocked" as const,
         findings: [{ detail: "No consent banner detected in page source - language check not applicable (see G1)", severity: "info" as const }],
         summary: "No consent banner found to check language",
       };
@@ -314,7 +314,7 @@ ${text.slice(0, 6000)}`
 
     if (!bannerHtml) {
       return {
-        status: "na" as const,
+        status: "blocked" as const,
         findings: [{ detail: "No consent banner detected in page source - dark pattern check not applicable (see G1)", severity: "info" as const }],
         summary: "No consent banner found to check for dark patterns",
       };

@@ -11,7 +11,7 @@ export interface ScanFinding {
 
 export interface CheckResult {
   checkKey: string;
-  status: "ok" | "issue" | "na";
+  status: "ok" | "issue" | "na" | "blocked";
   findings: ScanFinding[];
   summary: string;
 }
@@ -885,7 +885,7 @@ function checkG8($: cheerio.CheerioAPI, html: string, hasBanner: boolean): Check
   if (!hasBanner) {
     return {
       checkKey: "G8",
-      status: "na",
+      status: "blocked",
       findings: [{ element: "", detail: "No consent banner detected (see G1) - withdrawal mechanism check not applicable", severity: "info" }],
       summary: "No consent banner found (see G1)",
     };

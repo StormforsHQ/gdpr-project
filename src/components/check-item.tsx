@@ -23,6 +23,7 @@ const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   ok: <CheckCircle2 className="h-4 w-4 text-green-500" />,
   issue: <AlertCircle className="h-4 w-4 text-destructive" />,
   na: <MinusCircle className="h-4 w-4 text-muted-foreground" />,
+  blocked: <CircleDashed className="h-4 w-4 text-amber-500" />,
 };
 
 export interface FixInfo {
@@ -83,7 +84,7 @@ export function CheckItem({
   const missingRequirements = siteFields
     ? requirements.filter((r) => !siteFields[r.field])
     : [];
-  const isBlocked = missingRequirements.length > 0 && status === "not_checked";
+  const isBlockedByRequirement = missingRequirements.length > 0 && status === "not_checked";
 
   return (
     <div className="border-b last:border-b-0">
@@ -91,7 +92,7 @@ export function CheckItem({
         className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-accent/30 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        {isBlocked
+        {isBlockedByRequirement
           ? <CircleDashed className="h-4 w-4 text-amber-500" />
           : STATUS_ICONS[status]}
         <span className="text-xs font-mono text-muted-foreground w-7 shrink-0">
@@ -124,7 +125,7 @@ export function CheckItem({
             </TooltipContent>
           </Tooltip>
         )}
-        {isBlocked && (
+        {isBlockedByRequirement && (
           <Tooltip>
             <TooltipTrigger>
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
@@ -357,7 +358,7 @@ export function CheckItem({
             >
               <SelectTrigger className="w-36 h-8 text-xs">
                 <SelectValue placeholder="Not checked">
-                  {{ not_checked: "Not checked", ok: "OK", issue: "Issue", na: "N/A" }[status] ?? status}
+                  {{ not_checked: "Not checked", ok: "OK", issue: "Issue", na: "N/A", blocked: "Blocked" }[status] ?? status}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -365,6 +366,7 @@ export function CheckItem({
                 <SelectItem value="ok">OK</SelectItem>
                 <SelectItem value="issue">Issue</SelectItem>
                 <SelectItem value="na">N/A</SelectItem>
+                <SelectItem value="blocked">Blocked</SelectItem>
               </SelectContent>
             </Select>
           </div>

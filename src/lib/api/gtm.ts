@@ -71,6 +71,7 @@ export interface GtmTag {
   tagId: string;
   name: string;
   type: string;
+  paused?: boolean;
   firingTriggerId?: string[];
   consentSettings?: {
     consentStatus: string;

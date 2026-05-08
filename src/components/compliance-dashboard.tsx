@@ -143,6 +143,22 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
                 Complete a scan to record your first snapshot
               </div>
             )}
+            {history.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-4 mt-3 pt-3 border-t">
+                <div className="flex items-center gap-1.5 text-xs">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-green-500" />
+                  Compliant
+                </div>
+                <div className="flex items-center gap-1.5 text-xs">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-destructive" />
+                  Issues
+                </div>
+                <div className="flex items-center gap-1.5 text-xs">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-blue-400/60" />
+                  Not checked
+                </div>
+              </div>
+            )}
             {baseline && history.length > 1 && (
               <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground border-t pt-3">
                 <span>Since baseline ({baseline.date.slice(5)}):</span>
@@ -172,11 +188,11 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
           <CardDescription>Compliance status by audit category</CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <ChartContainer config={chartConfig} className="h-[220px] w-full">
             <BarChart
               data={categoryBarData}
-              margin={{ top: 10, right: 10, left: 10, bottom: 60 }}
-              barSize={32}
+              margin={{ top: 5, right: 10, left: 0, bottom: 50 }}
+              barSize={20}
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
               <XAxis

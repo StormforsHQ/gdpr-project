@@ -5,6 +5,7 @@ export interface ScanFinding {
   element: string;
   detail: string;
   severity: "error" | "warning" | "info";
+  pageUrl?: string;
 }
 
 export interface CheckResult {
@@ -126,6 +127,12 @@ export async function scanSite(url: string): Promise<ScanResult> {
       checkG8($, html),
       checkB5($, html),
     ];
+
+    for (const check of checks) {
+      for (const finding of check.findings) {
+        finding.pageUrl = normalizedUrl;
+      }
+    }
 
     return {
       url: normalizedUrl,

@@ -247,7 +247,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         return updated || c;
       });
       return {
-        ...prev,
+        url: scanUrl,
+        scannedAt: new Date().toISOString(),
         checks: [...updatedChecks, ...newChecks],
       };
     });
@@ -289,13 +290,14 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const executeScan = async () => {
     setScanning(true);
     clearErrors();
-    setScanResult(null);
     try {
       const result = await runPageScan(scanUrl, siteId);
       if (!result.error) {
         setLastScanType("page-scan");
-        setScanResult(result);
         let totalSkipped = applyCheckResults(result.checks, "scan");
+        if (result.pagesScanned) {
+          setScanResult((prev) => prev ? { ...prev, pagesScanned: result.pagesScanned } : prev);
+        }
         const failedChecks = result.checks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
         for (const check of failedChecks) {
           addError("scan", `Check ${check.checkKey} failed`, check.summary);
@@ -343,7 +345,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
         setLastSkippedCount(totalSkipped);
       } else {
-        setScanResult(result);
         addError("scan", `Page scan failed: ${result.error}`, scanUrl);
         if (auditId) {
           const run = await saveScanRun(auditId, "page-scan", scanUrl, [], result.error);

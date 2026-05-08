@@ -253,6 +253,13 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           next[key] = { status: "client_managed", notes: "", internalNote: existingInternalNote, source };
           persistCheck(key, "client_managed", "", source);
         }
+        for (const key of Object.keys(next)) {
+          if (next[key].status === "blocked" && next[key].source !== "manual") {
+            const originalSource = next[key].source || source;
+            next[key] = { ...next[key], status: "client_managed" };
+            persistCheck(key, "client_managed", "", originalSource);
+          }
+        }
       }
 
       return next;
@@ -278,10 +285,16 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         }
         return updated;
       });
+      let allChecks = [...updatedChecks, ...newChecks];
+      if (hasClientManaged) {
+        allChecks = allChecks.map((c) =>
+          c.status === "blocked" ? { ...c, status: "client_managed" as const } : c
+        );
+      }
       return {
         url: scanUrl,
         scannedAt: new Date().toISOString(),
-        checks: [...updatedChecks, ...newChecks],
+        checks: allChecks,
       };
     });
 

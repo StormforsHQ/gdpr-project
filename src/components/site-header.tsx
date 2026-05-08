@@ -248,18 +248,23 @@ export function SiteHeader({ site, auditId, reportVersions }: SiteHeaderProps) {
           <div className="flex items-start gap-2 rounded-md bg-amber-500/10 px-3 py-2">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
             <div className="text-xs text-amber-600 dark:text-amber-400">
-              {missingFields.map((mf, i) => (
-                <span key={mf.field}>
-                  {i > 0 && " "}
-                  <button
-                    className="font-medium underline underline-offset-2 hover:no-underline"
-                    onClick={() => setEditOpen(true)}
-                  >
-                    {mf.label}
-                  </button>
-                  {" "}not set - {mf.count} check{mf.count !== 1 ? "s" : ""} need it.
-                </span>
-              ))}
+              <p>
+                {missingFields.map((mf, i) => (
+                  <span key={mf.field}>
+                    {i > 0 && " "}
+                    <button
+                      className="font-medium underline underline-offset-2 hover:no-underline"
+                      onClick={() => setEditOpen(true)}
+                    >
+                      {mf.label}
+                    </button>
+                    {" "}not set - {mf.count} check{mf.count !== 1 ? "s" : ""} need it.
+                  </span>
+                ))}
+              </p>
+              <p className="mt-1 text-amber-600/80 dark:text-amber-400/80">
+                Run Scan Site or use Edit Site &gt; Detect IDs to find them automatically. If not found, the site may not have {missingFields.length === 2 ? "these tools" : missingFields[0].field === "cookiebotId" ? "a consent manager" : "a tag manager"} installed - or they may be managed by the client under a separate account (Cookiebot loaded via a client-managed GTM cannot be detected automatically). You can enter IDs manually in Edit Site if you know them.
+              </p>
             </div>
           </div>
         )}

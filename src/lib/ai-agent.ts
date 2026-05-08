@@ -373,8 +373,8 @@ ${forms.slice(0, 8000)}${scanContext}`
       if (g1Ok) {
         return {
           status: "blocked" as const,
-          findings: [{ detail: "The consent banner is loaded dynamically (via Cookiebot/GTM) so its HTML is not available for static analysis. Check in the browser that Accept and Reject buttons are equally prominent.", severity: "warning" as const }],
-          summary: "Banner is dynamic - verify button prominence in browser",
+          findings: [{ detail: "The consent banner can't be checked automatically because it loads after the page renders. Open the site in a browser and check that the Accept and Reject buttons are the same size and equally easy to find.", severity: "warning" as const }],
+          summary: "Check in browser: are Accept and Reject buttons equally visible?",
         };
       }
       return {
@@ -467,8 +467,8 @@ ${text.slice(0, 6000)}${scanContext}`
       if (g1Ok) {
         return {
           status: "blocked" as const,
-          findings: [{ detail: "The consent banner is loaded dynamically (via Cookiebot/GTM) so its HTML is not available for static analysis. Check in the browser for dark patterns: pre-ticked boxes, hidden reject button, guilt language, or cookie walls.", severity: "warning" as const }],
-          summary: "Banner is dynamic - verify no dark patterns in browser",
+          findings: [{ detail: "The consent banner can't be checked automatically because it loads after the page renders. Open the site in a browser and look for: pre-ticked checkboxes, a hidden or hard-to-find Reject button, guilt-tripping language, or content blocked until you accept cookies.", severity: "warning" as const }],
+          summary: "Check in browser: any dark patterns in the consent banner?",
         };
       }
       return {

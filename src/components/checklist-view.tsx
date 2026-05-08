@@ -857,44 +857,62 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             acc[type] = (acc[type] || 0) + 1;
             return acc;
           }, {});
-          const activeAutoFilters = Array.from(activeFilters).filter((f) => f.startsWith("auto:"));
-          const activeLabel = activeAutoFilters.length === 1
-            ? AUTOMATION_CONFIG[activeAutoFilters[0].slice(5) as keyof typeof AUTOMATION_CONFIG]?.label
-            : activeAutoFilters.length > 1
-              ? `${activeAutoFilters.length} types`
-              : null;
+          const activeAutoFilter = Array.from(activeFilters).find((f) => f.startsWith("auto:"));
+          const activeLabel = activeAutoFilter
+            ? AUTOMATION_CONFIG[activeAutoFilter.slice(5) as keyof typeof AUTOMATION_CONFIG]?.label
+            : null;
           return (
             <DropdownMenu>
               <DropdownMenuTrigger className="inline-flex items-center gap-1.5 outline-none">
                 <Badge
                   variant="secondary"
-                  className={`cursor-pointer text-xs gap-1 ${activeAutoFilters.length > 0 ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+                  className={`cursor-pointer text-xs gap-1 ${activeAutoFilter ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
                 >
                   <Filter className="h-3 w-3" />
                   {activeLabel ?? "Check type"}
                   <ChevronDown className="h-3 w-3 opacity-50" />
                 </Badge>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuContent align="start" className="w-52">
+                <DropdownMenuItem
+                  className="flex items-center gap-2 cursor-pointer"
+                  onClick={() => {
+                    setActiveFilters((prev) => {
+                      const next = new Set(prev);
+                      for (const f of next) { if (f.startsWith("auto:")) next.delete(f); }
+                      return next;
+                    });
+                  }}
+                >
+                  <Check className={`h-3.5 w-3.5 shrink-0 ${!activeAutoFilter ? "opacity-100" : "opacity-0"}`} />
+                  <span>All</span>
+                  <span className="ml-auto text-muted-foreground text-xs">({totalChecks}/{totalChecks})</span>
+                </DropdownMenuItem>
                 {Object.entries(typeCounts)
                   .sort(([, a], [, b]) => b - a)
                   .map(([type, count]) => {
                     const config = AUTOMATION_CONFIG[type as keyof typeof AUTOMATION_CONFIG];
                     if (!config) return null;
                     const filterKey = `auto:${type}`;
-                    const isActive = activeFilters.has(filterKey);
+                    const isActive = activeAutoFilter === filterKey;
                     return (
                       <DropdownMenuItem
                         key={type}
                         className="flex items-center gap-2 cursor-pointer"
-                        closeOnClick={false}
-                        onClick={() => toggleFilter(filterKey)}
+                        onClick={() => {
+                          setActiveFilters((prev) => {
+                            const next = new Set(prev);
+                            for (const f of next) { if (f.startsWith("auto:")) next.delete(f); }
+                            if (!isActive) next.add(filterKey);
+                            return next;
+                          });
+                        }}
                       >
                         <Check className={`h-3.5 w-3.5 shrink-0 ${isActive ? "opacity-100" : "opacity-0"}`} />
                         <span className={config.className.replace(/bg-\S+/g, "").trim()}>
                           {config.label}
                         </span>
-                        <span className="ml-auto text-muted-foreground text-xs">({count})</span>
+                        <span className="ml-auto text-muted-foreground text-xs">({count}/{totalChecks})</span>
                       </DropdownMenuItem>
                     );
                   })}

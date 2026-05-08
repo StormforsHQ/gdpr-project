@@ -33,7 +33,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X, RotateCcw, Filter, Check, MessageSquare, UserCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, Scan, Loader2, AlertCircle, History, Clock, Trash2, X, RotateCcw, Filter, Check, MessageSquare, UserCircle } from "lucide-react";
 
 
 const MANUAL_GTM_CHECKS = ["H3", "H4", "H5"];
@@ -117,7 +117,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     return () => clearInterval(interval);
   }, [scanning]);
 
-  const [aiScanning, setAiScanning] = useState(false);
   const [runningChecks, setRunningChecks] = useState<Set<string>>(new Set());
   const [scanResult, setScanResult] = useState<ScanResult | null>(() => {
     if (!initialScanRuns?.length) return null;
@@ -143,17 +142,11 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       ? { url: completedRuns[0].url, scannedAt: completedRuns[0].startedAt.toString(), checks: allChecks }
       : null;
   });
-  const [lastScanType, setLastScanType] = useState<"page-scan" | "ai-agent" | null>(() => {
-    if (!initialScanRuns?.length) return null;
-    const latest = initialScanRuns.find((r) => r.status === "completed");
-    if (!latest) return null;
-    return latest.scanType === "ai-agent" ? "ai-agent" : "page-scan";
-  });
+  const [lastScanType, setLastScanType] = useState<string | null>(null);
   const [scanDrawerOpen, setScanDrawerOpen] = useState(false);
   const [scanDrawerCheckKey, setScanDrawerCheckKey] = useState<string | null>(null);
-  const [confirmAction, setConfirmAction] = useState<"scan" | "ai" | null>(null);
+  const [confirmAction, setConfirmAction] = useState<"scan" | null>(null);
   const [urlError, setUrlError] = useState<string | null>(null);
-  const [creditWarning, setCreditWarning] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [showHistory, setShowHistory] = useState(false);
   const [fixAvailability, setFixAvailability] = useState<Record<string, FixAvailability>>({});
@@ -309,26 +302,19 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     return { total, checked, issues };
   };
 
-  const aiCheckKeys = new Set(
-    CHECKLIST.flatMap((cat) =>
-      cat.checks.filter((c) => c.automation === "ai-agent").map((c) => c.key)
-    )
-  );
-  const hasExistingScanResults = Object.entries(checkStates).some(
-    ([key, s]) => s.status !== "not_checked" && !aiCheckKeys.has(key)
-  );
-  const hasExistingAIResults = Object.entries(checkStates).some(
-    ([key, s]) => s.status !== "not_checked" && aiCheckKeys.has(key)
+  const hasExistingResults = Object.entries(checkStates).some(
+    ([, s]) => s.status !== "not_checked"
   );
 
   const executeScan = async () => {
     setScanning(true);
     clearErrors();
+    let totalSkipped = 0;
     try {
       const result = await runPageScan(scanUrl, siteId);
       if (!result.error) {
         setLastScanType("page-scan");
-        let totalSkipped = applyCheckResults(result.checks, "scan");
+        totalSkipped += applyCheckResults(result.checks, "scan");
         if (result.pagesScanned) {
           setScanResult((prev) => prev ? { ...prev, pagesScanned: result.pagesScanned } : prev);
         }
@@ -351,6 +337,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
         const cbid = result.detectedCookiebotId || siteFields?.cookiebotId;
         if (cbid) {
+          setScanStatus("Checking Cookiebot...");
           try {
             const cbResults = await runCookiebotScan(cbid, scanUrl);
             totalSkipped += applyCheckResults(cbResults, "scan");
@@ -365,6 +352,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
         const gtmId = result.detectedGtmId || siteFields?.gtmId;
         if (gtmId) {
+          setScanStatus("Checking GTM...");
           try {
             const gtmResults = await runGtmScan(gtmId);
             totalSkipped += applyCheckResults(gtmResults, "scan");
@@ -376,8 +364,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             addError("scan", "GTM scan failed", err instanceof Error ? err.message : "Unknown error");
           }
         }
-
-        setLastSkippedCount(totalSkipped);
       } else {
         addError("scan", `Page scan failed: ${result.error}`, scanUrl);
         if (auditId) {
@@ -387,32 +373,31 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       }
     } catch (err) {
       addError("scan", "Page scan crashed", err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setScanning(false);
     }
-  };
 
-  const executeAIScan = async () => {
-    setAiScanning(true);
-    clearErrors();
+    setScanStatus("Running AI analysis...");
     try {
-      const results = await runAllAIChecks(scanUrl);
-      setLastScanType("ai-agent");
-      const skipped = applyCheckResults(results, "ai");
-      setLastSkippedCount(skipped);
-      const failedChecks = results.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
-      for (const check of failedChecks) {
-        addError("ai", `AI check ${check.checkKey} failed`, check.summary);
-      }
-      if (auditId) {
-        const run = await saveScanRun(auditId, "ai-agent", scanUrl, results);
-        setScanRuns((prev) => [run, ...prev]);
+      const credits = await checkOpenRouterCredits();
+      if (credits.available) {
+        const aiResults = await runAllAIChecks(scanUrl);
+        totalSkipped += applyCheckResults(aiResults, "ai");
+        const failedAI = aiResults.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
+        for (const check of failedAI) {
+          addError("ai", `AI check ${check.checkKey} failed`, check.summary);
+        }
+        if (auditId) {
+          const run = await saveScanRun(auditId, "ai-agent", scanUrl, aiResults);
+          setScanRuns((prev) => [run, ...prev]);
+        }
+      } else {
+        addError("ai", "AI checks skipped", credits.error || "No OpenRouter credits available");
       }
     } catch (err) {
-      addError("ai", "AI analysis crashed", err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setAiScanning(false);
+      addError("ai", "AI analysis failed", err instanceof Error ? err.message : "Unknown error");
     }
+
+    setLastSkippedCount(totalSkipped);
+    setScanning(false);
   };
 
   const validateUrl = (url: string): boolean => {
@@ -430,36 +415,15 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
   const handleScan = () => {
     if (!validateUrl(scanUrl)) return;
-    if (hasExistingScanResults) {
+    if (hasExistingResults) {
       setConfirmAction("scan");
     } else {
       executeScan();
     }
   };
 
-  const handleAIScan = async () => {
-    if (!validateUrl(scanUrl)) return;
-    setCreditWarning(null);
-
-    const credits = await checkOpenRouterCredits();
-    if (!credits.available) {
-      setCreditWarning(credits.error || "No OpenRouter credits remaining");
-      return;
-    }
-    if (credits.credits < 1) {
-      setCreditWarning(`Low OpenRouter credits: $${credits.credits} remaining`);
-    }
-
-    if (hasExistingAIResults) {
-      setConfirmAction("ai");
-    } else {
-      executeAIScan();
-    }
-  };
-
   const handleConfirm = () => {
-    if (confirmAction === "scan") executeScan();
-    if (confirmAction === "ai") executeAIScan();
+    executeScan();
     setConfirmAction(null);
   };
 
@@ -523,7 +487,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     if (automation === "ai-agent") {
       const credits = await checkOpenRouterCredits();
       if (!credits.available) {
-        setCreditWarning(credits.error || "No OpenRouter credits remaining");
+        addError("ai", "Can't run AI check", credits.error || "No OpenRouter credits available");
         return;
       }
     }
@@ -679,24 +643,10 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               )}
               {scanning ? scanStatus : "Scan site"}
             </Button>
-            <Button
-              onClick={handleAIScan}
-              disabled={aiScanning || !scanUrl.trim()}
-              size="sm"
-              variant="secondary"
-              className="gap-2"
-            >
-              {aiScanning ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-              {aiScanning ? "Analyzing..." : "AI Analyze"}
-            </Button>
           </div>
           {scanResult && !scanResult.error && (
             <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-              <span>{lastScanType === "ai-agent" ? "AI scan" : lastScanType === "page-scan" ? "Page scan" : "Scanned"}: {scanResult.url}</span>
+              <span>Scanned: {scanResult.url}</span>
               <span>{scannedCheckCount} checks run</span>
               {scanBasicIssues > 0 && (
                 <Badge variant="destructive" className="text-xs">{scanBasicIssues} basic issue{scanBasicIssues !== 1 ? "s" : ""}</Badge>
@@ -722,12 +672,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             <div className="flex items-center gap-1.5 mt-3">
               <AlertCircle className="h-3.5 w-3.5 text-destructive" />
               <p className="text-xs text-destructive">{urlError}</p>
-            </div>
-          )}
-          {creditWarning && (
-            <div className="flex items-center gap-1.5 mt-3">
-              <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
-              <p className="text-xs text-amber-600 dark:text-amber-400">{creditWarning}</p>
             </div>
           )}
           {scanResult?.error && (
@@ -1249,13 +1193,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       <AlertDialog open={confirmAction !== null} onOpenChange={(open) => !open && setConfirmAction(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {confirmAction === "scan" ? "Re-run full scan?" : "Re-run AI analysis?"}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Re-run all checks?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will overwrite existing {confirmAction === "scan" ? "scan" : "AI analysis"} results.
-              Manually reviewed checks will be preserved.
-              To re-run individual checks instead, use the Re-run button on each check.
+              This will overwrite existing results. Manually reviewed checks will be preserved.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -91,6 +91,34 @@ export function CheckGuideDrawer({
               </p>
             </div>
 
+            <Separator />
+
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                How to check
+              </h3>
+              <ol className="space-y-2">
+                {guide.steps.map((step, i) => {
+                  const isSubStep = step.startsWith("  -");
+                  if (isSubStep) {
+                    return (
+                      <li key={i} className="text-sm leading-relaxed pl-8 text-muted-foreground">
+                        {step.trim().replace(/^- /, "")}
+                      </li>
+                    );
+                  }
+                  return (
+                    <li key={i} className="text-sm leading-relaxed flex gap-3">
+                      <span className="text-xs font-mono text-muted-foreground mt-0.5 shrink-0 w-5 text-right">
+                        {i + 1}.
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+
             {guide.tools && guide.tools.length > 0 && (
               <>
                 <Separator />

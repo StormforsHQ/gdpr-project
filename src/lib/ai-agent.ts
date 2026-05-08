@@ -369,10 +369,18 @@ ${forms.slice(0, 8000)}${scanContext}`
     }
 
     if (!bannerHtml) {
+      const g1Ok = /G1:\s*OK/i.test(scanContext);
+      if (g1Ok) {
+        return {
+          status: "blocked" as const,
+          findings: [{ detail: "The consent banner is loaded dynamically (via Cookiebot/GTM) so its HTML is not available for static analysis. Check in the browser that Accept and Reject buttons are equally prominent.", severity: "warning" as const }],
+          summary: "Banner is dynamic - verify button prominence in browser",
+        };
+      }
       return {
         status: "blocked" as const,
-        findings: [{ detail: "No consent banner detected in page source - prominence check not applicable (see G1)", severity: "info" as const }],
-        summary: "No consent banner found to check button prominence",
+        findings: [{ detail: "No consent banner or Cookiebot script detected - prominence check not applicable", severity: "info" as const }],
+        summary: "No consent banner detected",
       };
     }
 
@@ -408,23 +416,32 @@ ${bannerHtml.slice(0, 6000)}${scanContext}`
       if (el.length > 0) bannerHtml += $.html(el) + "\n";
     }
 
-    if (!bannerHtml) {
+    const hasBannerContext = bannerHtml.length > 0;
+    const g1Ok = /G1:\s*OK/i.test(scanContext);
+
+    if (!hasBannerContext && !g1Ok) {
       return {
         status: "blocked" as const,
-        findings: [{ detail: "No consent banner detected in page source - language check not applicable (see G1)", severity: "info" as const }],
-        summary: "No consent banner found to check language",
+        findings: [{ detail: "No consent banner or Cookiebot script detected - language check not applicable", severity: "info" as const }],
+        summary: "No consent banner detected",
       };
     }
 
-    const raw = await callOpenRouter(
-      `You are a GDPR compliance auditor checking if a website's cookie consent banner language matches the site's content language.
-${RESPONSE_FORMAT_INSTRUCTION}`,
-      `Analyze this page content and determine:
-1. What language(s) is the main site content written in?
-2. Is there evidence of a cookie consent banner? If so, what language is it in?
-3. Do the languages match?
+    const bannerNote = hasBannerContext
+      ? `Banner HTML found in page source:\n${bannerHtml.slice(0, 3000)}`
+      : "The consent banner is loaded dynamically via Cookiebot/GTM (confirmed by G1 check). The banner HTML is not available for static analysis, but Cookiebot serves the banner in the language configured in admin.cookiebot.com.";
 
-If the site is in Swedish but the banner is only in English, that's an issue. Multi-language sites need multi-language banners.
+    const raw = await callOpenRouter(
+      `You are a GDPR compliance auditor checking if a website's consent banner language is appropriate for the site's audience.
+${RESPONSE_FORMAT_INSTRUCTION}`,
+      `Determine what language(s) the site content is written in and whether the consent banner language setup is appropriate.
+
+IMPORTANT RULES:
+- A single-language site with Cookiebot configured is likely fine - Cookiebot auto-detects language when configured correctly
+- Only flag an issue if the site is MULTILINGUAL and there's evidence the banner doesn't support all languages
+- Do NOT flag single-language sites as issues just because you can't see the banner text
+
+${bannerNote}
 
 URL: ${url}
 Page content (first 6000 chars):
@@ -446,10 +463,18 @@ ${text.slice(0, 6000)}${scanContext}`
     }
 
     if (!bannerHtml) {
+      const g1Ok = /G1:\s*OK/i.test(scanContext);
+      if (g1Ok) {
+        return {
+          status: "blocked" as const,
+          findings: [{ detail: "The consent banner is loaded dynamically (via Cookiebot/GTM) so its HTML is not available for static analysis. Check in the browser for dark patterns: pre-ticked boxes, hidden reject button, guilt language, or cookie walls.", severity: "warning" as const }],
+          summary: "Banner is dynamic - verify no dark patterns in browser",
+        };
+      }
       return {
         status: "blocked" as const,
-        findings: [{ detail: "No consent banner detected in page source - dark pattern check not applicable (see G1)", severity: "info" as const }],
-        summary: "No consent banner found to check for dark patterns",
+        findings: [{ detail: "No consent banner or Cookiebot script detected - dark pattern check not applicable", severity: "info" as const }],
+        summary: "No consent banner detected",
       };
     }
 

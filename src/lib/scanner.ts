@@ -921,17 +921,9 @@ function checkG1($: cheerio.CheerioAPI, html: string, detectedGtmId: string | nu
 }
 
 function checkG8($: cheerio.CheerioAPI, html: string, hasBanner: boolean): CheckResult {
-  if (!hasBanner) {
-    return {
-      checkKey: "G8",
-      status: "blocked",
-      findings: [{ element: "", detail: "No consent banner detected (see G1) - withdrawal mechanism check not applicable", severity: "info" }],
-      summary: "No consent banner found (see G1)",
-    };
-  }
-
   const findings: ScanFinding[] = [];
 
+  const hasCookiebotScript = $("script[src*='consent.cookiebot.com'], script[src*='consentcdn.cookiebot.com']").length > 0;
   const hasCookiebotWidget = /CookiebotWidget|CookieConsent\.renew|Cookiebot\.renew/i.test(html);
   const hasConsentLink = $("a").toArray().some((a) => {
     const href = $(a).attr("href") || "";
@@ -964,6 +956,24 @@ function checkG8($: cheerio.CheerioAPI, html: string, hasBanner: boolean): Check
       severity: "info",
     });
     return { checkKey: "G8", status: "ok", findings, summary: "Consent settings link found" };
+  }
+
+  if (hasCookiebotScript || hasBanner) {
+    findings.push({
+      element: "page",
+      detail: "Cookiebot is present but no persistent consent widget or footer link was found in the static HTML. The widget may be loaded dynamically - verify in the browser that a floating cookie icon or 'Cookie settings' link exists.",
+      severity: "warning",
+    });
+    return { checkKey: "G8", status: "blocked", findings, summary: "Cookiebot present - verify widget in browser" };
+  }
+
+  if (!hasBanner) {
+    return {
+      checkKey: "G8",
+      status: "blocked",
+      findings: [{ element: "", detail: "No consent banner detected (see G1) - withdrawal mechanism check not applicable", severity: "info" }],
+      summary: "No consent banner found (see G1)",
+    };
   }
 
   findings.push({

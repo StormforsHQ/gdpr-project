@@ -283,8 +283,16 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     return { total, checked, issues };
   };
 
-  const hasExistingResults = Object.values(checkStates).some(
-    (s) => s.status !== "not_checked"
+  const aiCheckKeys = new Set(
+    CHECKLIST.flatMap((cat) =>
+      cat.checks.filter((c) => c.automation === "ai-agent").map((c) => c.key)
+    )
+  );
+  const hasExistingScanResults = Object.entries(checkStates).some(
+    ([key, s]) => s.status !== "not_checked" && !aiCheckKeys.has(key)
+  );
+  const hasExistingAIResults = Object.entries(checkStates).some(
+    ([key, s]) => s.status !== "not_checked" && aiCheckKeys.has(key)
   );
 
   const executeScan = async () => {
@@ -396,7 +404,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
   const handleScan = () => {
     if (!validateUrl(scanUrl)) return;
-    if (hasExistingResults) {
+    if (hasExistingScanResults) {
       setConfirmAction("scan");
     } else {
       executeScan();
@@ -416,7 +424,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       setCreditWarning(`Low OpenRouter credits: $${credits.credits} remaining`);
     }
 
-    if (hasExistingResults) {
+    if (hasExistingAIResults) {
       setConfirmAction("ai");
     } else {
       executeAIScan();

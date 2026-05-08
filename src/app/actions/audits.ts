@@ -197,6 +197,13 @@ export async function resetAllChecks(auditId: string): Promise<{ success: boolea
   }
 }
 
+export async function saveAuditNotes(auditId: string, notes: string) {
+  await prisma.audit.update({
+    where: { id: auditId },
+    data: { notes },
+  });
+}
+
 export async function getAuditProgress(auditId: string) {
   const results = await prisma.checkResult.findMany({
     where: { auditId },

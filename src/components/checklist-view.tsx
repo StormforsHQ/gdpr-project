@@ -12,7 +12,7 @@ import { CHECKLIST, AUTOMATION_CONFIG, type CheckStatus } from "@/lib/checklist"
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan, runGtmScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
-import { saveCheckResult, saveInternalNote, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType, resetAllChecks } from "@/app/actions/audits";
+import { saveCheckResult, saveInternalNote, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType, resetAllChecks, saveAuditNotes } from "@/app/actions/audits";
 import { getFixAvailability, applyFix, analyzeFix, verifyGtmSetup, pushGtmSnippetToSite, deleteApiManagedScript, type FixAvailability, type FixAnalysisResult } from "@/app/actions/fixes";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
 import {
@@ -33,7 +33,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X, RotateCcw, Filter, Check } from "lucide-react";
+import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X, RotateCcw, Filter, Check, MessageSquare } from "lucide-react";
 
 
 type CheckEntry = { status: CheckStatus; notes: string; internalNote: string; source: "manual" | "scan" | "ai" };
@@ -56,10 +56,11 @@ interface ChecklistViewProps {
   auditType?: "basic" | "full";
   initialStates?: Record<string, { status: string; notes: string; internalNote?: string; source: string }>;
   initialScanRuns?: ScanRunEntry[];
+  initialAuditNotes?: string;
   siteFields?: { platform?: string | null; webflowId?: string | null; cookiebotId?: string | null; gtmId?: string | null };
 }
 
-export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", initialStates, initialScanRuns, siteFields: initialSiteFields }: ChecklistViewProps) {
+export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", initialStates, initialScanRuns, initialAuditNotes = "", siteFields: initialSiteFields }: ChecklistViewProps) {
   const { errors, addError, clearErrors } = useErrorLog();
   const [auditType, setAuditType] = useState<"basic" | "full">(initialAuditType);
   const [siteFields, setSiteFields] = useState(initialSiteFields);
@@ -85,6 +86,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(CHECKLIST.map((c) => c.id))
   );
+  const [auditNotes, setAuditNotes] = useState(initialAuditNotes);
+  const [auditNotesOpen, setAuditNotesOpen] = useState(!!initialAuditNotes.trim());
+  const auditNotesTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [guideKey, setGuideKey] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const [scanUrl, setScanUrl] = useState(siteUrl || "");
@@ -776,6 +780,37 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       )}
 
       <ChecklistLegend />
+
+      {auditId && (
+        <div className="text-sm">
+          <button
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setAuditNotesOpen(!auditNotesOpen)}
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            Auditor notes
+            {auditNotes.trim() && <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />}
+            {auditNotesOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          </button>
+          {auditNotesOpen && (
+            <div className="mt-2">
+              <textarea
+                className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
+                placeholder="General notes about this audit - observations, patterns, client communication, things to follow up on. Not included in the client report."
+                value={auditNotes}
+                onChange={(e) => {
+                  setAuditNotes(e.target.value);
+                  if (auditNotesTimer.current) clearTimeout(auditNotesTimer.current);
+                  auditNotesTimer.current = setTimeout(() => {
+                    if (auditId) saveAuditNotes(auditId, e.target.value);
+                  }, 800);
+                }}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Internal only - not included in client reports. Auto-saves.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <button

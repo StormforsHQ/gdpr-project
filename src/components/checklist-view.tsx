@@ -30,11 +30,9 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X, RotateCcw, Filter } from "lucide-react";
+import { ChevronDown, ChevronRight, Scan, Loader2, Sparkles, AlertCircle, History, Clock, Trash2, X, RotateCcw, Filter, Check } from "lucide-react";
 
 
 type CheckEntry = { status: CheckStatus; notes: string; internalNote: string; source: "manual" | "scan" | "ai" };
@@ -878,26 +876,26 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                 </Badge>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuLabel className="text-xs">Filter by check type</DropdownMenuLabel>
-                <DropdownMenuSeparator />
                 {Object.entries(typeCounts)
                   .sort(([, a], [, b]) => b - a)
                   .map(([type, count]) => {
                     const config = AUTOMATION_CONFIG[type as keyof typeof AUTOMATION_CONFIG];
                     if (!config) return null;
                     const filterKey = `auto:${type}`;
+                    const isActive = activeFilters.has(filterKey);
                     return (
-                      <DropdownMenuCheckboxItem
+                      <DropdownMenuItem
                         key={type}
-                        checked={activeFilters.has(filterKey)}
-                        onCheckedChange={() => toggleFilter(filterKey)}
-                        onSelect={(e) => e.preventDefault()}
+                        className="flex items-center gap-2 cursor-pointer"
+                        closeOnClick={false}
+                        onClick={() => toggleFilter(filterKey)}
                       >
+                        <Check className={`h-3.5 w-3.5 shrink-0 ${isActive ? "opacity-100" : "opacity-0"}`} />
                         <span className={config.className.replace(/bg-\S+/g, "").trim()}>
                           {config.label}
                         </span>
                         <span className="ml-auto text-muted-foreground text-xs">({count})</span>
-                      </DropdownMenuCheckboxItem>
+                      </DropdownMenuItem>
                     );
                   })}
               </DropdownMenuContent>

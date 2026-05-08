@@ -53,6 +53,14 @@ function getCheckLabel(key: string): string {
   return key;
 }
 
+function isAICheck(key: string): boolean {
+  for (const cat of CHECKLIST) {
+    const check = cat.checks.find((c) => c.key === key);
+    if (check) return check.automation === "ai-agent";
+  }
+  return false;
+}
+
 function ScriptAnalysisSection({ scripts }: { scripts: ScriptAnalysis }) {
   const sections = [
     { key: "tracking" as const, label: "Tracking scripts (move to GTM)", items: scripts.tracking, color: "text-destructive" },
@@ -154,7 +162,7 @@ export function ScanResultsDrawer({
             {checkResult && (
               <div>
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                  Summary
+                  Summary{isAICheck(effectiveKey) ? " (AI)" : ""}
                 </h3>
                 <p className="text-sm">{checkResult.summary}</p>
               </div>

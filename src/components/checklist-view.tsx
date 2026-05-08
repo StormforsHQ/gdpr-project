@@ -36,7 +36,12 @@ import {
 import { ChevronDown, ChevronRight, Scan, Loader2, AlertCircle, History, Clock, Trash2, X, RotateCcw, Filter, Check, MessageSquare, UserCircle } from "lucide-react";
 
 
-const MANUAL_GTM_CHECKS = ["H3", "H4", "H5"];
+const CLIENT_CONSENT_CHECKS = [
+  "B5",
+  "C1", "C2", "C3", "C4", "C5", "C6",
+  "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8",
+  "H3", "H4", "H5",
+];
 
 type CheckEntry = { status: CheckStatus; notes: string; internalNote: string; source: "manual" | "scan" | "ai" };
 type CheckState = Record<string, CheckEntry>;
@@ -246,19 +251,13 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       }
 
       if (hasClientManaged) {
-        for (const key of MANUAL_GTM_CHECKS) {
+        for (const key of CLIENT_CONSENT_CHECKS) {
           const existing = prev[key];
           if (existing?.source === "manual" && existing.status !== "not_checked") continue;
+          if (existing?.status === "ok" || existing?.status === "issue") continue;
           const existingInternalNote = prev[key]?.internalNote || "";
           next[key] = { status: "client_managed", notes: "", internalNote: existingInternalNote, source };
           persistCheck(key, "client_managed", "", source);
-        }
-        for (const key of Object.keys(next)) {
-          if (next[key].status === "blocked" && next[key].source !== "manual") {
-            const originalSource = next[key].source || source;
-            next[key] = { ...next[key], status: "client_managed" };
-            persistCheck(key, "client_managed", "", originalSource);
-          }
         }
       }
 
@@ -287,8 +286,11 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       });
       let allChecks = [...updatedChecks, ...newChecks];
       if (hasClientManaged) {
+        const clientKeys = new Set(CLIENT_CONSENT_CHECKS);
         allChecks = allChecks.map((c) =>
-          c.status === "blocked" ? { ...c, status: "client_managed" as const } : c
+          clientKeys.has(c.checkKey) && c.status !== "ok" && c.status !== "issue"
+            ? { ...c, status: "client_managed" as const }
+            : c
         );
       }
       return {

@@ -654,12 +654,13 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   },
 
   J1: {
-    plainExplanation: "Every third-party service that touches personal data needs a Data Processing Agreement (DPA). This is a legal contract that defines what the service can and can't do with the data. Most major services (Google, HubSpot, Cloudflare, Webflow) have standard DPAs available in their settings.",
+    plainExplanation: "Every third-party service that touches personal data needs a Data Processing Agreement (DPA). The scan automatically detects services on the site and tells you which ones are already covered and which ones the client needs to verify.",
     steps: [
-      { instruction: "List every third-party service touching personal data. Sources: GTM tag list, Cookiebot cookie report, form action URLs, site header/footer scripts, hosting provider, CDN", platform: "all" },
-      { instruction: "For each service, find and accept/sign the DPA. Common locations: Google (admin.google.com > Account > Legal), HubSpot (Settings > Account > Data Privacy), Webflow (included in Terms of Service), Cloudflare (dash.cloudflare.com > Account > Legal), Mailchimp (Account > Settings > Data Processing Addendum)", platform: "all" },
-      { instruction: "If a service has no DPA in their admin panel: check their legal/privacy page for a downloadable DPA. If none exists: contact their support to request one*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Add each vendor to the vendor inventory (J2) with DPA status: signed, pending, or unavailable", platform: "all" },
+      { instruction: "The scan detects third-party services from the site's scripts. Services marked 'covered by ToS' (Webflow, HubSpot, Stripe, Mailchimp, Cloudflare, etc.) are fine - the DPA is included in their terms automatically.", platform: "all" },
+      { instruction: "For services marked 'needs verification': tell the client to check their account settings. Google Analytics: Admin > Account Settings > 'Data Processing Amendment' must show as accepted. Google Ads: Settings > Setup > Data Processing Terms.", platform: "all" },
+      { instruction: "Meta (Facebook Pixel, Instagram tracking): tell the client to check Meta Business Suite > Business Settings > Data Sources > Data Processing Terms.", platform: "all" },
+      { instruction: "For services the scan doesn't recognize: check their legal/privacy page for a DPA, or search '[service name] DPA'. If none exists, contact their support.*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Add each vendor to the vendor inventory (J2) with DPA status: covered by ToS, verified, pending, or unavailable", platform: "all" },
     ],
   },
 
@@ -675,12 +676,12 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   },
 
   J3: {
-    plainExplanation: "Sending EU visitor data to US companies is only legal if there's a valid transfer mechanism. The easiest is the EU-US Data Privacy Framework (DPF) - if the US company is DPF-certified, the transfer is lawful. You can check certification on dataprivacyframework.gov.",
+    plainExplanation: "When a site uses US-based services like Google Analytics or Meta Pixel, visitor data gets sent to the US. This is only legal if the US company is certified under the EU-US Data Privacy Framework (DPF). The scan automatically detects US services and checks their certification status.",
     steps: [
-      { instruction: "From the vendor inventory (J2), list all US-based services: Google, Meta, HubSpot, Salesforce, Cloudflare, Mailchimp, etc.", platform: "all" },
-      { instruction: "For each: go to dataprivacyframework.gov/list, search the company name, and check the status column shows 'Active'", platform: "all" },
-      { instruction: "If status is 'Active': note the certification date in the vendor inventory. Screenshot the result as evidence", platform: "all" },
-      { instruction: "If a US service is NOT listed or status is 'Inactive'/'Withdrawn': flag for legal review. The client needs Standard Contractual Clauses (SCCs) + a Transfer Impact Assessment (see J8) to legally use this service*", platform: "all", needsDevOrLegal: true },
+      { instruction: "The scan detects US-based services from the site's scripts and checks their DPF certification. Most major services (Google, Meta, Microsoft, HubSpot, Stripe, Mailchimp) are certified.", platform: "all" },
+      { instruction: "For any service the scan flags as 'not certified' or 'unknown': go to dataprivacyframework.gov/list, search the company name, and check the status shows 'Active'", platform: "all" },
+      { instruction: "If a US service is NOT DPF-certified: the client needs Standard Contractual Clauses (SCCs) to legally use this service. Flag for legal review.*", platform: "all", needsDevOrLegal: true },
+      { instruction: "EU-based services (HotJar, Plausible, Crisp, Mouseflow, etc.) don't need DPF certification - data stays in the EU, so there's no transfer issue", platform: "all" },
     ],
     docLinks: [
       { label: "Data Privacy Framework: Search participants", url: "https://www.dataprivacyframework.gov/list" },

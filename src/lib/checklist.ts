@@ -624,7 +624,7 @@ export const CHECKLIST: CheckCategory[] = [
     label: "Data processing & legal",
     checks: [
       {
-        key: "J1", label: "DPAs in place for all processors", description: "Every third-party service that handles visitor or customer data (analytics, CRM, email tools, hosting, CDN, payment) must have a signed Data Processing Agreement (DPA). Most services offer these in their settings.", automation: "human", tier: "basic",
+        key: "J1", label: "DPAs in place for all processors", description: "Every third-party service that handles visitor or customer data (analytics, CRM, email tools, hosting, CDN, payment) must have a signed Data Processing Agreement (DPA). The scan detects which services the site uses and checks the DPA status for each one.", automation: "page-scan", tier: "basic",
         legalBasis: "GDPR requires a written agreement with every company that processes personal data on your behalf. Without a DPA, the data sharing has no legal basis.",
         references: [
           { label: "GDPR Art. 28 - Processor", url: "https://gdpr-info.eu/art-28-gdpr/" },
@@ -640,7 +640,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "J3", label: "US services DPF-certified", description: "For every US-based service (Google, Meta, HubSpot, etc.), check if they're certified on dataprivacyframework.gov. If yes, the data transfer is lawful. If not, you need additional legal safeguards (see J8).", automation: "human", tier: "basic",
+        key: "J3", label: "US services DPF-certified", description: "For every US-based service (Google, Meta, HubSpot, etc.), check if they're certified under the EU-US Data Privacy Framework. The scan detects US services and checks their DPF certification status automatically.", automation: "page-scan", tier: "basic",
         legalBasis: "Sending EU visitor data to US companies is only legal if there's a valid transfer mechanism. The EU-US Data Privacy Framework (since 2023) is the easiest one. IMY fined companies SEK 12M+ for US transfers without proper safeguards.",
         references: [
           { label: "GDPR Art. 44-46 - International transfers", url: "https://gdpr-info.eu/art-44-gdpr/" },

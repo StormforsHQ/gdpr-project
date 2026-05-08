@@ -829,7 +829,7 @@ function checkG1($: cheerio.CheerioAPI, html: string, detectedGtmId: string | nu
     findings.push({
       element: "page",
       detail: `No Cookiebot script found directly in the page HTML. If Cookiebot is loaded via GTM (${detectedGtmId}), the GTM scan will verify this.`,
-      severity: "warning",
+      severity: "info",
     });
     return { checkKey: "G1", status: "na", findings, summary: "Cookiebot not in HTML - will check via GTM" };
   }

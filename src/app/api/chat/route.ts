@@ -182,6 +182,8 @@ const TOOLS = [
   },
 ];
 
+const WEB_SEARCH_TOOL = { type: "openrouter:web_search" as const };
+
 // --- Tool implementations ---
 
 function executeListCategories(): string {
@@ -206,6 +208,8 @@ function executeGetChecks(categoryId: string): string {
       name: c.label,
       description: c.description,
       automation: c.automation,
+      tier: c.tier,
+      responsibility: c.responsibility || "agency",
       legalBasis: c.legalBasis || null,
     })),
   });
@@ -227,6 +231,8 @@ function executeGetCheckGuide(checkKey: string): string {
     result.name = check.label;
     result.description = check.description;
     result.automation = check.automation;
+    result.tier = check.tier;
+    result.responsibility = check.responsibility || "agency";
     result.legalBasis = check.legalBasis || null;
   }
   if (guide) {
@@ -275,6 +281,8 @@ function executeSearchChecks(query: string): string {
       category: `${c.categoryId}. ${c.category}`,
       description: c.description,
       automation: c.automation,
+      tier: c.tier,
+      responsibility: c.responsibility || "agency",
     })),
   });
 }
@@ -628,10 +636,28 @@ Examples:
 - User mentions any name (company, site, project) -> call getSiteByName to check if it's in the database
 - User asks "what should I fix?" -> call getCurrentSiteStatus or getComplianceOverview
 - User asks about overall status -> call getComplianceOverview
+- User asks about a vendor, DPA, DPF certification, or something outside the app's data -> use web search
 
 The ONLY exception: simple navigation like "where is settings?" or "how do I add a site?" - answer those directly.
 
-NEVER answer with hardcoded knowledge about GDPR rules, check details, remediation steps, or compliance requirements. Always look it up using tools first - the app's data is the source of truth, not your training data. If you can't find the answer via tools, say so and suggest where to look (e.g. the reference pages, official GDPR text, or DPA guidance).
+NEVER answer with hardcoded knowledge about GDPR rules, check details, remediation steps, or compliance requirements. Always look it up using tools first - the app's data is the source of truth, not your training data. If you can't find the answer via tools, try web search. If you still can't find the answer, say so and suggest where to look.
+
+## Check metadata
+Each check has these properties (returned by tools):
+- **tier**: "basic" (enforcement risk, always checked) or "full" (best practice, only in full audits)
+- **automation**: how the check runs - "page-scan" (automatic), "ai-agent" (AI), "gtm-api", "cookiebot-api", "human" (manual), etc.
+- **responsibility**: who is responsible for this check:
+  - "agency" (default) - our technical responsibility (scripts, config, setup)
+  - "client" - the client's organizational responsibility (internal processes like breach plans, ROPA). Our job is to ask if they have it and flag it if they don't.
+  - "content-author" - responsibility of whoever writes the content (privacy policy text, legal language). We check it but the content is not ours to write.
+
+When answering, always mention the responsibility if it's "client" or "content-author" so the user knows what's their job vs what they need to communicate to the client.
+
+## Vendor detection (J1, J3)
+The scan automatically detects third-party services from the site's scripts (Google Analytics, Meta Pixel, HubSpot, etc.) and reports:
+- DPA status: whether the service's Data Processing Agreement is covered by their ToS or needs the client to verify in their account settings
+- DPF certification: whether US vendors are certified under the EU-US Data Privacy Framework
+This data comes from the scan results. If the user asks about a specific vendor not in the app's data, use web search to check.
 
 ## Platform awareness
 Sites can be on different platforms (Webflow, HubSpot, Next.js, WordPress, other). When giving advice:
@@ -640,11 +666,11 @@ Sites can be on different platforms (Webflow, HubSpot, Next.js, WordPress, other
 - Platform-specific IDs (Webflow Site ID, HubSpot Hub ID) are only relevant for their platform
 - Fix instructions differ by platform: Webflow has API-based fixes, other platforms need manual steps
 - Missing IDs are auto-detected during scanning - users don't need to manually enter them unless auto-detection fails
-- Webflow Site ID is only needed for pushing fixes via the Webflow API, not for running audit checks
 
 ## App structure (for navigation questions only)
 Pages in the sidebar: Dashboard, Sites (click to see audit), Reference (Technical Guide, Audit Protocol, Cheat Sheet, Fix Flow Guide, MCP Servers), Settings.
-On a site's audit page: 69 checks in 11 categories, "Scan site" button, "AI Analyze" button, report generation, guide drawer (book icon).
+On a site's audit page: checks in 11 categories, "Scan site" button, "AI Analyze" button, report generation, guide drawer (book icon).
+Filter bar: status badges (OK, Issue, N/A, Not checked) and a check type dropdown (Auto, AI, GTM API, etc.) to filter the checklist.
 Warning triangles = missing Cookiebot ID or GTM Container ID. Add via Edit Site (pencil icon).
 "Sync from Webflow" button on Sites page imports all Webflow workspace sites. "Detect IDs from site" in Edit Site scans the URL for GTM, Cookiebot, and platform-specific IDs.`;
 
@@ -707,7 +733,7 @@ export async function POST(req: NextRequest) {
               body: JSON.stringify({
                 model: settings.primaryModel,
                 messages: openRouterMessages,
-                tools: TOOLS,
+                tools: [...TOOLS, WEB_SEARCH_TOOL],
                 temperature: 0.3,
               }),
             });
@@ -749,6 +775,8 @@ export async function POST(req: NextRequest) {
             });
 
             for (const toolCall of assistantMessage.tool_calls) {
+              if (!toolCall.function) continue;
+
               let args: Record<string, string> = {};
               try {
                 args = JSON.parse(toolCall.function.arguments);

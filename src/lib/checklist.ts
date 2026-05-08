@@ -496,7 +496,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "H3", label: "GTM Preview Mode test: decline all", description: "Open GTM Preview Mode, decline all cookies, and verify: the Consent tab should show 'Denied' for all types, and non-Google tags should appear under 'Not Fired'.", automation: "human", tier: "basic",
+        key: "H3", label: "GTM Preview Mode test: decline all", description: "Open GTM Preview Mode, decline all cookies, and verify: the Consent tab should show 'Denied' for all types, and non-Google tags should appear under 'Not Fired'.", automation: "human", tier: "full",
         legalBasis: "The most important test - proves that declining cookies actually prevents tracking. If tags still fire after declining, your setup is broken.",
         references: [
           { label: "GDPR Art. 25 - Data protection by design", url: "https://gdpr-info.eu/art-25-gdpr/" },

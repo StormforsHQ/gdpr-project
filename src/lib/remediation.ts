@@ -226,7 +226,7 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   G7: {
     plainExplanation: "Dark patterns are design tricks that push visitors toward accepting cookies when they might not want to. Pre-ticked boxes, guilt-trip language ('you'll miss out!'), cookie walls that block the site, or making 'Reject' hard to find are all violations.",
     steps: [
-      { instruction: "Cookiebot: Go to admin > Banner > Layout. If the consent dialog uses checkboxes, verify they are all unticked by default. If pre-ticked: change to unticked in the template settings", platform: "all" },
+      { instruction: "Cookiebot: Go to admin > Banner > Layout. If the consent dialog uses checkboxes, verify that Statistics, Marketing, and Preferences are all unticked by default. Necessary is always ticked and greyed out (this is correct - those cookies are legally exempt from consent)", platform: "all" },
       { instruction: "Cookiebot: Go to admin > Banner > Layout. Choose a template that includes a 'Reject All' button on the first screen, next to 'Accept All'", platform: "all" },
       { instruction: "Remove guilt language or manipulative wording from the banner text (e.g. \"Don't miss out!\", \"We value your experience\", \"Accept to continue enjoying our site\")", platform: "all" },
       { instruction: "Cookiebot: Go to admin > Banner > Text and review all banner copy", platform: "all" },

@@ -28,7 +28,7 @@ function ComplianceBar({ ok, issues, na, notChecked }: { ok: number; issues: num
 function CategoryBar({ checks }: { checks: { status: string }[] }) {
   const ok = checks.filter((c) => c.status === "ok").length;
   const issues = checks.filter((c) => c.status === "issue").length;
-  const na = checks.filter((c) => c.status === "na" || c.status === "blocked").length;
+  const na = checks.filter((c) => c.status === "na" || c.status === "blocked" || c.status === "client_managed").length;
   const notChecked = checks.filter((c) => c.status === "not_checked" || !c.status).length;
   return <ComplianceBar ok={ok} issues={issues} na={na} notChecked={notChecked} />;
 }
@@ -326,8 +326,8 @@ export function ReportView({ report, siteId, showVersion = true }: ReportViewPro
                     <tr key={check.key}>
                       <td style={{ padding: "5px 8px", borderBottom: "1px solid #f5f5f5", color: "#888", fontWeight: 500 }}>{check.key}</td>
                       <td style={{ padding: "5px 8px", borderBottom: "1px solid #f5f5f5", color: "#333" }}>{check.label}</td>
-                      <td style={{ padding: "5px 8px", borderBottom: "1px solid #f5f5f5", textAlign: "center", fontWeight: 500, fontSize: "11px", color: check.status === "ok" ? "#2d8a4e" : check.status === "issue" ? "#c0392b" : check.status === "blocked" ? "#d97706" : "#999" }}>
-                        {check.status === "ok" ? "OK" : check.status === "issue" ? "Issue" : check.status === "na" ? "N/A" : check.status === "blocked" ? "Blocked" : ""}
+                      <td style={{ padding: "5px 8px", borderBottom: "1px solid #f5f5f5", textAlign: "center", fontWeight: 500, fontSize: "11px", color: check.status === "ok" ? "#2d8a4e" : check.status === "issue" ? "#c0392b" : check.status === "blocked" ? "#d97706" : check.status === "client_managed" ? "#0891b2" : "#999" }}>
+                        {check.status === "ok" ? "OK" : check.status === "issue" ? "Issue" : check.status === "na" ? "N/A" : check.status === "blocked" ? "Blocked" : check.status === "client_managed" ? "Client managed" : ""}
                       </td>
                       <td style={{ padding: "5px 8px", borderBottom: "1px solid #f5f5f5", color: "#666", fontSize: "11px" }}>
                         {check.notes || "-"}

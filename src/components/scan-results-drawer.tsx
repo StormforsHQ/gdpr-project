@@ -143,6 +143,8 @@ export function ScanResultsDrawer({
               <Badge variant="destructive" className="text-xs">Issue</Badge>
             ) : checkResult?.status === "blocked" ? (
               <Badge variant="secondary" className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400">Blocked</Badge>
+            ) : checkResult?.status === "client_managed" ? (
+              <Badge variant="secondary" className="text-xs bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">Client managed?</Badge>
             ) : checkResult ? (
               <Badge variant="secondary" className="text-xs">N/A</Badge>
             ) : null}

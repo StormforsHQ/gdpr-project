@@ -63,7 +63,7 @@ function generateCategoryComment(cat: CategoryData): string {
   const total = cat.checks.length;
   const issues = cat.checks.filter((c) => c.status === "issue");
   const ok = cat.checks.filter((c) => c.status === "ok");
-  const na = cat.checks.filter((c) => c.status === "na" || c.status === "blocked");
+  const na = cat.checks.filter((c) => c.status === "na" || c.status === "blocked" || c.status === "client_managed");
 
   if (issues.length === 0 && ok.length === total) {
     return `All ${total} checks in this category are compliant. No issues identified.`;
@@ -106,7 +106,7 @@ async function loadAuditData(auditId: string) {
   const totalChecks = CHECKLIST.reduce((sum, cat) => sum + cat.checks.length, 0);
   const ok = audit.results.filter((r) => r.status === "ok").length;
   const issues = audit.results.filter((r) => r.status === "issue").length;
-  const na = audit.results.filter((r) => r.status === "na" || r.status === "blocked").length;
+  const na = audit.results.filter((r) => r.status === "na" || r.status === "blocked" || r.status === "client_managed").length;
   const notChecked = totalChecks - ok - issues - na;
 
   const categories: CategoryData[] = CHECKLIST.map((cat) => ({

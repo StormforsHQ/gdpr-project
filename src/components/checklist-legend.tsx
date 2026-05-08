@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, HelpCircle, CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, ClipboardList, Scan, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronRight, HelpCircle, CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, ClipboardList, Scan, Sparkles, UserCircle } from "lucide-react";
 
 export function ChecklistLegend() {
   const [open, setOpen] = useState(false);
@@ -54,6 +54,10 @@ export function ChecklistLegend() {
               <div className="flex items-center gap-2">
                 <MinusCircle className="h-4 w-4 text-muted-foreground shrink-0" />
                 <p>N/A - not applicable to this site</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <UserCircle className="h-4 w-4 text-cyan-500 shrink-0" />
+                <p>Client managed? - the client likely manages this themselves (e.g. their own GTM). Verify with the client.</p>
               </div>
             </div>
           </div>

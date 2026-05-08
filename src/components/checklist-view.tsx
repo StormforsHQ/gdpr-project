@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { CheckItem, type FixInfo } from "@/components/check-item";
 import { CheckGuideDrawer } from "@/components/check-guide-drawer";
 import { ScanResultsDrawer } from "@/components/scan-results-drawer";
-import { CHECKLIST, type CheckStatus } from "@/lib/checklist";
+import { CHECKLIST, AUTOMATION_CONFIG, type CheckStatus } from "@/lib/checklist";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan, runGtmScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
 import { saveCheckResult, saveInternalNote, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType, resetAllChecks } from "@/app/actions/audits";
@@ -561,6 +561,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
   const visibleCheckKeys = new Set(filteredChecklist.flatMap((c) => c.checks.map((ch) => ch.key)));
   const basicCheckKeys = new Set(CHECKLIST.flatMap((c) => c.checks.filter((ch) => ch.tier === "basic").map((ch) => ch.key)));
+  const checkAutomation = new Map(filteredChecklist.flatMap((c) => c.checks.map((ch) => [ch.key, ch.automation] as const)));
   const visibleStates = Object.entries(checkStates).filter(([key]) => visibleCheckKeys.has(key));
   const totalChecks = visibleCheckKeys.size;
   const totalChecked = visibleStates.filter(([, s]) => s.status !== "not_checked").length;
@@ -585,12 +586,19 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const matchesFilter = (key: string): boolean => {
     if (activeFilters.size === 0) return true;
     const state = getCheckState(key);
+    const statusFilters: string[] = [];
+    const autoFilters: string[] = [];
     for (const filter of activeFilters) {
-      if (filter === "has_comments" && state.notes.trim()) return true;
-      if (filter === "has_internal_note" && state.internalNote.trim()) return true;
-      if (filter === state.status) return true;
+      if (filter.startsWith("auto:")) autoFilters.push(filter.slice(5));
+      else statusFilters.push(filter);
     }
-    return false;
+    const matchesStatus = statusFilters.length === 0 || statusFilters.some((f) => {
+      if (f === "has_comments") return state.notes.trim().length > 0;
+      if (f === "has_internal_note") return state.internalNote.trim().length > 0;
+      return f === state.status;
+    });
+    const matchesAuto = autoFilters.length === 0 || autoFilters.includes(checkAutomation.get(key) || "");
+    return matchesStatus && matchesAuto;
   };
 
   const scannedCheckCount = scanResult?.checks.length ?? 0;
@@ -838,6 +846,29 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             Internal notes ({totalWithInternalNotes})
           </Badge>
         </button>
+        <span className="text-muted-foreground text-xs">|</span>
+        {Object.entries(
+          Array.from(checkAutomation.values()).reduce<Record<string, number>>((acc, type) => {
+            acc[type] = (acc[type] || 0) + 1;
+            return acc;
+          }, {})
+        )
+          .sort(([, a], [, b]) => b - a)
+          .map(([type, count]) => {
+            const config = AUTOMATION_CONFIG[type as keyof typeof AUTOMATION_CONFIG];
+            if (!config) return null;
+            const filterKey = `auto:${type}`;
+            return (
+              <button key={type} onClick={() => toggleFilter(filterKey)}>
+                <Badge
+                  variant="secondary"
+                  className={`cursor-pointer text-xs ${config.className} ${activeFilters.has(filterKey) ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+                >
+                  {config.label} ({count})
+                </Badge>
+              </button>
+            );
+          })}
         {activeFilters.size > 0 && (
           <button
             onClick={() => setActiveFilters(new Set())}

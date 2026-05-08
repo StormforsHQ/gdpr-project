@@ -6,6 +6,7 @@ import { fetchCookiebotData, runCookiebotChecks } from "@/lib/cookiebot";
 import { isGtmConfigured, findCookiebotIdInContainer, getContainerInfo, listTags, listTriggers, listWorkspaces } from "@/lib/api/gtm";
 import { runGtmChecks } from "@/lib/gtm-checks";
 import { prisma } from "@/lib/db";
+import { revalidatePath } from "next/cache";
 import { getEffectiveAPIKey } from "@/app/actions/ai-settings";
 import type { CheckResult } from "@/lib/scanner";
 
@@ -66,10 +67,10 @@ export async function runPageScan(url: string, siteId?: string): Promise<ScanRes
         const site = await prisma.site.findUnique({ where: { id: siteId } });
         if (site) {
           const updates: { cookiebotId?: string; gtmId?: string; webflowId?: string } = {};
-          if (result.detectedCookiebotId && !site.cookiebotId) {
+          if (result.detectedCookiebotId && site.cookiebotId !== result.detectedCookiebotId) {
             updates.cookiebotId = result.detectedCookiebotId;
           }
-          if (result.detectedGtmId && !site.gtmId) {
+          if (result.detectedGtmId && site.gtmId !== result.detectedGtmId) {
             updates.gtmId = result.detectedGtmId;
           }
           if (!site.webflowId && site.platform === "webflow") {
@@ -87,6 +88,7 @@ export async function runPageScan(url: string, siteId?: string): Promise<ScanRes
           }
           if (Object.keys(updates).length > 0) {
             await prisma.site.update({ where: { id: siteId }, data: updates });
+            revalidatePath(`/sites/${siteId}`);
           }
         }
       } catch (dbErr) {

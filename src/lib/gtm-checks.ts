@@ -365,7 +365,19 @@ export function runGtmChecks(tags: GtmTag[], triggers: GtmTrigger[]): CheckResul
   ];
 
   const g1 = checkG1Gtm(tags);
-  if (g1) results.push(g1);
+  if (g1) {
+    results.push(g1);
+    results.push({
+      checkKey: "G8",
+      status: "blocked",
+      findings: [{
+        element: "Cookiebot via GTM",
+        detail: "Cookiebot is loaded through GTM so the consent widget is dynamically injected. Verify in the browser that a floating cookie icon or 'Cookie settings' link exists for changing consent.",
+        severity: "warning",
+      }],
+      summary: "Cookiebot via GTM - verify withdrawal widget in browser",
+    });
+  }
 
   return results;
 }

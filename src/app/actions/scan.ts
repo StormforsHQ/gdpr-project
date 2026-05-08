@@ -127,15 +127,16 @@ export async function runCookiebotScan(cookiebotId: string, siteUrl?: string): P
     const data = await fetchCookiebotData(cookiebotId.trim(), referer);
     if (!data) {
       return cookiebotFailureResults(
-        `Could not fetch data for Cookiebot ID: ${cookiebotId}. Check that the ID is correct and the Cookiebot subscription is active.`,
-        "Cookiebot data unavailable",
+        `Couldn't get data from Cookiebot for ID ${cookiebotId}. This usually means the ID is wrong or the Cookiebot subscription has expired. Double-check the ID in admin.cookiebot.com and make sure the subscription is active.`,
+        "Cookiebot not responding",
       );
     }
     return runCookiebotChecks(data);
   } catch (error) {
+    const errMsg = error instanceof Error ? error.message : "Unknown error";
     return cookiebotFailureResults(
-      error instanceof Error ? error.message : "Cookiebot scan failed",
-      "Cookiebot scan failed",
+      `Something went wrong checking Cookiebot: ${errMsg}. Try scanning again - if it keeps failing, verify the Cookiebot ID in admin.cookiebot.com.`,
+      "Cookiebot check failed",
     );
   }
 }
@@ -158,8 +159,8 @@ export async function runGtmScan(gtmId: string): Promise<CheckResult[]> {
 
   if (!isGtmConfigured()) {
     return gtmFailureResults(
-      "GTM API not configured (missing OAuth credentials). Set up GTM OAuth in Settings to enable these checks.",
-      "GTM API not available",
+      "The GTM API connection isn't set up yet. Go to Settings and connect your Google account to enable these checks.",
+      "GTM API not connected",
     );
   }
 
@@ -169,8 +170,8 @@ export async function runGtmScan(gtmId: string): Promise<CheckResult[]> {
     const defaultWs = workspaces.find((w) => w.name === "Default Workspace") || workspaces[0];
     if (!defaultWs) {
       return gtmFailureResults(
-        "No workspace found in this GTM container. The container may be empty or misconfigured.",
-        "GTM workspace not found",
+        "This GTM container looks empty - no workspace was found inside it. It might be a new container that hasn't been set up yet. Check tagmanager.google.com to see if it has any tags configured.",
+        "GTM container is empty",
       );
     }
 
@@ -182,9 +183,9 @@ export async function runGtmScan(gtmId: string): Promise<CheckResult[]> {
     const msg = error instanceof Error ? error.message : "Unknown error";
     const isNoAccess = /forbidden|403|permission|access|not found/i.test(msg);
     const detail = isNoAccess
-      ? `Our Google account doesn't have access to this GTM container (${gtmId}). This usually means the client manages their own GTM. To run these checks: ask the client to grant read access to our Google account, or log into their GTM at tagmanager.google.com and check these items manually.`
-      : `GTM API error: ${msg}`;
-    return gtmFailureResults(detail, isNoAccess ? "No access to GTM container" : "GTM scan failed");
+      ? `We can't see inside this GTM container (${gtmId}) because it's not in our Google account. The client probably manages it themselves.\n\nWhat you can do:\n- Ask the client to invite our Google account as a reader in their GTM (Admin > User Management)\n- Or ask the client to check these items themselves in tagmanager.google.com\n- Or log into the client's GTM directly if they share access`
+      : `Something went wrong connecting to the GTM API: ${msg}. Try scanning again - if it keeps failing, check that the GTM OAuth credentials in Settings are still valid.`;
+    return gtmFailureResults(detail, isNoAccess ? "Can't access this GTM container" : "GTM connection error");
   }
 }
 

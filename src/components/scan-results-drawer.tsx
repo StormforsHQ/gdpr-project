@@ -204,7 +204,7 @@ export function ScanResultsDrawer({
                       <div key={i} className="space-y-1">
                         <div className="flex items-start gap-2">
                           {SEVERITY_ICON[finding.severity]}
-                          <p className="text-sm">{finding.detail}</p>
+                          <p className="text-sm whitespace-pre-line">{finding.detail}</p>
                         </div>
                         {finding.element && finding.element !== "page" && (
                           <code className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded block ml-5 break-all">

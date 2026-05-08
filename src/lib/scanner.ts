@@ -961,10 +961,10 @@ function checkG8($: cheerio.CheerioAPI, html: string, hasBanner: boolean): Check
   if (hasCookiebotScript || hasBanner) {
     findings.push({
       element: "page",
-      detail: "Cookiebot is present but no persistent consent widget or footer link was found in the static HTML. The widget may be loaded dynamically - verify in the browser that a floating cookie icon or 'Cookie settings' link exists.",
+      detail: "The consent widget can't be checked automatically because it loads after the page renders. Open the site in a browser and look for a small floating cookie icon (usually bottom-left) or a 'Cookie settings' link in the footer. Visitors need one of these to change their consent choice.",
       severity: "warning",
     });
-    return { checkKey: "G8", status: "blocked", findings, summary: "Cookiebot present - verify widget in browser" };
+    return { checkKey: "G8", status: "blocked", findings, summary: "Check in browser: can visitors change their cookie choice?" };
   }
 
   if (!hasBanner) {

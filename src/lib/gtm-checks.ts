@@ -372,10 +372,10 @@ export function runGtmChecks(tags: GtmTag[], triggers: GtmTrigger[]): CheckResul
       status: "blocked",
       findings: [{
         element: "Cookiebot via GTM",
-        detail: "Cookiebot is loaded through GTM so the consent widget is dynamically injected. Verify in the browser that a floating cookie icon or 'Cookie settings' link exists for changing consent.",
+        detail: "The consent widget can't be checked automatically because it loads after the page renders. Open the site in a browser and look for a small floating cookie icon (usually bottom-left) or a 'Cookie settings' link in the footer. Visitors need one of these to change their consent choice.",
         severity: "warning",
       }],
-      summary: "Cookiebot via GTM - verify withdrawal widget in browser",
+      summary: "Check in browser: can visitors change their cookie choice?",
     });
   }
 

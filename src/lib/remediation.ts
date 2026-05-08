@@ -121,9 +121,10 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   E4: {
     plainExplanation: "Chat widgets (like Intercom, Drift, Crisp) often set cookies and track visitor behavior as soon as they load. If the chat is not strictly necessary for the site to function, it needs to wait for the visitor's consent before loading.",
     steps: [
-      { instruction: "Move the chat widget script from site code into GTM*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Set consent trigger on the GTM tag (typically preferences or marketing category)*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Alternative: check if the chat provider offers a consent-aware loading option", platform: "all" },
+      { instruction: "Find the chat widget script in the site code (header/footer custom code, or an embed element). Copy the script code", platform: "all" },
+      { instruction: "Remove the script from the site code. In GTM: create a new Custom HTML tag, paste the chat script, set consent to 'Require additional consent' with type 'functionality_storage' (preferences) or 'ad_storage' (marketing) depending on the widget*", platform: "all", needsDevOrLegal: true },
+      { instruction: "If the chat provider has a consent-aware mode (e.g. HubSpot chat has a cookie consent setting): enable it in the provider's admin panel instead of managing via GTM", platform: "all" },
+      { instruction: "Test: decline all cookies, verify the chat widget does not appear. Accept cookies, verify it loads", platform: "all" },
     ],
     devLegalNote: "Chat widgets that only provide customer support typically go under 'preferences'. If the widget also tracks behavior or feeds into marketing automation (like HubSpot Chat), it should go under 'marketing'. Check what cookies the widget sets to decide.",
   },
@@ -131,9 +132,9 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   E5: {
     plainExplanation: "Social media embeds (Facebook feeds, Twitter widgets, Instagram posts) load external scripts that track visitors across sites. They need consent before loading, or should be replaced with simple links to the social profiles.",
     steps: [
-      { instruction: "Move social embed scripts from site code into GTM with consent triggers*", platform: "all", needsDevOrLegal: true },
-      { instruction: "For iframe embeds: implement click-to-load or gate behind consent*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Alternative: use simple text links to social profiles instead of embedded widgets", platform: "all" },
+      { instruction: "Find social media embeds in the page source (Facebook feeds, Twitter/X timelines, Instagram widgets). In Webflow: check embed elements and custom code blocks", platform: "all" },
+      { instruction: "Remove the embed script from the site code. In GTM: create a new Custom HTML tag with the embed code, set consent trigger to 'ad_storage' (marketing)*", platform: "all", needsDevOrLegal: true },
+      { instruction: "For iframe embeds (e.g. Facebook Page Plugin): replace with a static image/screenshot of the feed + a link to the social profile page. This avoids consent requirements entirely", platform: "all" },
     ],
     devLegalNote: "Social media embeds that track visitors should be assigned to the 'marketing' consent category. Simple links to social profiles don't require consent since they don't load any external scripts.",
   },
@@ -141,9 +142,10 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   F2: {
     plainExplanation: "GDPR requires data minimization: only collect personal data that is actually needed for the form's purpose. A contact form asking for a phone number, company size, or birthday when none of those are necessary is over-collecting.",
     steps: [
-      { instruction: "Review each form field flagged and determine if it's necessary for the form's purpose", platform: "all" },
-      { instruction: "Remove fields that aren't needed, or make them optional with clear labeling", platform: "all" },
-      { instruction: "If a field is legally required, document the justification*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Open each form on the site and list every field: name, email, phone, company, address, etc.", platform: "all" },
+      { instruction: "For each field, ask: would the form's purpose fail without this? A contact form needs name + email, but not phone or company size", platform: "all" },
+      { instruction: "Webflow: Edit the form component > delete unnecessary fields or set them to 'Not required' and label them '(optional)'", platform: "webflow" },
+      { instruction: "If a field seems excessive but the client insists it's needed: document the business reason in writing*", platform: "all", needsDevOrLegal: true },
     ],
     devLegalNote: "If a field collects data beyond what's obviously needed (e.g. a newsletter signup asking for a home address), there should be a documented business reason. This justification may be needed if a data protection authority asks why that data is collected.",
   },
@@ -161,10 +163,11 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   F4: {
     plainExplanation: "GDPR requires that consent is specific and freely given. A single checkbox that says 'I agree to receive marketing AND accept the terms' bundles two different things together. Each purpose needs its own separate checkbox, and none can be pre-ticked.",
     steps: [
-      { instruction: "Separate bundled consent checkboxes into individual checkboxes per purpose", platform: "all" },
-      { instruction: "Ensure all consent checkboxes are unchecked by default (no pre-ticking)", platform: "all" },
-      { instruction: "Label each checkbox clearly: one for inquiry/service, one for marketing/newsletter", platform: "all" },
-      { instruction: "Marketing consent must be optional - form submission should work without it*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Find forms with a single checkbox covering multiple purposes (e.g. 'I agree to terms AND want marketing emails')", platform: "all" },
+      { instruction: "Split into separate checkboxes: one per purpose (e.g. 'I accept the terms of service' + 'I want to receive marketing emails')", platform: "all" },
+      { instruction: "Webflow: Edit the form > add separate checkbox fields for each consent purpose, set all to unchecked by default", platform: "webflow" },
+      { instruction: "Set all consent checkboxes to unchecked by default in the form builder - never pre-tick them", platform: "all" },
+      { instruction: "Test: submit the form with the marketing checkbox unchecked - the form must still work*", platform: "all", needsDevOrLegal: true },
     ],
     devLegalNote: "The form must work even if the visitor only checks the required boxes (like accepting terms) and leaves optional ones unchecked (like marketing). If the form fails to submit without marketing consent, that's forced consent and violates GDPR.",
   },
@@ -182,11 +185,11 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   F6: {
     plainExplanation: "Swedish personnummer (personal identity number) is classified as specially protected data under Swedish law. Collecting it requires a specific and documented need - it can't be collected 'just in case' or for convenience.",
     steps: [
-      { instruction: "Search all forms on the site for fields collecting personnummer, samordningsnummer, or similar national ID numbers", platform: "all" },
-      { instruction: "For each field found: document the business justification for why personnummer is needed*", platform: "all", needsDevOrLegal: true },
-      { instruction: "If the form's purpose can be achieved without personnummer, remove the field", platform: "all" },
-      { instruction: "If personnummer is genuinely needed: make the field optional if possible, and add clear text explaining why it is needed", platform: "all" },
-      { instruction: "Ensure the privacy policy specifically mentions personnummer processing and the legal basis*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Browse all forms on the site and look for fields labeled 'personnummer', 'personal identity number', 'samordningsnummer', 'SSN', or similar national ID fields", platform: "all" },
+      { instruction: "For each field found: ask the client why they collect it. Write down the specific business reason (e.g. 'required for insurance claim processing')*", platform: "all", needsDevOrLegal: true },
+      { instruction: "If the form works without it (e.g. a contact form or newsletter signup): remove the field entirely. Webflow: edit the form and delete the field", platform: "webflow" },
+      { instruction: "If personnummer is genuinely needed: make the field optional if possible, and add helper text next to the field explaining why (e.g. 'Required for identity verification when processing your insurance claim')", platform: "all" },
+      { instruction: "Open the privacy policy and add a specific section about personnummer: why it's collected, the legal basis under dataskyddslagen 2018:218, and how it's protected*", platform: "all", needsDevOrLegal: true },
     ],
     devLegalNote: "Under the Swedish Data Protection Act (2018:218), processing personnummer requires that it is 'clearly justified' by the purpose. The privacy policy must state why personnummer is collected, the legal basis for processing it, and how it is protected.",
     docLinks: [
@@ -197,10 +200,10 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   G2: {
     plainExplanation: "If the 'Accept' button is big and green but 'Reject' is small, grey, or hidden behind a 'Settings' link, that's a dark pattern. Both choices must be equally easy to find and click. EU regulators actively enforce this.",
     steps: [
-      { instruction: "Ensure Accept and Reject/Decline buttons have the same visual weight", platform: "all" },
-      { instruction: "Cookiebot: Go to Cookiebot admin > Banner > Layout and ensure Reject is on the same layer as Accept", platform: "all" },
-      { instruction: "Both buttons should be the same size, same styling, same number of clicks to reach", platform: "all" },
-      { instruction: "EDPB Cookie Banner Taskforce: reject must be available on the first layer, not hidden in settings*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Open the site in incognito and look at the consent banner - compare the Accept and Reject buttons side by side", platform: "all" },
+      { instruction: "Cookiebot: Go to admin > Banner > Layout. Set the template to one that shows both Accept All and Reject All as buttons (not a link) on the first screen", platform: "all" },
+      { instruction: "Cookiebot: Go to admin > Banner > Styling. Set both buttons to the same size, font weight, and similar color contrast (e.g. both solid-colored, not one solid and one outline/ghost)", platform: "all" },
+      { instruction: "Reject must be on the first screen - not hidden behind 'Settings' or 'Customize'. If it's only accessible after clicking into preferences, change the banner layout*", platform: "all", needsDevOrLegal: true },
     ],
     devLegalNote: "The EDPB (European Data Protection Board) has explicitly stated that rejecting cookies must be as easy as accepting them. Hiding 'Reject' behind a settings menu or making it visually less prominent than 'Accept' counts as a dark pattern and can result in enforcement action.",
     docLinks: [
@@ -223,11 +226,11 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   G7: {
     plainExplanation: "Dark patterns are design tricks that push visitors toward accepting cookies when they might not want to. Pre-ticked boxes, guilt-trip language ('you'll miss out!'), cookie walls that block the site, or making 'Reject' hard to find are all violations.",
     steps: [
-      { instruction: "Fix any pre-ticked consent checkboxes (must be unticked by default)", platform: "all" },
-      { instruction: "Add a visible Reject/Decline All button on the same layer as Accept All", platform: "all" },
-      { instruction: "Remove guilt language or manipulative wording from the banner text", platform: "all" },
+      { instruction: "Cookiebot: Go to admin > Banner > Layout. If the consent dialog uses checkboxes, verify they are all unticked by default. If pre-ticked: change to unticked in the template settings", platform: "all" },
+      { instruction: "Cookiebot: Go to admin > Banner > Layout. Choose a template that includes a 'Reject All' button on the first screen, next to 'Accept All'", platform: "all" },
+      { instruction: "Remove guilt language or manipulative wording from the banner text (e.g. \"Don't miss out!\", \"We value your experience\", \"Accept to continue enjoying our site\")", platform: "all" },
       { instruction: "Cookiebot: Go to admin > Banner > Text and review all banner copy", platform: "all" },
-      { instruction: "Ensure declining cookies does not block access to site content (no cookie walls)*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Ensure declining cookies does not block access to site content (no cookie walls) - test by clicking Reject All and verifying all pages, content, and features remain fully accessible*", platform: "all", needsDevOrLegal: true },
     ],
     devLegalNote: "Cookie walls (blocking site access until the visitor consents) are generally not allowed under GDPR unless the site genuinely offers an equivalent alternative (which is rare). If declining cookies causes any part of the site to become inaccessible, that's a compliance issue.",
   },
@@ -235,9 +238,9 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   I1: {
     plainExplanation: "GDPR Article 13 lists 12 specific things that must be in a privacy policy (like who controls the data, why it's collected, how long it's kept, and the visitor's rights). Missing any of these is a compliance gap.",
     steps: [
-      { instruction: "Review the privacy policy against the 12 required GDPR Art. 13 elements listed in the findings*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Add any missing elements identified by the audit*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Ensure legal basis is stated for each processing purpose (not just 'legitimate interest' for everything)*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Open the privacy policy page and check for each of the 12 required Art. 13 items: (1) company name + contact, (2) DPO contact if applicable, (3) each processing purpose + its legal basis, (4) legitimate interests if used, (5) who data is shared with, (6) international transfers, (7) how long data is kept, (8) visitor rights (access, rectify, erase, restrict, port, object), (9) right to withdraw consent, (10) right to complain to a DPA, (11) whether data provision is required, (12) automated decision-making if applicable", platform: "all" },
+      { instruction: "For each missing item: draft the text and add it to the privacy policy page. Webflow: edit the privacy policy page content directly*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Check that each processing purpose (e.g. analytics, marketing, contact forms) states a specific legal basis - not just 'legitimate interest' for everything. Common bases: consent (marketing), legitimate interest (analytics), contractual necessity (order processing)*", platform: "all", needsDevOrLegal: true },
     ],
     devLegalNote: "Updating a privacy policy is a legal task - the content must be accurate and reflect the actual data processing that happens on the site. Work with someone who understands the site's data flows and the legal requirements.",
   },
@@ -245,8 +248,10 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   I2: {
     plainExplanation: "If the site has content in multiple languages, the privacy policy must also be available in each of those languages. A Swedish visitor browsing a Swedish site should not need to read an English privacy policy to understand how their data is handled.",
     steps: [
-      { instruction: "Create translated versions of the privacy policy for each language the site supports*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Link each translated privacy policy from the corresponding language version of the site", platform: "all" },
+      { instruction: "List the languages the site has content in (check the language switcher or URL structure like /en/, /sv/, /de/)", platform: "all" },
+      { instruction: "For each language that doesn't have a privacy policy: create a translated version of the policy. Use a professional translator, not just Google Translate, for legal text*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Webflow: create a new privacy policy page for each language version, add the translated content, and link to it from that language version's footer", platform: "webflow" },
+      { instruction: "Test: switch to each language and click the footer privacy policy link - it should open in the matching language", platform: "all" },
     ],
     devLegalNote: "Translations should be done by someone who understands legal language in the target language. Machine translations of legal text can introduce inaccuracies that create compliance issues.",
   },
@@ -290,11 +295,11 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   I8: {
     plainExplanation: "A privacy policy that is hard to read defeats its purpose. GDPR requires that privacy information is provided in 'clear and plain language'. Long walls of legal text with no structure or headings make it practically impossible for a normal person to understand their rights.",
     steps: [
-      { instruction: "Restructure the privacy policy with clear headings and sections*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Add a table of contents at the top if the policy is longer than 1000 words", platform: "all" },
-      { instruction: "Replace legal jargon with plain language, or add explanations in parentheses*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Add a 'Last updated' date at the top of the policy", platform: "all" },
-      { instruction: "Consider adding a short summary/overview section before the full details", platform: "all" },
+      { instruction: "Open the privacy policy page. If it's a wall of text with no headings: add H2 headings for each section (e.g. 'Who we are', 'What data we collect', 'How we use it', 'Your rights', 'Contact us')*", platform: "all", needsDevOrLegal: true },
+      { instruction: "If the policy is longer than ~1000 words: add a clickable table of contents at the top with anchor links to each section", platform: "all" },
+      { instruction: "Look for dense legal jargon (e.g. 'data subjects may exercise their right to data portability pursuant to Art. 20') and rewrite in plain language (e.g. 'You can ask us to send your data to another service'). Keep the legal reference in parentheses if needed*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Add a visible 'Last updated: [date]' line at the top of the policy page", platform: "all" },
+      { instruction: "Add a 2-3 sentence summary at the very top: who you are, what data you collect, and how to contact you - then the full details below", platform: "all" },
     ],
     devLegalNote: "Simplifying a privacy policy doesn't mean removing legally required content. It means restructuring and rewording so a non-lawyer can understand it. Consider a layered approach: a simple overview first, then the full legal detail below.",
   },
@@ -483,11 +488,11 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   E6: {
     plainExplanation: "CRM systems like HubSpot and Salesforce receive personal data from forms (names, emails, etc.) and may also track visitor behavior. If the CRM is a US-based service, you need both a DPA and a valid data transfer mechanism.",
     steps: [
-      { instruction: "List all CRM integrations on the site (HubSpot, Salesforce, Pipedrive, etc.)", platform: "all" },
-      { instruction: "For each CRM: verify a Data Processing Agreement (DPA) is signed - most have this in their settings", platform: "all" },
-      { instruction: "For US-based CRMs: check DPF certification on dataprivacyframework.gov*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Review what data the CRM receives: form submissions, visitor tracking, cookies", platform: "all" },
-      { instruction: "If the CRM sets tracking cookies: ensure they're categorized in Cookiebot and behind consent", platform: "all" },
+      { instruction: "List all CRM integrations on the site (check form action URLs, embedded scripts, and GTM tags for HubSpot, Salesforce, Pipedrive, etc.)", platform: "all" },
+      { instruction: "For each CRM: check the DPA status. HubSpot: Settings > Account > Data Privacy > DPA. Salesforce: Trust & Compliance > DPA. Most have a DPA you can accept in their admin panel", platform: "all" },
+      { instruction: "For US-based CRMs: search the company name on dataprivacyframework.gov and confirm the status shows 'Active'*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Check what the CRM receives: open a form on the site, submit test data, then check the CRM to see what was stored (form fields, IP address, page URL, referrer)", platform: "all" },
+      { instruction: "If the CRM sets tracking cookies (e.g. HubSpot's __hs* cookies): open Cookiebot admin > cookie report and verify those cookies are categorized as Marketing or Statistics, not Necessary", platform: "all" },
     ],
     devLegalNote: "A DPA is a legal contract, not a technical setting. Most major CRMs (HubSpot, Salesforce) have standard DPAs available in their account settings or legal pages. The client (data controller) must accept/sign the DPA.",
   },
@@ -495,22 +500,20 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   F1: {
     plainExplanation: "Every form on the site collects personal data - even a simple contact form asks for a name and email. You need to know exactly how many forms exist and what they collect so you can review each one for privacy compliance.",
     steps: [
-      { instruction: "Review the scan results above - the scanner identifies forms found in the page HTML", platform: "all" },
-      { instruction: "Browse the full site manually to catch forms on pages that weren't scanned (subpages, landing pages, pop-ups)", platform: "all" },
-      { instruction: "For each form: list what fields it collects (name, email, phone, company, message, etc.)", platform: "all" },
-      { instruction: "Note which forms go to third-party services (HubSpot, Mailchimp, etc.) vs the site's own backend", platform: "all" },
-      { instruction: "Use this inventory for the remaining form checks (F2-F6)", platform: "all" },
+      { instruction: "Check the scan findings above for detected forms. Then manually browse the full site (especially /contact, /about, /newsletter, landing pages) to catch forms the scanner missed", platform: "all" },
+      { instruction: "For each form found: open it and write down every field (name, email, phone, company, message, etc.) and whether each is marked required or optional", platform: "all" },
+      { instruction: "Check the form's action URL or integration: right-click the form > Inspect > look at the <form> tag's action attribute. Common destinations: HubSpot, Mailchimp, Webflow native, custom API", platform: "all" },
+      { instruction: "Create a simple list: form name/location, fields collected, where data goes, privacy policy link present (yes/no). Use this for checks F2-F6", platform: "all" },
     ],
   },
 
   G3: {
     plainExplanation: "A consent banner that only offers 'Accept All' or 'Reject All' isn't enough. Visitors must be able to choose individually - for example, accepting analytics cookies but declining marketing cookies. Cookiebot supports this by default, but it needs to be configured correctly.",
     steps: [
-      { instruction: "Open the site and check if the consent banner offers category-level controls (not just Accept/Reject)", platform: "all" },
-      { instruction: "Verify each category is selectable independently: Necessary (always on), Statistics, Marketing, Preferences", platform: "all" },
-      { instruction: "If categories aren't shown: check Cookiebot admin > Banner configuration for the consent dialog type", platform: "all" },
-      { instruction: "The dialog type should be 'Opt-in' with category details visible, not a simple accept/reject popup", platform: "all" },
-      { instruction: "Test: accept only Statistics, decline Marketing - then verify in DevTools that marketing cookies aren't set", platform: "all" },
+      { instruction: "Open the site in incognito. When the banner appears, look for individual category toggles/checkboxes (Statistics, Marketing, Preferences) - not just Accept All / Reject All", platform: "all" },
+      { instruction: "If no category controls are visible: go to Cookiebot admin > Banner > Layout. Change the dialog type to 'Opt-in' and select a template that shows category details with toggles", platform: "all" },
+      { instruction: "In the banner layout settings, make sure each category (Necessary, Statistics, Marketing, Preferences) is shown as a separate toggleable option", platform: "all" },
+      { instruction: "Test: accept only Statistics, decline Marketing. Open DevTools > Application > Cookies. Marketing cookies like _fbp or li_fat_id should NOT be present. Analytics cookies like _ga should be present", platform: "all" },
     ],
     docLinks: [
       { label: "Cookiebot: Banner configuration", url: "https://www.cookiebot.com/en/help/consent-dialog/" },
@@ -621,21 +624,21 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   I5: {
     plainExplanation: "A script inventory is an internal document (not published on the site) that lists every script, what it does, and why it's there. It's essential for maintaining the consent setup - when someone asks 'why is this script running?', the inventory has the answer.",
     steps: [
-      { instruction: "Create a spreadsheet or document with columns: Script name, Vendor, Purpose, Cookie category, Consent type, DPA signed, Notes", platform: "all" },
-      { instruction: "Populate it from the GTM tag list and the Cookiebot cookie report", platform: "all" },
-      { instruction: "Cross-reference with scan results from checks A1 and B1 to catch scripts outside GTM", platform: "all" },
-      { instruction: "For each entry: note whether the script is managed via GTM or loaded directly", platform: "all" },
-      { instruction: "Share with the client and schedule annual reviews to keep it current", platform: "all" },
+      { instruction: "Create a spreadsheet (Google Sheets or Excel) with columns: Script name | Vendor | Purpose | Cookie category (necessary/statistics/marketing/preferences) | Consent type in GTM (analytics_storage/ad_storage/none) | Managed via GTM? (yes/no) | DPA signed? (yes/no) | Notes", platform: "all" },
+      { instruction: "Open GTM > Tags and add every tag name to the spreadsheet. Then open Cookiebot admin > cookie report and add any vendor not already listed", platform: "all" },
+      { instruction: "Check the A1 and B1 scan results for scripts loaded directly from site code (outside GTM) - add these too, and flag them in the 'Notes' column as needing to move to GTM", platform: "all" },
+      { instruction: "For each entry: open the tag/script and note whether it's in GTM (tag name) or loaded directly (header/footer/embed code). Direct-loaded scripts are the highest priority to fix", platform: "all" },
+      { instruction: "Share the completed inventory with the client and set a calendar reminder for annual review", platform: "all" },
     ],
   },
 
   I6: {
     plainExplanation: "If the site uses AI or automated systems that make decisions affecting people (like automated loan approvals, content filtering, or dynamic pricing), the privacy policy must explain the logic and give people the right to request human review. Most marketing websites don't have this - mark as N/A if it doesn't apply.",
     steps: [
-      { instruction: "Ask the client: does the site use any automated decision-making that affects visitors? (e.g. credit scoring, automated rejection, personalized pricing, content blocking based on profiling)", platform: "all" },
-      { instruction: "If no: mark this check as N/A and document the conclusion", platform: "all" },
-      { instruction: "If yes: verify the privacy policy discloses the logic, significance, and consequences*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Verify the privacy policy mentions the right to contest automated decisions and request human review*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Ask the client: 'Does the site automatically make decisions about people without human involvement?' Examples: automated loan/application rejection, algorithmic pricing that varies per visitor, content blocking based on user profiling, automated hiring screening", platform: "all" },
+      { instruction: "If no automated decision-making: mark as N/A and add an internal note ('No automated decision-making with legal/significant effects identified')", platform: "all" },
+      { instruction: "If yes: open the privacy policy and check for a section about automated decision-making. It must explain: what decisions are automated, the logic involved, and the consequences for the individual*", platform: "all", needsDevOrLegal: true },
+      { instruction: "The privacy policy must also state that individuals can contest automated decisions and request human review. If this text is missing: add it to the policy*", platform: "all", needsDevOrLegal: true },
     ],
     devLegalNote: "This applies to decisions with 'legal or similarly significant effects'. Basic personalization (showing different homepage banners) doesn't count. Credit decisions, automated hiring, or algorithmic content blocking do count.",
   },
@@ -643,44 +646,41 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   I7: {
     plainExplanation: "Some organizations are legally required to have a Data Protection Officer (DPO): public authorities, companies doing large-scale monitoring, or those handling sensitive data like health records. If a DPO exists, their contact details must be in the privacy policy.",
     steps: [
-      { instruction: "Ask the client: is a DPO appointed? Is one legally required?", platform: "all" },
-      { instruction: "DPO is mandatory for: public authorities, organizations whose core activity involves large-scale systematic monitoring, organizations processing sensitive data at scale", platform: "all" },
-      { instruction: "If a DPO exists: verify their contact details (name or title, email) are in the privacy policy", platform: "all" },
-      { instruction: "If a DPO is required but not appointed: flag as a critical issue*", platform: "all", needsDevOrLegal: true },
-      { instruction: "If a DPO is not required: mark as N/A and document the conclusion", platform: "all" },
+      { instruction: "Ask the client: 'Do you have a Data Protection Officer, and is one required?' A DPO is mandatory for: (1) public authorities, (2) organizations whose core activity is large-scale systematic monitoring, (3) organizations processing sensitive data at scale (health, criminal, biometric)", platform: "all" },
+      { instruction: "If a DPO exists: open the privacy policy and check that it includes the DPO's contact details (name or title + email address). If missing: add them to the policy", platform: "all" },
+      { instruction: "If a DPO is required but not appointed: flag as a critical compliance gap - the client must appoint one. This can be internal staff or an external DPO service*", platform: "all", needsDevOrLegal: true },
+      { instruction: "If a DPO is not required (most standard businesses): mark as N/A and add an internal note documenting why ('Not a public authority, no large-scale monitoring, no sensitive data processing')", platform: "all" },
     ],
   },
 
   J1: {
     plainExplanation: "Every third-party service that touches personal data needs a Data Processing Agreement (DPA). This is a legal contract that defines what the service can and can't do with the data. Most major services (Google, HubSpot, Cloudflare, Webflow) have standard DPAs available in their settings.",
     steps: [
-      { instruction: "List all third-party services that process personal data: analytics, CRM, email marketing, hosting, CDN, payment, chat widgets", platform: "all" },
-      { instruction: "For each service: check if a DPA is signed or accepted - most have this in account settings or legal pages", platform: "all" },
-      { instruction: "Common DPA locations: Google (Admin > Account > Legal), HubSpot (Settings > Data Privacy), Webflow (in Terms of Service), Cloudflare (Dashboard > Account > Legal)", platform: "all" },
-      { instruction: "If a service doesn't offer a standard DPA: the client needs to request one directly*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Document the DPA status for each vendor in the vendor inventory (J2)", platform: "all" },
+      { instruction: "List every third-party service touching personal data. Sources: GTM tag list, Cookiebot cookie report, form action URLs, site header/footer scripts, hosting provider, CDN", platform: "all" },
+      { instruction: "For each service, find and accept/sign the DPA. Common locations: Google (admin.google.com > Account > Legal), HubSpot (Settings > Account > Data Privacy), Webflow (included in Terms of Service), Cloudflare (dash.cloudflare.com > Account > Legal), Mailchimp (Account > Settings > Data Processing Addendum)", platform: "all" },
+      { instruction: "If a service has no DPA in their admin panel: check their legal/privacy page for a downloadable DPA. If none exists: contact their support to request one*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Add each vendor to the vendor inventory (J2) with DPA status: signed, pending, or unavailable", platform: "all" },
     ],
   },
 
   J2: {
     plainExplanation: "A vendor inventory is a master list of every company that handles your visitors' data. It tracks what data they get, where they store it, and whether the legal agreements are in place. This is a core accountability requirement and one of the first things authorities check.",
     steps: [
-      { instruction: "Create a spreadsheet with columns: Vendor, Service type, Data received, Storage location (EU/US/other), DPA signed, DPF certified (if US), Last reviewed", platform: "all" },
-      { instruction: "Populate from the script inventory (I5), GTM tag list, and form integrations", platform: "all" },
-      { instruction: "Include hosting and CDN providers (Webflow, Cloudflare, Vercel, etc.) - they also process data", platform: "all" },
-      { instruction: "Schedule annual reviews to catch vendor changes*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Share with the client - they are legally responsible for maintaining this", platform: "all" },
+      { instruction: "Create a spreadsheet (Google Sheets or Excel) with columns: Vendor | Service type | Data received | Storage location (EU/US/other) | DPA signed (yes/no/date) | DPF certified (yes/no, check dataprivacyframework.gov) | Last reviewed", platform: "all" },
+      { instruction: "Fill it in from: the script inventory (I5), GTM tag list (all tag names), form action URLs, and the Cookiebot cookie report (each cookie comes from a vendor)", platform: "all" },
+      { instruction: "Don't forget infrastructure vendors that also process visitor data: hosting (Webflow, Vercel), CDN (Cloudflare), DNS, email service (Mailchimp, SendGrid), payment (Stripe)", platform: "all" },
+      { instruction: "Set a calendar reminder to review the inventory annually. Add it to the client's shared calendar or project management tool*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Share the completed inventory with the client. They are the data controller and legally responsible for keeping it current", platform: "all" },
     ],
   },
 
   J3: {
     plainExplanation: "Sending EU visitor data to US companies is only legal if there's a valid transfer mechanism. The easiest is the EU-US Data Privacy Framework (DPF) - if the US company is DPF-certified, the transfer is lawful. You can check certification on dataprivacyframework.gov.",
     steps: [
-      { instruction: "List all US-based services used on the site: Google, Meta, HubSpot, Salesforce, Cloudflare, etc.", platform: "all" },
-      { instruction: "For each: go to dataprivacyframework.gov and search for the company name", platform: "all" },
-      { instruction: "Verify the certification is 'Active' (not expired or withdrawn)", platform: "all" },
-      { instruction: "If a US service is NOT DPF-certified: flag for legal review - alternative safeguards needed (Standard Contractual Clauses + Transfer Impact Assessment, see J8)*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Document the certification status in the vendor inventory (J2)", platform: "all" },
+      { instruction: "From the vendor inventory (J2), list all US-based services: Google, Meta, HubSpot, Salesforce, Cloudflare, Mailchimp, etc.", platform: "all" },
+      { instruction: "For each: go to dataprivacyframework.gov/list, search the company name, and check the status column shows 'Active'", platform: "all" },
+      { instruction: "If status is 'Active': note the certification date in the vendor inventory. Screenshot the result as evidence", platform: "all" },
+      { instruction: "If a US service is NOT listed or status is 'Inactive'/'Withdrawn': flag for legal review. The client needs Standard Contractual Clauses (SCCs) + a Transfer Impact Assessment (see J8) to legally use this service*", platform: "all", needsDevOrLegal: true },
     ],
     docLinks: [
       { label: "Data Privacy Framework: Search participants", url: "https://www.dataprivacyframework.gov/list" },
@@ -690,11 +690,10 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   J4: {
     plainExplanation: "People have the right to ask: 'What data do you have about me?' and 'Delete my data.' The organization must have a process to handle these requests within 30 days. This includes knowing who receives the request, how it's tracked, and who fulfills it.",
     steps: [
-      { instruction: "Ask the client: do you have a documented process for handling data subject requests (access, correction, deletion)?", platform: "all" },
-      { instruction: "If yes: verify it covers who receives requests, how they're logged, response templates, and the 30-day deadline", platform: "all" },
-      { instruction: "Check the privacy policy: it should explain how visitors can exercise their rights and provide a contact method (email or form)", platform: "all" },
-      { instruction: "If no process exists: flag as an issue and recommend creating one*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Test the contact method: is the email address or form actually working?", platform: "all" },
+      { instruction: "Ask the client: 'If someone emails you asking what data you have on them, who handles it and what do you do?' If the answer is unclear, they don't have a process", platform: "all" },
+      { instruction: "If they have a process: ask to see it. Check it includes: who receives the request (name/role), how requests are tracked (spreadsheet, ticket system), response templates for access/deletion, and the 30-day deadline", platform: "all" },
+      { instruction: "Open the privacy policy and find the 'Your rights' section. It must include a working contact method (email or form) for exercising rights. Try sending a test email to the address listed", platform: "all" },
+      { instruction: "If no process exists: flag as an issue. At minimum they need: a designated contact person, an email template for acknowledging requests, and a simple log (even a spreadsheet) to track deadlines*", platform: "all", needsDevOrLegal: true },
     ],
     devLegalNote: "This is primarily a client/organizational responsibility, not a website issue. But the privacy policy must tell visitors how to exercise their rights, and the contact method must actually work.",
   },
@@ -702,11 +701,10 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   J5: {
     plainExplanation: "If personal data is leaked or stolen, the data protection authority must be notified within 72 hours. Without a plan in place before a breach happens, teams scramble, miss the deadline, and face larger fines. The plan doesn't need to be complex - it just needs to exist.",
     steps: [
-      { instruction: "Ask the client: do you have a data breach response plan?", platform: "all" },
-      { instruction: "If yes: verify it includes who to notify internally, assessment steps, authority notification template (72-hour deadline), affected person notification template, and a breach log", platform: "all" },
-      { instruction: "If no: flag as an issue and recommend creating one*", platform: "all", needsDevOrLegal: true },
-      { instruction: "Verify the plan names the relevant supervisory authority (e.g. IMY for Sweden, ICO for UK)", platform: "all" },
-      { instruction: "Check that a breach log exists (even if empty) - authorities expect to see one", platform: "all" },
+      { instruction: "Ask the client: 'If customer data was leaked tomorrow, what would you do in the first hour?' If they can't answer clearly, they need a plan", platform: "all" },
+      { instruction: "If they have a plan: ask to see it. Check it includes: (1) internal contact list (who to call first), (2) assessment checklist (what data, how many people, how serious), (3) authority notification template with the 72-hour deadline, (4) affected person notification template, (5) a breach log document (even if empty)", platform: "all" },
+      { instruction: "If no plan exists: flag as an issue. A basic plan is a 1-2 page document with the items above. The supervisory authority must be named: IMY for Sweden (imy.se), ICO for UK, CNIL for France*", platform: "all", needsDevOrLegal: true },
+      { instruction: "Check that a breach log exists as a file or spreadsheet - even if it has zero entries. Columns: date, description, data affected, people affected, authority notified (yes/no), actions taken", platform: "all" },
     ],
     devLegalNote: "The breach plan is an organizational document, not something published on the website. But having one is a legal requirement, and its absence is a compliance gap the audit should flag.",
   },
@@ -714,11 +712,10 @@ export const REMEDIATION: Record<string, RemediationInfo> = {
   J6: {
     plainExplanation: "Records of Processing Activities (ROPA) is the master document that lists everything the organization does with personal data. It's mandatory for most organizations and is one of the first things a data protection authority asks for during an inspection.",
     steps: [
-      { instruction: "Ask the client: do you maintain a Record of Processing Activities?", platform: "all" },
-      { instruction: "If yes: verify it covers the website's processing: analytics, form submissions, marketing tools, CRM data, email marketing", platform: "all" },
-      { instruction: "ROPA must include: purposes, data categories, recipients, retention periods, transfer safeguards, security measures", platform: "all" },
-      { instruction: "If no ROPA exists: flag as an issue - this is a legal requirement for most organizations*", platform: "all", needsDevOrLegal: true },
-      { instruction: "The ROPA must be kept up to date and available to the data protection authority on request", platform: "all" },
+      { instruction: "Ask the client: 'Do you have a Record of Processing Activities (ROPA) document?' - it's usually a spreadsheet or document maintained by legal/compliance", platform: "all" },
+      { instruction: "If they have one: check that it covers website-related processing: analytics tracking, form data collection, marketing pixels, CRM syncing, email marketing, and hosting", platform: "all" },
+      { instruction: "Each processing activity in the ROPA must list: purpose, categories of data, recipients, retention period, transfer safeguards (if data leaves EU), and security measures. If any of these columns are empty: they need to be filled in*", platform: "all", needsDevOrLegal: true },
+      { instruction: "If no ROPA exists: flag as a compliance gap. Most organizations are required to have one (the <250 employee exemption rarely applies when the site uses analytics and marketing cookies). Recommend the client create one or hire a privacy consultant*", platform: "all", needsDevOrLegal: true },
     ],
     devLegalNote: "The exemption for organizations under 250 employees only applies if processing is 'occasional' - website tracking, analytics, and marketing cookies are not occasional, so the exemption rarely applies in practice.",
   },

@@ -135,6 +135,16 @@ export function CheckItem({
             </TooltipContent>
           </Tooltip>
         )}
+        {!isBlockedByRequirement && status === "blocked" && scanResult && (
+          <Tooltip>
+            <TooltipTrigger>
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs text-black dark:text-black">
+              {scanResult.summary}
+            </TooltipContent>
+          </Tooltip>
+        )}
         {scanResult && (
           <Button
             variant="ghost"
@@ -168,11 +178,19 @@ export function CheckItem({
           <p className="text-xs text-muted-foreground">
             <GlossaryText text={check.description} />
           </p>
-          {missingRequirements.length > 0 && (
+          {isBlockedByRequirement && (
             <div className="flex items-start gap-1.5">
               <AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-600 dark:text-amber-400">
                 Needs {missingRequirements.map((r) => r.label).join(" and ")} to run this check
+              </p>
+            </div>
+          )}
+          {status === "blocked" && scanResult && (
+            <div className="flex items-start gap-1.5">
+              <AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                {scanResult.summary}
               </p>
             </div>
           )}

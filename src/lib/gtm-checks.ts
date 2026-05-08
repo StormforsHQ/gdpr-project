@@ -170,7 +170,7 @@ export function checkA5(tags: GtmTag[]): CheckResult {
 }
 
 export function checkB2(tags: GtmTag[]): CheckResult {
-  const googleTags = tags.filter(isGoogleTag);
+  const googleTags = tags.filter((t) => isGoogleTag(t) && !t.paused);
 
   if (googleTags.length === 0) {
     return {
@@ -213,7 +213,7 @@ export function checkB2(tags: GtmTag[]): CheckResult {
 }
 
 export function checkB3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
-  const nonGoogleNonSystem = tags.filter((t) => !isGoogleTag(t) && !isSystemTag(t));
+  const nonGoogleNonSystem = tags.filter((t) => !isGoogleTag(t) && !isSystemTag(t) && !t.paused);
 
   if (nonGoogleNonSystem.length === 0) {
     return {
@@ -260,7 +260,7 @@ export function checkB3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
         .join(", ") || "none";
       findings.push({
         element: tag.name,
-        detail: `No consent gating. Fires on: ${triggerNames}. Open GTM > Consent Overview (shield icon) > click this tag > set "Require additional consent" with the right types (ad_storage for marketing tags, analytics_storage for analytics tags).`,
+        detail: `No consent gating. Fires on: ${triggerNames}. In GTM, open the site's container workspace, go to Tags, and click the shield icon (Consent Overview). Click this tag and set "Require additional consent" with the right types (ad_storage for marketing tags, analytics_storage for analytics tags).`,
         severity: "error",
       });
       issueCount++;
@@ -278,7 +278,7 @@ export function checkB3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
 }
 
 export function checkB4(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
-  const nonGoogleNonSystem = tags.filter((t) => !isGoogleTag(t) && !isSystemTag(t));
+  const nonGoogleNonSystem = tags.filter((t) => !isGoogleTag(t) && !isSystemTag(t) && !t.paused);
 
   if (nonGoogleNonSystem.length === 0) {
     return {

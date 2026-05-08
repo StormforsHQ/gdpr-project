@@ -518,7 +518,12 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       if (automation === "cookiebot-api") {
         const cbid = siteFields?.cookiebotId;
         if (!cbid) {
-          addError("scan", `Check ${checkKey} requires Cookiebot ID`, "Add a Cookiebot ID to the site settings");
+          applyCheckResults([{
+            checkKey,
+            status: "blocked",
+            findings: [{ element: "", detail: "Requires Cookiebot ID to run this check", severity: "info" }],
+            summary: "Needs Cookiebot ID",
+          }], "scan");
           return;
         }
         const results = await runCookiebotScan(cbid);

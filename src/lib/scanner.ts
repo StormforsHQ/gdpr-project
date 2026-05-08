@@ -976,10 +976,10 @@ function checkB5($: cheerio.CheerioAPI, html: string): CheckResult {
 
   findings.push({
     element: "page",
-    detail: "No Google Consent Mode V2 configuration detected. Check GTM Cookiebot template settings.",
+    detail: "No Google Consent Mode V2 configuration detected in page HTML. Needs GTM Container ID to check the Cookiebot template settings.",
     severity: "info",
   });
-  return { checkKey: "B5", status: "na", findings, summary: "Cannot determine Consent Mode V2 from HTML alone - verify in GTM" };
+  return { checkKey: "B5", status: "blocked", findings, summary: "Needs GTM to verify Consent Mode V2" };
 }
 
 function checkJ1(vendors: DetectedVendor[]): CheckResult {

@@ -202,11 +202,11 @@ export async function runSingleAICheck(checkKey: string, url: string): Promise<C
   return runAICheck(checkKey, url);
 }
 
-export async function runAllAIChecks(url: string): Promise<CheckResult[]> {
+export async function runAllAIChecks(url: string, priorResults: CheckResult[] = []): Promise<CheckResult[]> {
   if (!url || url.trim().length === 0) return [];
 
   const results = await Promise.allSettled(
-    AI_CHECK_KEYS.map((key) => runAICheck(key, url))
+    AI_CHECK_KEYS.map((key) => runAICheck(key, url, priorResults))
   );
 
   return results.map((r, i) => {

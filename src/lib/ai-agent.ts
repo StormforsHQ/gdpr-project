@@ -125,9 +125,10 @@ async function fetchPageContent(url: string): Promise<{ html: string; text: stri
   return { html, text };
 }
 
-export async function runAICheck(checkKey: string, url: string): Promise<CheckResult> {
+export async function runAICheck(checkKey: string, url: string, priorResults: CheckResult[] = []): Promise<CheckResult> {
   try {
     const { html, text } = await fetchPageContent(url);
+    const scanContext = formatScanContext(priorResults);
 
     const handler = AI_CHECKS[checkKey];
     if (!handler) {
@@ -139,7 +140,7 @@ export async function runAICheck(checkKey: string, url: string): Promise<CheckRe
       };
     }
 
-    const result = await handler(html, text, url);
+    const result = await handler(html, text, url, scanContext);
     return {
       checkKey,
       status: result.status,
@@ -173,10 +174,23 @@ Respond with a JSON object:
 }
 Only include findings for actual problems. If everything looks fine, return status "ok" with empty findings.`;
 
-type AICheckHandler = (html: string, text: string, url: string) => Promise<AICheckResult>;
+function formatScanContext(priorResults: CheckResult[]): string {
+  if (priorResults.length === 0) return "";
+  const lines = priorResults.map((r) => {
+    const status = r.status === "ok" ? "OK" : r.status === "issue" ? "ISSUE" : r.status === "client_managed" ? "CLIENT_MANAGED" : r.status.toUpperCase();
+    const findings = r.findings
+      .filter((f) => f.severity === "error" || f.severity === "warning")
+      .map((f) => f.detail)
+      .join("; ");
+    return `${r.checkKey}: ${status} - ${r.summary}${findings ? ` [${findings}]` : ""}`;
+  });
+  return `\n\nContext from other checks already run on this site:\n${lines.join("\n")}`;
+}
+
+type AICheckHandler = (html: string, text: string, url: string, scanContext: string) => Promise<AICheckResult>;
 
 const AI_CHECKS: Record<string, AICheckHandler> = {
-  F2: async (_html, text) => {
+  F2: async (_html, text, _url, scanContext) => {
     const raw = await callOpenRouter(
       `You are a GDPR compliance auditor analyzing web forms for data minimization (GDPR Art. 5(1)(c)).
 ${RESPONSE_FORMAT_INSTRUCTION}`,
@@ -188,14 +202,14 @@ Flag issues like:
 - Hidden fields that collect tracking data
 - Multiple optional fields that seem unrelated to the form's purpose
 - Note: contact forms asking for both phone and email may be justified if the business offers multiple contact channels - only flag if the form purpose clearly doesn't need both
-
+${scanContext}
 Page content:
 ${text.slice(0, 8000)}`
     );
     return parseAIResponse(raw);
   },
 
-  F4: async (html) => {
+  F4: async (html, _text, _url, scanContext) => {
     const $ = cheerio.load(html);
     const forms = $("form").toArray().map((el) => $.html(el)).join("\n---\n");
 
@@ -215,12 +229,12 @@ Check for:
 - Bundled consent (inquiry + newsletter in one checkbox)
 
 Forms HTML:
-${forms.slice(0, 8000)}`
+${forms.slice(0, 8000)}${scanContext}`
     );
     return parseAIResponse(raw);
   },
 
-  G2: async (html) => {
+  G2: async (html, _text, _url, scanContext) => {
     const $ = cheerio.load(html);
     const bannerSelectors = [
       "[class*='cookie']", "[class*='consent']", "[class*='gdpr']",
@@ -258,12 +272,12 @@ Check for:
 IMPORTANT: This is HTML-only analysis. CSS styling (colors, exact sizes) is not visible. Note this limitation in your response if you cannot determine visual prominence from the HTML/class names alone. Check class names like "btn-primary" vs "btn-secondary" or "text-sm" vs "text-lg" for clues.
 
 Banner HTML:
-${bannerHtml.slice(0, 6000)}`
+${bannerHtml.slice(0, 6000)}${scanContext}`
     );
     return parseAIResponse(raw);
   },
 
-  G6: async (html, text, url) => {
+  G6: async (html, text, url, scanContext) => {
     const $ = cheerio.load(html);
     const bannerSelectors = [
       "[class*='cookie']", "[class*='consent']", "[class*='gdpr']",
@@ -295,12 +309,12 @@ If the site is in Swedish but the banner is only in English, that's an issue. Mu
 
 URL: ${url}
 Page content (first 6000 chars):
-${text.slice(0, 6000)}`
+${text.slice(0, 6000)}${scanContext}`
     );
     return parseAIResponse(raw);
   },
 
-  G7: async (html, text) => {
+  G7: async (html, text, _url, scanContext) => {
     const $ = cheerio.load(html);
     const bannerSelectors = [
       "[class*='cookie']", "[class*='consent']", "[class*='gdpr']",
@@ -342,12 +356,12 @@ Banner HTML:
 ${bannerHtml.slice(0, 4000)}
 
 Page text near banner:
-${text.slice(0, 3000)}`
+${text.slice(0, 3000)}${scanContext}`
     );
     return parseAIResponse(raw);
   },
 
-  I1: async (_html, text, url) => {
+  I1: async (_html, text, url, scanContext) => {
     const privacyPatterns = /privacy|dataskydd|integritet|personuppgift|sekretesspolicy|privatlivspolicy/i;
     const isPrivacyPage = privacyPatterns.test(url) || privacyPatterns.test(text.slice(0, 500));
 
@@ -376,12 +390,12 @@ Required elements under GDPR Art. 13:
 12. Automated decision-making including profiling (if applicable)
 
 Page content:
-${contentToAnalyze.slice(0, 10000)}`
+${contentToAnalyze.slice(0, 10000)}${scanContext}`
     );
     return parseAIResponse(raw);
   },
 
-  I8: async (_html, text, url) => {
+  I8: async (_html, text, url, scanContext) => {
     const privacyPatterns = /privacy|dataskydd|integritet|personuppgift|sekretesspolicy|privatlivspolicy/i;
     const isPrivacyPage = privacyPatterns.test(url) || privacyPatterns.test(text.slice(0, 500));
 
@@ -416,12 +430,12 @@ Flag issues like:
 - Overly vague language ("we may share your data with partners" without specifics)
 
 Privacy policy content:
-${text.slice(0, 12000)}`
+${text.slice(0, 12000)}${scanContext}`
     );
     return parseAIResponse(raw);
   },
 
-  F6: async (_html, text) => {
+  F6: async (_html, text, _url, scanContext) => {
     const raw = await callOpenRouter(
       `You are a GDPR compliance auditor checking Swedish web forms for personnummer (Swedish personal identity number) collection. This check is specific to Swedish law (dataskyddslagen 2018:218).
 ${RESPONSE_FORMAT_INSTRUCTION}`,
@@ -440,12 +454,12 @@ If found, evaluate:
 If no personnummer fields are found, return status "ok" with summary "No personnummer collection detected".
 
 Page content:
-${text.slice(0, 8000)}`
+${text.slice(0, 8000)}${scanContext}`
     );
     return parseAIResponse(raw);
   },
 
-  I2: async (_html, text, url) => {
+  I2: async (_html, text, url, scanContext) => {
     const raw = await callOpenRouter(
       `You are a GDPR compliance auditor checking if a website is multilingual, and if so, whether the privacy policy is available in all languages.
 ${RESPONSE_FORMAT_INSTRUCTION}`,
@@ -463,7 +477,7 @@ IMPORTANT: A site being in only one language (whether Swedish, English, or any o
 
 URL: ${url}
 Page content:
-${text.slice(0, 6000)}`
+${text.slice(0, 6000)}${scanContext}`
     );
     return parseAIResponse(raw);
   },

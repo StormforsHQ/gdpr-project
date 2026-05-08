@@ -310,11 +310,13 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     setScanning(true);
     clearErrors();
     let totalSkipped = 0;
+    const collectedResults: CheckResult[] = [];
     try {
       const result = await runPageScan(scanUrl, siteId);
       if (!result.error) {
         setLastScanType("page-scan");
         totalSkipped += applyCheckResults(result.checks, "scan");
+        collectedResults.push(...result.checks);
         if (result.pagesScanned) {
           setScanResult((prev) => prev ? { ...prev, pagesScanned: result.pagesScanned } : prev);
         }
@@ -341,6 +343,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           try {
             const cbResults = await runCookiebotScan(cbid, scanUrl);
             totalSkipped += applyCheckResults(cbResults, "scan");
+            collectedResults.push(...cbResults);
             if (auditId) {
               const cbRun = await saveScanRun(auditId, "cookiebot", scanUrl, cbResults);
               setScanRuns((prev) => [cbRun, ...prev]);
@@ -356,6 +359,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           try {
             const gtmResults = await runGtmScan(gtmId);
             totalSkipped += applyCheckResults(gtmResults, "scan");
+            collectedResults.push(...gtmResults);
             if (auditId) {
               const gtmRun = await saveScanRun(auditId, "gtm-api", scanUrl, gtmResults);
               setScanRuns((prev) => [gtmRun, ...prev]);
@@ -379,7 +383,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     try {
       const credits = await checkOpenRouterCredits();
       if (credits.available) {
-        const aiResults = await runAllAIChecks(scanUrl);
+        const aiResults = await runAllAIChecks(scanUrl, collectedResults);
         totalSkipped += applyCheckResults(aiResults, "ai");
         const failedAI = aiResults.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
         for (const check of failedAI) {

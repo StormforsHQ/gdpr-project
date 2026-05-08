@@ -179,6 +179,11 @@ export function ScanResultsDrawer({
                             {finding.element}
                           </code>
                         )}
+                        {finding.pageUrl && (
+                          <p className="text-xs text-muted-foreground ml-5">
+                            Page: <a href={finding.pageUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">{new URL(finding.pageUrl).pathname}</a>
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>

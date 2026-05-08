@@ -82,6 +82,28 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const [guideOpen, setGuideOpen] = useState(false);
   const [scanUrl, setScanUrl] = useState(siteUrl || "");
   const [scanning, setScanning] = useState(false);
+  const [scanStatus, setScanStatus] = useState("Scanning...");
+
+  useEffect(() => {
+    if (!scanning) return;
+    const messages = [
+      "Scanning homepage...",
+      "Checking sitemap...",
+      "Scanning subpages...",
+      "Checking forms and embeds...",
+      "Analyzing consent setup...",
+      "Reviewing scripts...",
+      "Almost done...",
+    ];
+    let index = 0;
+    setScanStatus(messages[0]);
+    const interval = setInterval(() => {
+      index = Math.min(index + 1, messages.length - 1);
+      setScanStatus(messages[index]);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [scanning]);
+
   const [aiScanning, setAiScanning] = useState(false);
   const [runningChecks, setRunningChecks] = useState<Set<string>>(new Set());
   const [scanResult, setScanResult] = useState<ScanResult | null>(() => {
@@ -590,7 +612,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               ) : (
                 <Scan className="h-4 w-4" />
               )}
-              {scanning ? "Scanning..." : "Scan site"}
+              {scanning ? scanStatus : "Scan site"}
             </Button>
             <Button
               onClick={handleAIScan}
@@ -625,6 +647,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               )}
               {lastSkippedCount > 0 && (
                 <span className="text-amber-600 dark:text-amber-400">{lastSkippedCount} skipped (manually reviewed)</span>
+              )}
+              {scanResult?.pagesScanned && scanResult.pagesScanned > 1 && (
+                <span className="text-muted-foreground">{scanResult.pagesScanned} pages scanned</span>
               )}
             </div>
           )}

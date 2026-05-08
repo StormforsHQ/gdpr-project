@@ -9,7 +9,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { CHECKLIST } from "@/lib/checklist";
+import { CHECKLIST, RESPONSIBILITY_CONFIG } from "@/lib/checklist";
 import type { ScanResult } from "@/lib/scanner";
 import { REMEDIATION } from "@/lib/remediation";
 import { CHECK_GUIDES } from "@/lib/check-guides";
@@ -59,6 +59,14 @@ function isAICheck(key: string): boolean {
     if (check) return check.automation === "ai-agent";
   }
   return false;
+}
+
+function getCheckResponsibility(key: string) {
+  for (const cat of CHECKLIST) {
+    const check = cat.checks.find((c) => c.key === key);
+    if (check?.responsibility && check.responsibility !== "agency") return check.responsibility;
+  }
+  return null;
 }
 
 function ScriptAnalysisSection({ scripts }: { scripts: ScriptAnalysis }) {
@@ -158,6 +166,20 @@ export function ScanResultsDrawer({
                 </p>
               </div>
             )}
+
+            {(() => {
+              const resp = getCheckResponsibility(effectiveKey);
+              if (!resp) return null;
+              const config = RESPONSIBILITY_CONFIG[resp];
+              return (
+                <div className={`flex items-start gap-2 p-2.5 rounded-md ${resp === "client" ? "bg-orange-500/10 border border-orange-500/20" : "bg-violet-500/10 border border-violet-500/20"}`}>
+                  <Info className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${resp === "client" ? "text-orange-500" : "text-violet-500"}`} />
+                  <p className={`text-xs ${resp === "client" ? "text-orange-700 dark:text-orange-400" : "text-violet-700 dark:text-violet-400"}`}>
+                    {config.description}
+                  </p>
+                </div>
+              );
+            })()}
 
             {checkResult && (
               <div>

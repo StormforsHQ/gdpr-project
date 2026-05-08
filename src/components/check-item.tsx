@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { Check, CheckStatus, LegalReference } from "@/lib/checklist";
 import type { CheckResult } from "@/lib/scanner";
-import { AUTOMATION_CONFIG } from "@/lib/checklist";
+import { AUTOMATION_CONFIG, RESPONSIBILITY_CONFIG } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { GlossaryText } from "@/components/glossary-text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -109,6 +109,18 @@ export function CheckItem({
         <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 ${automationInfo.className}`}>
           {automationInfo.label}
         </span>
+        {check.responsibility && check.responsibility !== "agency" && (
+          <Tooltip>
+            <TooltipTrigger>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 ${RESPONSIBILITY_CONFIG[check.responsibility].className}`}>
+                {RESPONSIBILITY_CONFIG[check.responsibility].label}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs text-black dark:text-black">
+              {RESPONSIBILITY_CONFIG[check.responsibility].description}
+            </TooltipContent>
+          </Tooltip>
+        )}
         {missingRequirements.length > 0 && status === "not_checked" && (
           <Tooltip>
             <TooltipTrigger>

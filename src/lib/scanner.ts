@@ -147,6 +147,7 @@ function mergePageSpecificResults(allResults: CheckResult[][]): CheckResult[] {
       } else {
         existing.findings.push(...result.findings);
         if (result.status === "issue") existing.status = "issue";
+        else if (result.status === "ok" && existing.status === "na") existing.status = "ok";
       }
     }
   }

@@ -30,6 +30,7 @@ export interface Check {
   references?: LegalReference[];
   imyNote?: string;
   imyReferences?: LegalReference[];
+  manualHint?: string;
 }
 
 export interface CheckCategory {
@@ -207,6 +208,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "C6", label: "Cookie lifetimes proportionate", description: "Cookies should not last longer than necessary. The recommended maximum is 13 months. Check expiry dates in Cookiebot or browser DevTools.", automation: "human", tier: "full",
+        manualHint: "Open the site in Chrome > DevTools > Application > Cookies. Check the 'Expires' column for each cookie. Anything over 13 months is too long. Also check the Cookiebot admin cookie report if available.",
         legalBasis: "Data privacy rules say you shouldn't keep data longer than needed. A marketing cookie lasting 10 years is disproportionate. 13 months is the widely accepted maximum.",
         references: [
           { label: "GDPR Art. 5(1)(c) - Data minimization", url: "https://gdpr-info.eu/art-5-gdpr/" },
@@ -228,6 +230,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "D2", label: "No old campaign scripts", description: "Scripts left over from past marketing campaigns (old Salesforce tracking, expired promotions, etc.). Check with the client before removing - some may still be needed.", automation: "human", tier: "full",
+        manualHint: "Open Google Tag Manager > Tags. Look for tags named after specific campaigns, dates, or promotions that are likely finished. Also check the site source code for scripts referencing specific campaign URLs or IDs. Ask the client before removing anything.",
         legalBasis: "Data collection must have a clear, current purpose. Scripts from finished campaigns no longer have one.",
         references: [
           { label: "GDPR Art. 5(1)(b) - Purpose limitation", url: "https://gdpr-info.eu/art-5-gdpr/" },
@@ -302,6 +305,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "E6", label: "CRM integrations reviewed", description: "CRM systems (HubSpot, Salesforce, etc.) that receive form data or track visitors need a signed Data Processing Agreement (DPA). If the CRM is US-based, verify they have a valid data transfer mechanism.", automation: "human", tier: "full",
+        manualHint: "Ask the client which CRM they use. Check if a DPA is signed (HubSpot: Account > Privacy; Salesforce: DPA addendum in contract). For US-based CRMs, verify DPF certification at dataprivacyframework.gov/list.",
         legalBasis: "Any service that handles personal data on your behalf needs a DPA. Sending data to US services also needs a legal transfer mechanism (like the EU-US Data Privacy Framework).",
         references: [
           { label: "GDPR Art. 28 - Processor", url: "https://gdpr-info.eu/art-28-gdpr/" },
@@ -421,6 +425,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "G4", label: "Declining actually blocks scripts", description: "When a visitor clicks 'Decline' or 'Reject all', non-essential scripts (analytics, marketing) must actually stop. Verify in browser DevTools that no tracking scripts fire after declining.", automation: "browser-manual", tier: "basic",
+        manualHint: "Open the site in an incognito window. Open DevTools > Network tab. Click 'Decline' or 'Reject all' on the consent banner. Check: are there still requests to google-analytics.com, facebook.net, linkedin, hotjar, etc.? Also check DevTools > Application > Cookies - no analytics/marketing cookies should appear after declining.",
         legalBasis: "A decline button that doesn't actually block tracking is worse than no button at all - it gives visitors a false sense of control.",
         references: [
           { label: "GDPR Art. 7(3) - Withdrawal of consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
@@ -429,6 +434,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "G5", label: "Consent remembered on return", description: "When a visitor returns to the site, their previous consent choice should be remembered. The banner should not appear again on every visit - that's annoying and undermines trust.", automation: "browser-manual", tier: "basic",
+        manualHint: "Open the site in a normal browser window (not incognito). Make a consent choice (accept or decline). Close the tab, then open the site again. The banner should NOT reappear - your previous choice should be remembered via the CookieConsent cookie.",
         legalBasis: "The site must be able to prove that consent was given. Storing the consent choice in a cookie is the standard way to do this.",
         references: [
           { label: "GDPR Art. 7(1) - Demonstrating consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
@@ -469,6 +475,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "G9", label: "Consent renewal period configured", description: "The consent banner should re-appear after a set period (max 12 months, 6 months for French visitors) so visitors can reconsider their choice. It should also re-appear if the cookie policy changes.", automation: "human", tier: "full",
+        manualHint: "Log into Cookiebot admin > Settings > Banner. Check the 'Consent renewal' setting. It should be 12 months or less (6 months if the site has French visitors). Also check that 'Renew on policy change' is enabled.",
         legalBasis: "Consent is not forever. Visitors should periodically be reminded of their choice and given the option to change it.",
         references: [
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
@@ -483,6 +490,7 @@ export const CHECKLIST: CheckCategory[] = [
     checks: [
       {
         key: "H1", label: "Cookiebot compliance scan run", description: "Run a full scan in the Cookiebot admin panel and save the results. This checks that all cookies are detected and properly categorized.", automation: "human", tier: "full",
+        manualHint: "Log into admin.cookiebot.com > select the domain > Compliance. Click 'Start scan'. Wait for it to finish (can take a few minutes). Review the results - look for uncategorized or miscategorized cookies.",
         legalBasis: "You need documented proof that you've checked your cookie setup. The scan report serves as evidence of due diligence.",
         references: [
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
@@ -490,6 +498,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "H2", label: "Cookiebot GCM Check run", description: "Run the Google Consent Mode Checker in the Cookiebot admin panel. This verifies that consent signals are being sent correctly to Google services.", automation: "human", tier: "full",
+        manualHint: "Log into admin.cookiebot.com > select the domain > Google Consent Mode. Click 'Run check'. It tests whether consent signals (ad_storage, analytics_storage, etc.) are correctly communicated to Google. Save or screenshot the results.",
         legalBasis: "Confirms that your Consent Mode setup actually works - that Google receives the right consent signals when visitors accept or decline.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
@@ -497,6 +506,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "H3", label: "GTM Preview Mode test: decline all", description: "Open GTM Preview Mode, decline all cookies, and verify: the Consent tab should show 'Denied' for all types, and non-Google tags should appear under 'Not Fired'.", automation: "human", tier: "full",
+        manualHint: "Open tagmanager.google.com > select the container > click Preview (top right). Enter the site URL. On the site, click 'Decline all'. In the GTM debugger: check the Tags tab (marketing/analytics tags should say 'Not Fired') and the Consent tab (all types should show 'Denied').",
         legalBasis: "The most important test - proves that declining cookies actually prevents tracking. If tags still fire after declining, your setup is broken.",
         references: [
           { label: "GDPR Art. 25 - Data protection by design", url: "https://gdpr-info.eu/art-25-gdpr/" },
@@ -504,6 +514,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "H4", label: "GTM Preview Mode test: accept all", description: "Open GTM Preview Mode, accept all cookies, and verify: all tags should fire and the Consent tab should show 'Granted' for all types.", automation: "human", tier: "full",
+        manualHint: "Open tagmanager.google.com > select the container > click Preview. Enter the site URL. On the site, click 'Accept all'. In the GTM debugger: check the Tags tab (all tags should say 'Fired') and the Consent tab (all types should show 'Granted').",
         legalBasis: "Verifies the other side - that accepting cookies actually enables tracking. If tags don't fire after accepting, your analytics and marketing tools won't collect data.",
         references: [
           { label: "GDPR Art. 25 - Data protection by design", url: "https://gdpr-info.eu/art-25-gdpr/" },
@@ -511,6 +522,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "H5", label: "GTM Preview Mode test: selective", description: "Accept only Statistics cookies (decline Marketing), then verify in GTM Preview that marketing tags (LinkedIn Pixel, Meta Pixel, etc.) did NOT fire while analytics tags did.", automation: "human", tier: "full",
+        manualHint: "Open GTM Preview Mode. On the site, accept only Statistics (decline Marketing). In the GTM debugger: analytics tags (GA4) should say 'Fired', but marketing tags (Meta Pixel, LinkedIn, etc.) should say 'Not Fired'. This confirms consent categories actually control which tags run.",
         legalBasis: "Tests that granular consent actually works - accepting one category should not enable another.",
         references: [
           { label: "GDPR Art. 7 - Conditions for consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
@@ -519,6 +531,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "H6", label: "Cookie tab check in DevTools", description: "Open browser DevTools > Application > Cookies. Before any consent choice: only the CookieConsent cookie should exist. After declining: no analytics or marketing cookies should appear.", automation: "browser-manual", tier: "full",
+        manualHint: "Open the site in incognito. Open DevTools > Application > Cookies (left sidebar). Before making any consent choice: only CookieConsent should exist. Click 'Decline all', reload, and check again - you should NOT see _ga, _gid, _fbp, _hjSession, or similar tracking cookies.",
         legalBasis: "The ultimate proof that consent works - if tracking cookies appear before or after declining consent, something is broken regardless of what GTM Preview shows.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
@@ -526,6 +539,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "H7", label: "Consent records stored and auditable", description: "Cookiebot's consent log must be enabled. It records when each visitor consented, what they accepted/declined, and which banner version they saw. Keep these records for at least 5 years.", automation: "human", tier: "basic",
+        manualHint: "Log into admin.cookiebot.com > select the domain > Consent log. Verify that logging is enabled and that consent records are being stored. If the log is empty or disabled, enable it in Settings. This is required for demonstrating GDPR compliance.",
         legalBasis: "If a data protection authority investigates, you must prove that each visitor actually consented. Without consent records, you have no evidence.",
         references: [
           { label: "GDPR Art. 7(1) - Demonstrating consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
@@ -538,6 +552,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "H8", label: "Non-cookie tracking checked", description: "Tracking isn't limited to cookies. Check localStorage, sessionStorage, and IndexedDB in browser DevTools for tracking data. Also check for fingerprinting scripts. The same consent rules apply to all of these.", automation: "browser-manual", tier: "full",
+        manualHint: "Open the site in incognito. Open DevTools > Application. Check Local Storage, Session Storage, and IndexedDB (left sidebar) for tracking data from analytics or marketing tools. These are subject to the same consent rules as cookies.",
         legalBasis: "EU consent rules apply to ALL data stored on the visitor's device, not just cookies. localStorage tracking without consent is just as illegal as cookie tracking without consent.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
@@ -591,6 +606,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "I5", label: "Script inventory documented", description: "Keep an internal document listing every script on the site, what it does, and why it's there. This is for your own records - not published on the site.", automation: "human", tier: "full",
+        manualHint: "Create a spreadsheet listing every script on the site. Columns: script name, vendor, purpose, consent category, DPA status. Use the B1 scan results and GTM tag list as a starting point. This is an internal document, not for the client's site.",
         legalBasis: "You need to be able to account for every piece of tracking on your site. If a data protection authority asks, you should be able to show this list immediately.",
         references: [
           { label: "GDPR Art. 30 - Records of processing", url: "https://gdpr-info.eu/art-30-gdpr/" },
@@ -599,6 +615,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "I6", label: "Automated decision-making disclosed (if applicable)", description: "If the site uses AI or automated systems that make decisions affecting people (e.g. automated loan approvals, content filtering), the privacy policy must explain how it works and the visitor's right to human review. Not applicable to most marketing websites.", automation: "human", tier: "full", responsibility: "content-author",
+        manualHint: "Ask the client: does this site or any connected service use automated decision-making that affects people (e.g. credit scoring, automated hiring, content filtering)? If no, mark as N/A. If yes, check that the privacy policy explains the logic and the right to human review.",
         legalBasis: "People have a right to know when decisions about them are made by machines, and to request a human review.",
         references: [
           { label: "GDPR Art. 22 - Automated decision-making", url: "https://gdpr-info.eu/art-22-gdpr/" },
@@ -607,6 +624,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "I7", label: "DPO contact in privacy policy (if applicable)", description: "If the organization has a Data Protection Officer (required for public authorities and companies doing large-scale monitoring or handling sensitive data), their contact details must be in the privacy policy.", automation: "human", tier: "full", responsibility: "content-author",
+        manualHint: "Ask the client: do they have a Data Protection Officer (DPO)? Required if they are a public authority or do large-scale monitoring/sensitive data processing. If yes, check the privacy policy includes the DPO's contact details. If no DPO exists and none is required, mark as N/A.",
         legalBasis: "If a DPO is required and appointed, visitors must be able to contact them. If a DPO is required but not appointed, that's a separate compliance issue to flag.",
         references: [
           { label: "GDPR Art. 37 - Designation of DPO", url: "https://gdpr-info.eu/art-37-gdpr/" },
@@ -642,6 +660,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "J2", label: "Vendor inventory maintained", description: "Keep an up-to-date list of every third-party service used: what data they receive, where they store it, and whether a DPA is signed. Review this list at least annually.", automation: "human", tier: "full",
+        manualHint: "Create or update a vendor spreadsheet. Columns: service name, data received, storage location (EU/US/other), DPA signed (yes/no/covered by ToS), DPF certified (yes/no). Use J1 and J3 scan results as a starting point for the list of detected services.",
         legalBasis: "You must be able to show exactly which companies handle your visitors' data. This is a core accountability requirement.",
         references: [
           { label: "GDPR Art. 30 - Records of processing", url: "https://gdpr-info.eu/art-30-gdpr/" },
@@ -665,6 +684,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "J4", label: "Data subject rights process exists", description: "There must be a documented process for handling requests from people who want to see, correct, or delete their data. You must be able to respond within 30 days.", automation: "human", tier: "full", responsibility: "client",
+        manualHint: "Ask the client: what happens if someone emails asking to see or delete their data? Is there a documented process? Who handles it? Can they respond within 30 days? If no process exists, flag it as an issue and recommend they create one.",
         legalBasis: "People have the right to access, correct, and delete their personal data. If someone asks and you can't respond within 30 days, that's a violation.",
         references: [
           { label: "GDPR Art. 15 - Right of access", url: "https://gdpr-info.eu/art-15-gdpr/" },
@@ -679,6 +699,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "J5", label: "Data breach response plan exists", description: "There must be a plan for what to do if personal data is leaked or stolen. The data protection authority must be notified within 72 hours. Affected individuals may also need to be told. Keep a log of all breaches.", automation: "human", tier: "full", responsibility: "client",
+        manualHint: "Ask the client: do they have a data breach response plan? Key things it should cover: who to contact internally, how to notify the data protection authority within 72 hours, when to inform affected individuals, and a breach log. If no plan exists, flag it.",
         legalBasis: "A data breach without a response plan means slower notification, worse outcomes, and larger fines. IMY received 12,000+ breach reports in 2025 alone.",
         references: [
           { label: "GDPR Art. 33 - Notification to supervisory authority", url: "https://gdpr-info.eu/art-33-gdpr/" },
@@ -694,6 +715,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "J6", label: "Records of Processing Activities (ROPA) exist", description: "The client must maintain a formal record of all personal data processing: what data, why, who receives it, how long it's kept, and what safeguards are in place. Must be available to the data protection authority if they ask.", automation: "human", tier: "full", responsibility: "client",
+        manualHint: "Ask the client: do they have a Record of Processing Activities (ROPA)? This is a formal document required by GDPR Art. 30. It should list all personal data they process, why, who receives it, retention periods, and security measures. If they don't have one, the data from this audit can help them create it.",
         legalBasis: "ROPA is mandatory for most organizations. It's the master document that ties together everything else in your data protection setup.",
         references: [
           { label: "GDPR Art. 30 - Records of processing", url: "https://gdpr-info.eu/art-30-gdpr/" },
@@ -701,6 +723,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "J7", label: "Sub-processor management in DPAs", description: "Your vendors often use their own sub-vendors (sub-processors). DPAs should include: advance notice when sub-processors change, your right to object, and that sub-processors follow the same data protection rules.", automation: "human", tier: "full",
+        manualHint: "Review the DPAs for each vendor identified in J1. Check: does the DPA mention sub-processors? Does it require advance notice when sub-processors change? Does it give you the right to object? Most major vendors (Google, HubSpot, etc.) cover this in their standard DPA.",
         legalBasis: "You're responsible for the entire chain. If your vendor shares data with a sub-processor who mishandles it, you're still accountable.",
         references: [
           { label: "GDPR Art. 28 - Processor", url: "https://gdpr-info.eu/art-28-gdpr/" },
@@ -709,6 +732,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "J8", label: "Transfer Impact Assessments for non-DPF transfers", description: "For US vendors not on the Data Privacy Framework, or vendors in other non-EU countries: you need a Transfer Impact Assessment documenting the risks of sending data there. Not needed if all vendors are DPF-certified or in EU-approved countries.", automation: "human", tier: "full",
+        manualHint: "Check J3 results first. If all US vendors are DPF-certified and no data goes to other non-EU countries, mark as N/A. Otherwise, for each uncertified vendor: document what data is transferred, the legal basis (usually SCCs), and the risks. Consider consulting legal if unsure.",
         legalBasis: "When there's no adequacy agreement (like the DPF), you must assess whether the destination country adequately protects personal data and what supplementary measures are needed.",
         references: [
           { label: "GDPR Art. 46 - Appropriate safeguards", url: "https://gdpr-info.eu/art-46-gdpr/" },
@@ -717,6 +741,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "J9", label: "DPIA need assessed", description: "Check if the site's data processing requires a Data Protection Impact Assessment (DPIA). Triggers include: large-scale profiling, systematic monitoring of public areas, automated decision-making, handling sensitive data, or collecting children's data. Document your conclusion either way.", automation: "human", tier: "full",
+        manualHint: "Ask: does this site do any of these? Large-scale profiling, systematic monitoring of public areas, automated decisions affecting people, processing sensitive data (health, ethnicity, etc.), or collecting children's data. If none apply, mark N/A and note why. If any apply, a formal DPIA is needed.",
         legalBasis: "High-risk data processing requires a formal risk assessment before you start. Even if a DPIA isn't needed, you should document why not.",
         references: [
           { label: "GDPR Art. 35 - DPIA", url: "https://gdpr-info.eu/art-35-gdpr/" },
@@ -736,6 +761,7 @@ export const CHECKLIST: CheckCategory[] = [
     checks: [
       {
         key: "K1", label: "EU/EEA visitors get opt-in banner", description: "Visitors from EU/EEA countries must see a full consent banner that blocks all non-essential cookies until they actively choose to accept. This is the strictest consent model.", automation: "browser-manual", tier: "basic",
+        manualHint: "Open the site in an incognito window from an EU location (or use a VPN/browser extension set to an EU country). A full consent banner should appear that blocks all non-essential cookies until the visitor actively clicks 'Accept'. Check DevTools > Application > Cookies to confirm no tracking cookies exist before consent.",
         legalBasis: "EU rules require opt-in consent - nothing tracks until the visitor says yes. This applies to any website that targets EU visitors, even if the company is based elsewhere.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
@@ -745,6 +771,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "K2", label: "US visitors get appropriate notice", description: "US visitors use an opt-out model (tracking can start, but visitors can say stop). The site needs a 'Do Not Sell/Share My Personal Information' link and must honor the Global Privacy Control (GPC) browser signal.", automation: "browser-manual", tier: "full",
+        manualHint: "Use a VPN/browser extension set to a US location and open the site in incognito. Check: does the banner use opt-out language (not opt-in)? Is there a 'Do Not Sell/Share My Personal Information' link in the footer? In Cookiebot admin, check that geo-targeting is configured for US visitors.",
         legalBasis: "California (CCPA) and 20+ other US states require an opt-out option. GPC browser signals must be treated as a valid opt-out request.",
         references: [
           { label: "CCPA - California Consumer Privacy Act", url: "https://oag.ca.gov/privacy/ccpa" },
@@ -755,6 +782,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "K3", label: "UK visitors handled correctly", description: "UK rules differ from EU: marketing cookies still need opt-in, but analytics cookies can load without consent if they're only used for service improvement, visitors are informed, an opt-out is provided, and the analytics provider doesn't use the data for their own purposes (since Feb 2026).", automation: "browser-manual", tier: "full",
+        manualHint: "Use a VPN set to UK and open the site in incognito. Marketing cookies should still require opt-in. Analytics cookies might load without consent if the site meets all 4 UK DUAA 2025 conditions. Check Cookiebot admin for UK-specific geo-targeting rules.",
         legalBasis: "The UK relaxed analytics cookie rules in 2025 but kept strict rules for marketing. If you serve UK visitors, your consent banner should reflect these different requirements.",
         references: [
           { label: "UK PECR - Cookie consent rules", url: "https://www.legislation.gov.uk/uksi/2003/2426" },
@@ -766,6 +794,7 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "K4", label: "GPC browser signal honored", description: "Some visitors have Global Privacy Control (GPC) enabled in their browser, which signals 'do not sell/share my data'. The site must detect and honor this signal. Required by law in 11+ US states. Test with the GPC browser extension.", automation: "browser-manual", tier: "full",
+        manualHint: "Install the GPC browser extension (globalprivacycontrol.org). Open the site. The site should detect the GPC signal and automatically opt the visitor out of data sharing. In Cookiebot admin, check that GPC signal handling is enabled.",
         legalBasis: "California, Colorado, Texas, and 8+ other US states legally require websites to honor GPC signals as a valid opt-out of data sale/sharing.",
         references: [
           { label: "Global Privacy Control (GPC)", url: "https://globalprivacycontrol.org/" },

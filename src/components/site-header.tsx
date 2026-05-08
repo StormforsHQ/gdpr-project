@@ -61,6 +61,7 @@ export function SiteHeader({ site, auditId, reportVersions }: SiteHeaderProps) {
   const [versions, setVersions] = useState(reportVersions);
   const menuRef = useRef<HTMLDivElement>(null);
   const missingFields = getMissingFieldCounts(site);
+  const [showManualCheck, setShowManualCheck] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -262,9 +263,36 @@ export function SiteHeader({ site, auditId, reportVersions }: SiteHeaderProps) {
                   </span>
                 ))}
               </p>
-              <p className="mt-1 text-amber-600/80 dark:text-amber-400/80">
-                Run Scan Site or use Edit Site &gt; Detect IDs to find them automatically. If not found, the site may not have {missingFields.length === 2 ? "these tools" : missingFields[0].field === "cookiebotId" ? "a consent manager" : "a tag manager"} installed - or they may be managed by the client under a separate account (Cookiebot loaded via a client-managed GTM cannot be detected automatically). You can enter IDs manually in Edit Site if you know them.
+              <p className="mt-1">
+                <button
+                  className="underline underline-offset-2 hover:no-underline font-medium text-amber-600 dark:text-amber-400"
+                  onClick={() => setShowManualCheck(!showManualCheck)}
+                >
+                  {showManualCheck ? "Hide details" : "How do we check?"}
+                </button>
               </p>
+              {showManualCheck && (
+                <div className="mt-2 pl-3 border-l-2 border-amber-500/30 space-y-3 text-amber-600/80 dark:text-amber-400/80">
+                  <div>
+                    <p className="font-medium text-amber-600 dark:text-amber-400 mb-1">Automatic detection</p>
+                    <p>Run Scan Site or use Edit Site &gt; Detect IDs. Both scan the site&apos;s HTML for GTM and Cookiebot scripts.</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-amber-600 dark:text-amber-400 mb-1">What if nothing is found?</p>
+                    <p><strong>GTM</strong> is always visible in the HTML if it&apos;s installed. No GTM in the HTML means no GTM on the site.</p>
+                    <p className="mt-1"><strong>Cookiebot</strong> is visible in the HTML if loaded directly. But if it&apos;s loaded through GTM, it won&apos;t be in the HTML. We check inside the GTM container via API, but only for containers our Google account has access to. If the client manages their own GTM, we can&apos;t look inside it.</p>
+                    <p className="mt-1">If neither is found and the client doesn&apos;t manage their own setup, the site genuinely does not have consent or tag management installed.</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-amber-600 dark:text-amber-400 mb-1">Manual double-check in the browser</p>
+                    <p>If you suspect the client manages their own setup, you can verify in the browser:</p>
+                    <p className="mt-1">1. Open the site in an incognito window - if a consent banner appears, a consent manager is active</p>
+                    <p>2. Open DevTools &gt; Network tab, reload and filter for &quot;cookiebot&quot; or &quot;googletagmanager&quot; - any matching requests confirm they are loaded</p>
+                    <p>3. Open DevTools &gt; Console and type <code className="bg-amber-500/10 px-1 rounded">Cookiebot</code> or <code className="bg-amber-500/10 px-1 rounded">google_tag_manager</code> - if it returns an object, the tool is running</p>
+                    <p className="mt-1 text-amber-600/60 dark:text-amber-400/60">If confirmed, enter the IDs manually in Edit Site.</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

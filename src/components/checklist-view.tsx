@@ -39,8 +39,9 @@ import { ChevronDown, ChevronRight, Scan, Loader2, AlertCircle, History, Clock, 
 const CLIENT_CONSENT_CHECKS = [
   "B5",
   "C1", "C2", "C3", "C4", "C5", "C6",
-  "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8",
-  "H3", "H4", "H5",
+  "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9",
+  "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8",
+  "K1", "K2", "K3", "K4",
 ];
 
 type CheckEntry = { status: CheckStatus; notes: string; internalNote: string; source: "manual" | "scan" | "ai" };
@@ -237,6 +238,10 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           skipped++;
           continue;
         }
+        if (source === "ai" && existing?.status === "client_managed") {
+          skipped++;
+          continue;
+        }
         if (source === "ai" && check.status === "na" && existing?.source === "scan" && existing.status !== "not_checked") {
           skipped++;
           continue;
@@ -277,6 +282,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       const updatedChecks = prev.checks.map((c) => {
         const updated = results.find((r) => r.checkKey === c.checkKey);
         if (!updated) return c;
+        if (source === "ai" && c.status === "client_managed") return c;
         if (source === "ai" && updated.status === "na" && c.status !== "na") return c;
         if (source === "ai" && c.findings.length > 0) {
           const mergedStatus = (c.status === "issue" || updated.status === "issue") ? "issue" as const : updated.status;

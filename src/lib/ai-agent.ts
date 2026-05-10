@@ -89,15 +89,23 @@ interface AICheckResult {
   summary: string;
 }
 
+const VALID_AI_STATUSES = new Set(["ok", "issue", "na", "blocked"]);
+const VALID_SEVERITIES = new Set(["error", "warning", "info"]);
+
 function parseAIResponse(raw: string): AICheckResult {
   try {
     const cleaned = raw.replace(/^```json\s*/, "").replace(/```\s*$/, "").trim();
     const parsed = JSON.parse(cleaned);
-    return {
-      status: parsed.status || "na",
-      findings: Array.isArray(parsed.findings) ? parsed.findings : [],
-      summary: parsed.summary || "AI analysis complete",
-    };
+    const status = VALID_AI_STATUSES.has(parsed.status) ? parsed.status : "na";
+    const findings = Array.isArray(parsed.findings)
+      ? parsed.findings
+          .filter((f: Record<string, unknown>) => f && typeof f.detail === "string")
+          .map((f: Record<string, unknown>) => ({
+            detail: String(f.detail),
+            severity: VALID_SEVERITIES.has(f.severity as string) ? f.severity as "error" | "warning" | "info" : "warning",
+          }))
+      : [];
+    return { status, findings, summary: parsed.summary || "AI analysis complete" };
   } catch {
     console.error("Failed to parse AI response:", raw.slice(0, 500));
     return {

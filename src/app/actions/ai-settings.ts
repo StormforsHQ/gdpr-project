@@ -9,8 +9,8 @@ export interface AISettings {
 }
 
 const DEFAULTS: AISettings = {
-  primaryModel: "google/gemini-2.0-flash-001",
-  fallbackModel: "google/gemini-2.0-flash-lite-001",
+  primaryModel: "google/gemini-2.5-flash",
+  fallbackModel: "google/gemini-2.5-flash-lite",
   apiKey: "",
 };
 

@@ -185,9 +185,11 @@ function mergePageSpecificResults(allResults: CheckResult[][]): CheckResult[] {
 
     const issueFindings = result.findings.filter((f) => f.severity === "error" || f.severity === "warning");
     if (result.checkKey === "F1") {
-      result.summary = result.findings.length === 0
-        ? "No forms found on scanned pages"
-        : `${result.findings.length} form(s) found across scanned pages`;
+      const formFindings = result.findings.filter((f) => f.element !== "page");
+      result.summary = formFindings.length === 0
+        ? "No forms found in page source"
+        : `${formFindings.length} form(s) found across scanned pages`;
+      result.status = formFindings.length === 0 ? "na" : "ok";
     } else if (result.checkKey === "F3") {
       const issues = result.findings.filter((f) => f.severity === "error");
       result.summary = issues.length === 0
@@ -535,9 +537,11 @@ function checkE1($: cheerio.CheerioAPI): CheckResult {
   return {
     checkKey: "E1",
     status: findings.length === 0 ? "ok" : "issue",
-    findings,
+    findings: findings.length === 0
+      ? [{ element: "page", detail: "No video embeds found in page source (if added by JavaScript, verify in browser)", severity: "info" as const }]
+      : findings,
     summary: findings.length === 0
-      ? "No problematic video embeds found"
+      ? "No video embeds found in page source"
       : `${findings.length} video embed issue(s) found`,
   };
 }
@@ -612,9 +616,11 @@ function checkE3($: cheerio.CheerioAPI): CheckResult {
   return {
     checkKey: "E3",
     status: findings.length === 0 ? "ok" : "issue",
-    findings,
+    findings: findings.length === 0
+      ? [{ element: "page", detail: "No map embeds found in page source (if loaded by JavaScript, verify in browser)", severity: "info" as const }]
+      : findings,
     summary: findings.length === 0
-      ? "No unblocked map embeds found"
+      ? "No map embeds found in page source"
       : `${findings.length} map embed(s) loading without consent gate`,
   };
 }
@@ -638,9 +644,11 @@ function checkE4($: cheerio.CheerioAPI, html: string): CheckResult {
   return {
     checkKey: "E4",
     status: findings.length === 0 ? "ok" : "issue",
-    findings,
+    findings: findings.length === 0
+      ? [{ element: "page", detail: "No chat widgets found in page source (most chat widgets load via JavaScript - verify in browser)", severity: "info" as const }]
+      : findings,
     summary: findings.length === 0
-      ? "No ungated chat widgets found"
+      ? "No chat widgets found in page source"
       : `${findings.length} chat widget(s) loading without consent`,
   };
 }
@@ -675,9 +683,11 @@ function checkE5($: cheerio.CheerioAPI, html: string): CheckResult {
   return {
     checkKey: "E5",
     status: findings.length === 0 ? "ok" : "issue",
-    findings,
+    findings: findings.length === 0
+      ? [{ element: "page", detail: "No social embeds found in page source (if added by JavaScript, verify in browser)", severity: "info" as const }]
+      : findings,
     summary: findings.length === 0
-      ? "No ungated social embeds found"
+      ? "No social embeds found in page source"
       : `${findings.length} social embed(s) found`,
   };
 }
@@ -703,10 +713,12 @@ function checkF1($: cheerio.CheerioAPI): CheckResult {
 
   return {
     checkKey: "F1",
-    status: "ok",
-    findings,
+    status: findings.length === 0 ? "na" : "ok",
+    findings: findings.length === 0
+      ? [{ element: "page", detail: "No forms found in page source (if forms are added by JavaScript, they won't appear here)", severity: "info" as const }]
+      : findings,
     summary: findings.length === 0
-      ? "No forms found on this page"
+      ? "No forms found in page source"
       : `${findings.length} form(s) found`,
   };
 }

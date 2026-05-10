@@ -739,8 +739,18 @@ export async function POST(req: NextRequest) {
             });
 
             if (!response.ok) {
-              const text = await response.text();
-              send({ error: `OpenRouter error ${response.status}: ${text.slice(0, 200)}` });
+              const status = response.status;
+              if (status === 401 || status === 403) {
+                send({ error: "API key is invalid or expired. Check your key in Settings." });
+              } else if (status === 402) {
+                send({ error: "Out of OpenRouter credits. Top up your balance at openrouter.ai." });
+              } else if (status === 429) {
+                send({ error: "Too many requests - wait a moment and try again." });
+              } else if (status >= 500) {
+                send({ error: "The AI service is temporarily unavailable. Try again in a minute." });
+              } else {
+                send({ error: "Couldn't reach the AI service. Try again or check Settings." });
+              }
               controller.close();
               return;
             }
@@ -777,14 +787,19 @@ export async function POST(req: NextRequest) {
             for (const toolCall of assistantMessage.tool_calls) {
               if (!toolCall.function) continue;
 
-              let args: Record<string, string> = {};
+              let result: string;
               try {
-                args = JSON.parse(toolCall.function.arguments);
-              } catch {
-                args = {};
+                let args: Record<string, string> = {};
+                try {
+                  args = JSON.parse(toolCall.function.arguments);
+                } catch {
+                  args = {};
+                }
+                result = await executeTool(toolCall.function.name, args, siteId);
+              } catch (toolErr) {
+                console.error(`Tool ${toolCall.function.name} failed:`, toolErr);
+                result = JSON.stringify({ error: "Could not look this up right now. Try again." });
               }
-
-              const result = await executeTool(toolCall.function.name, args, siteId);
 
               openRouterMessages.push({
                 role: "tool",
@@ -798,7 +813,8 @@ export async function POST(req: NextRequest) {
           send({ done: true, usage: { totalTokens: 0 } });
           controller.close();
         } catch (err) {
-          send({ error: err instanceof Error ? err.message : "Stream error" });
+          console.error("Chat stream error:", err);
+          send({ error: "Something went wrong. Try again or refresh the page." });
           controller.close();
         }
       },
@@ -812,8 +828,9 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
+    console.error("Chat POST error:", err);
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Internal error" }),
+      JSON.stringify({ error: "Something went wrong. Try again or refresh the page." }),
       { status: 500 },
     );
   }

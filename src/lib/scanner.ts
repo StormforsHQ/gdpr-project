@@ -187,7 +187,7 @@ function mergePageSpecificResults(allResults: CheckResult[][]): CheckResult[] {
     if (result.checkKey === "F1") {
       const formFindings = result.findings.filter((f) => f.element !== "page");
       result.summary = formFindings.length === 0
-        ? "No forms found in page source"
+        ? "No forms detected"
         : `${formFindings.length} form(s) found across scanned pages`;
       result.status = formFindings.length === 0 ? "na" : "ok";
     } else if (result.checkKey === "F3") {
@@ -538,10 +538,10 @@ function checkE1($: cheerio.CheerioAPI): CheckResult {
     checkKey: "E1",
     status: findings.length === 0 ? "ok" : "issue",
     findings: findings.length === 0
-      ? [{ element: "page", detail: "No video embeds found in page source (if added by JavaScript, verify in browser)", severity: "info" as const }]
+      ? [{ element: "page", detail: "No YouTube or Vimeo embeds detected. If the site has video embeds that appear after clicking something, double-check those in the browser.", severity: "info" as const }]
       : findings,
     summary: findings.length === 0
-      ? "No video embeds found in page source"
+      ? "No video embeds detected"
       : `${findings.length} video embed issue(s) found`,
   };
 }
@@ -617,10 +617,10 @@ function checkE3($: cheerio.CheerioAPI): CheckResult {
     checkKey: "E3",
     status: findings.length === 0 ? "ok" : "issue",
     findings: findings.length === 0
-      ? [{ element: "page", detail: "No map embeds found in page source (if loaded by JavaScript, verify in browser)", severity: "info" as const }]
+      ? [{ element: "page", detail: "No Google Maps or other map embeds detected. If a map only appears on a contact page or after clicking something, check that page in the browser.", severity: "info" as const }]
       : findings,
     summary: findings.length === 0
-      ? "No map embeds found in page source"
+      ? "No map embeds detected"
       : `${findings.length} map embed(s) loading without consent gate`,
   };
 }
@@ -645,10 +645,10 @@ function checkE4($: cheerio.CheerioAPI, html: string): CheckResult {
     checkKey: "E4",
     status: findings.length === 0 ? "ok" : "issue",
     findings: findings.length === 0
-      ? [{ element: "page", detail: "No chat widgets found in page source (most chat widgets load via JavaScript - verify in browser)", severity: "info" as const }]
+      ? [{ element: "page", detail: "No chat widgets detected (e.g. Intercom, Drift, Zendesk). If a chat bubble appears when you visit the site in a browser, it needs consent gating.", severity: "info" as const }]
       : findings,
     summary: findings.length === 0
-      ? "No chat widgets found in page source"
+      ? "No chat widgets detected"
       : `${findings.length} chat widget(s) loading without consent`,
   };
 }
@@ -684,10 +684,10 @@ function checkE5($: cheerio.CheerioAPI, html: string): CheckResult {
     checkKey: "E5",
     status: findings.length === 0 ? "ok" : "issue",
     findings: findings.length === 0
-      ? [{ element: "page", detail: "No social embeds found in page source (if added by JavaScript, verify in browser)", severity: "info" as const }]
+      ? [{ element: "page", detail: "No social media embeds detected (e.g. Facebook, Instagram). If social feeds or share widgets appear on the site, they need consent gating.", severity: "info" as const }]
       : findings,
     summary: findings.length === 0
-      ? "No social embeds found in page source"
+      ? "No social embeds detected"
       : `${findings.length} social embed(s) found`,
   };
 }
@@ -715,10 +715,10 @@ function checkF1($: cheerio.CheerioAPI): CheckResult {
     checkKey: "F1",
     status: findings.length === 0 ? "na" : "ok",
     findings: findings.length === 0
-      ? [{ element: "page", detail: "No forms found in page source (if forms are added by JavaScript, they won't appear here)", severity: "info" as const }]
+      ? [{ element: "page", detail: "No forms detected on the scanned pages. If the site has forms on pages not in the sitemap (e.g. landing pages, gated content), check those separately.", severity: "info" as const }]
       : findings,
     summary: findings.length === 0
-      ? "No forms found in page source"
+      ? "No forms detected"
       : `${findings.length} form(s) found`,
   };
 }

@@ -100,6 +100,7 @@ export async function updateSite(
     name?: string;
     url?: string;
     platform?: string;
+    coverageType?: string;
     webflowId?: string | null;
     hubspotId?: string | null;
     cookiebotId?: string | null;

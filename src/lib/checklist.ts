@@ -17,6 +17,63 @@ export interface LegalReference {
 
 export type AuditTier = "basic" | "full";
 
+export type CoverageType = "sla" | "no-sla" | "us-based" | "unknown";
+
+export const COVERAGE_TYPES: Record<CoverageType, { label: string; description: string; className: string }> = {
+  sla: {
+    label: "SLA",
+    description: "We manage their Cookiebot and GDPR compliance",
+    className: "bg-green-500/15 text-green-600 dark:text-green-400",
+  },
+  "no-sla": {
+    label: "No SLA",
+    description: "EU-based but manages their own GDPR compliance",
+    className: "bg-orange-500/15 text-orange-600 dark:text-orange-400",
+  },
+  "us-based": {
+    label: "US-based",
+    description: "GDPR does not apply - US privacy laws may apply",
+    className: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  },
+  unknown: {
+    label: "Unknown",
+    description: "Coverage type not yet determined",
+    className: "bg-muted text-muted-foreground",
+  },
+};
+
+const SLA_ESSENTIAL_CHECKS = new Set([
+  "A1", "A3", "A5",
+  "B3", "B5",
+  "E1", "E2",
+  "F3", "F4", "F5",
+  "G1", "G2", "G3", "G6", "G7", "G8",
+  "H2", "H7",
+  "I1", "I2", "I4",
+  "J1", "J3",
+]);
+
+const NO_SLA_ESSENTIAL_CHECKS = new Set([
+  "E1", "E2",
+  "F3", "F5",
+  "I1", "I2", "I4",
+  "J1", "J3",
+]);
+
+const US_BASED_ESSENTIAL_CHECKS = new Set([
+  "F5",
+  "I1", "I4",
+]);
+
+export function getEssentialChecks(coverageType: CoverageType): Set<string> {
+  switch (coverageType) {
+    case "sla": return SLA_ESSENTIAL_CHECKS;
+    case "no-sla": return NO_SLA_ESSENTIAL_CHECKS;
+    case "us-based": return US_BASED_ESSENTIAL_CHECKS;
+    case "unknown": return new Set(CHECKLIST.flatMap((c) => c.checks.map((ch) => ch.key)));
+  }
+}
+
 export type CheckResponsibility = "agency" | "client" | "content-author";
 
 export interface Check {
@@ -497,8 +554,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "H2", label: "Cookiebot GCM Check run", description: "Run the Google Consent Mode Checker in the Cookiebot admin panel. This verifies that consent signals are being sent correctly to Google services.", automation: "human", tier: "full",
-        manualHint: "Log into admin.cookiebot.com > select the domain > Google Consent Mode. Click 'Run check'. It tests whether consent signals (ad_storage, analytics_storage, etc.) are correctly communicated to Google. Save or screenshot the results.",
+        key: "H2", label: "Cookiebot GCM Check passed", description: "Run the Google Consent Mode Checker inside the Cookiebot admin panel. If all checks pass, the consent-to-GTM pipeline is working correctly. This is the single most important verification step for SLA clients.", automation: "human", tier: "basic",
+        manualHint: "Log into admin.cookiebot.com > select the site from the dropdown > Analytics tab > on the Consent Analytics tab, scroll down to User Consent Logging > click 'View more' > scroll down and click 'Start GCM check'. The checker tests that all Google Consent Mode V2 signals (ad_storage, analytics_storage, ad_user_data, ad_personalization) are correctly transmitted from Cookiebot through GTM. If all parameters show green: mark this check as OK. If any are red: the issue is usually a missing 'additional consent' setting on a tag in GTM, or Cookiebot not being set as an initialization tag. Check the GTM tag that failed and add the correct consent parameters.",
         legalBasis: "Confirms that your Consent Mode setup actually works - that Google receives the right consent signals when visitors accept or decline.",
         references: [
           { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },

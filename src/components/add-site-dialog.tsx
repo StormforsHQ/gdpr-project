@@ -24,7 +24,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { createSite, detectSiteIds } from "@/app/actions/sites";
-import { COVERAGE_TYPES, type CoverageType } from "@/lib/checklist";
+import { COVERAGE_TYPES, PLATFORM_LABELS, type CoverageType } from "@/lib/checklist";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -178,14 +178,12 @@ export function AddSiteDialog() {
             <Label htmlFor="platform">Platform</Label>
             <Select value={platform} onValueChange={(v) => v && setPlatform(v)}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue>{PLATFORM_LABELS[platform] || platform}</SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="webflow">Webflow</SelectItem>
-                <SelectItem value="hubspot">HubSpot</SelectItem>
-                <SelectItem value="nextjs">Next.js</SelectItem>
-                <SelectItem value="wordpress">WordPress</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                {Object.entries(PLATFORM_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

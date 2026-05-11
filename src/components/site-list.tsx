@@ -17,7 +17,7 @@ import { DeleteSiteButton } from "@/components/delete-site-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, ArrowUpDown, BarChart3, Eye, EyeOff } from "lucide-react";
 import { toggleSiteActive } from "@/app/actions/sites";
-import { COVERAGE_TYPES, type CoverageType } from "@/lib/checklist";
+import { COVERAGE_TYPES, PLATFORM_LABELS, type CoverageType } from "@/lib/checklist";
 
 export type SiteWithAudit = {
   id: string;
@@ -47,13 +47,6 @@ const STATUS_BADGES: Record<string, { label: string; variant: "default" | "secon
   compliant: { label: "Compliant", variant: "secondary" },
 };
 
-const PLATFORM_LABELS: Record<string, string> = {
-  webflow: "Webflow",
-  hubspot: "HubSpot",
-  nextjs: "Next.js",
-  wordpress: "WordPress",
-  other: "Other",
-};
 
 type SortField = "name" | "platform" | "status";
 type SortDir = "asc" | "desc";

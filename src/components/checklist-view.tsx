@@ -826,13 +826,15 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
       <div className="flex items-center gap-2 text-xs">
         {(() => {
+          const allCount = CHECKLIST.reduce((s, c) => s + c.checks.length, 0);
+          const basicCount = CHECKLIST.reduce((s, c) => s + c.checks.filter((ch) => ch.tier === "basic").length, 0);
           const viewOptions: { value: string; label: string }[] = [
-            { value: "unknown", label: `Not set (${CHECKLIST.reduce((s, c) => s + c.checks.length, 0)} checks)` },
-            { value: "sla", label: `SLA client audit (${getEssentialChecks("sla").size} checks)` },
-            { value: "no-sla", label: `Non-SLA client audit (${getEssentialChecks("no-sla").size} checks)` },
-            { value: "us-based", label: `US-based audit (${getEssentialChecks("us-based").size} checks)` },
-            { value: "basic", label: `Basic audit (${CHECKLIST.reduce((s, c) => s + c.checks.filter((ch) => ch.tier === "basic").length, 0)} checks)` },
-            { value: "full", label: `Full audit (${CHECKLIST.reduce((s, c) => s + c.checks.length, 0)} checks)` },
+            { value: "unknown", label: `${COVERAGE_TYPES.unknown.label} (${allCount} checks)` },
+            { value: "sla", label: `${COVERAGE_TYPES.sla.label} (${getEssentialChecks("sla").size} checks)` },
+            { value: "no-sla", label: `${COVERAGE_TYPES["no-sla"].label} (${getEssentialChecks("no-sla").size} checks)` },
+            { value: "us-based", label: `${COVERAGE_TYPES["us-based"].label} (${getEssentialChecks("us-based").size} checks)` },
+            { value: "basic", label: `Basic (${basicCount} checks)` },
+            { value: "full", label: `Full (${allCount} checks)` },
           ];
           const activeLabel = viewOptions.find((o) => o.value === checkView)?.label ?? checkView;
           return (

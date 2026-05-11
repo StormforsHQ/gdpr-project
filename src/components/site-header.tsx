@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EditSiteDialog } from "@/components/edit-site-dialog";
 import { CHECK_REQUIREMENTS, type CheckRequirement } from "@/lib/glossary";
-import { COVERAGE_TYPES, type CoverageType } from "@/lib/checklist";
+import { COVERAGE_TYPES, PLATFORM_LABELS, type CoverageType } from "@/lib/checklist";
 import { Settings, ExternalLink, AlertTriangle, FileText, ChevronDown, Trash2, BarChart3, Info } from "lucide-react";
 import Link from "next/link";
 import type { ReportListItem } from "@/app/actions/report";
@@ -28,13 +28,6 @@ interface SiteHeaderProps {
   reportVersions: ReportListItem[];
 }
 
-const PLATFORM_LABELS: Record<string, string> = {
-  webflow: "Webflow",
-  hubspot: "HubSpot",
-  nextjs: "Next.js",
-  wordpress: "WordPress",
-  other: "Other",
-};
 
 function getMissingFieldCounts(site: SiteHeaderProps["site"]): { field: CheckRequirement; label: string; count: number }[] {
   const missing: Record<CheckRequirement, { label: string; count: number }> = {

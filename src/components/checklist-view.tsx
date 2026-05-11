@@ -398,8 +398,10 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           }));
         }
 
+        const needsCookiebotGtm = coverageType === "unknown" || coverageType === "sla";
+
         const cbid = result.detectedCookiebotId || siteFields?.cookiebotId;
-        if (cbid) {
+        if (cbid && needsCookiebotGtm) {
           setScanStatus("Checking Cookiebot...");
           try {
             const cbResults = await runCookiebotScan(cbid, scanUrl);
@@ -415,7 +417,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         }
 
         const gtmId = result.detectedGtmId || siteFields?.gtmId;
-        if (gtmId) {
+        if (gtmId && needsCookiebotGtm) {
           setScanStatus("Checking GTM (may take a minute)...");
           try {
             const gtmResults = await runGtmScan(gtmId);

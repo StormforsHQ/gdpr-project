@@ -15,6 +15,10 @@ function isRetryable(status: number): boolean {
   return status >= 500 || status === 429;
 }
 
+let _sessionCost = 0;
+export function getSessionAICost(): number { return _sessionCost; }
+export function resetSessionAICost(): void { _sessionCost = 0; }
+
 async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise<string> {
   const apiKey = await getEffectiveAPIKey();
   if (!apiKey) {
@@ -65,6 +69,8 @@ async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise
         if (model !== models[0]) {
           console.info(`OpenRouter: used fallback model ${model}`);
         }
+        const cost = data.usage?.cost ?? data.usage?.total_cost ?? 0;
+        if (typeof cost === "number" && cost > 0) _sessionCost += cost;
         return data.choices?.[0]?.message?.content || "";
       } catch (err) {
         if (err instanceof TypeError && attempt < MAX_RETRIES) {

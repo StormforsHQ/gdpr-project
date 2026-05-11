@@ -148,34 +148,31 @@ export async function getEffectiveAPIKey(): Promise<string | null> {
 
 export async function getOpenRouterUsage(): Promise<{
   configured: boolean;
-  usage?: number;
-  limit?: number;
-  remaining?: number;
   model?: string;
+  lastRunCost?: number;
+  last24hCost?: number;
 } | null> {
   const apiKey = await getEffectiveAPIKey();
   if (!apiKey) return { configured: false };
 
   try {
     const settings = await getAISettings();
-    const res = await fetch("https://openrouter.ai/api/v1/auth/key", {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    if (!res.ok) return { configured: true, model: settings.primaryModel };
-    const data = await res.json();
 
-    const usage = data.data?.usage;
-    const limit = data.data?.limit;
-    const hasLimit = limit != null;
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const recentRuns = await prisma.scanRun.findMany({
+      where: { scanType: "ai-agent", cost: { not: null }, startedAt: { gte: since24h } },
+      select: { cost: true, startedAt: true },
+      orderBy: { startedAt: "desc" },
+    });
+
+    const lastRunCost = recentRuns[0]?.cost ?? undefined;
+    const last24hCost = recentRuns.reduce((sum, r) => sum + (r.cost ?? 0), 0);
 
     return {
       configured: true,
-      usage: usage != null ? Math.round(usage * 100) / 100 : undefined,
-      limit: hasLimit ? Math.round(limit * 100) / 100 : undefined,
-      remaining: hasLimit && usage != null
-        ? Math.round(Math.max(0, limit - usage) * 100) / 100
-        : undefined,
       model: settings.primaryModel,
+      lastRunCost: lastRunCost != null ? Math.round(lastRunCost * 10000) / 10000 : undefined,
+      last24hCost: last24hCost > 0 ? Math.round(last24hCost * 10000) / 10000 : undefined,
     };
   } catch {
     return { configured: true };

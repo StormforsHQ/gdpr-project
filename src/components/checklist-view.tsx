@@ -446,14 +446,14 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     try {
       const credits = await checkOpenRouterCredits();
       if (credits.available) {
-        const aiResults = await runAllAIChecks(scanUrl, collectedResults);
-        totalSkipped += applyCheckResults(aiResults, "ai");
-        const failedAI = aiResults.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
+        const aiResult = await runAllAIChecks(scanUrl, collectedResults);
+        totalSkipped += applyCheckResults(aiResult.checks, "ai");
+        const failedAI = aiResult.checks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
         for (const check of failedAI) {
           addError("ai", `AI check ${check.checkKey} failed`, check.summary);
         }
         if (auditId) {
-          const run = await saveScanRun(auditId, "ai-agent", scanUrl, aiResults);
+          const run = await saveScanRun(auditId, "ai-agent", scanUrl, aiResult.checks, undefined, aiResult.cost);
           setScanRuns((prev) => [run, ...prev]);
         }
       } else {

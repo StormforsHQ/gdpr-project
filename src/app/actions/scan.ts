@@ -1,7 +1,7 @@
 "use server";
 
 import { scanSite, type ScanResult } from "@/lib/scanner";
-import { runAICheck, AI_CHECK_KEYS } from "@/lib/ai-agent";
+import { runAICheck, AI_CHECK_KEYS, getSessionAICost, resetSessionAICost } from "@/lib/ai-agent";
 import { fetchCookiebotData, runCookiebotChecks } from "@/lib/cookiebot";
 import { isGtmConfigured, findCookiebotIdInContainer, getContainerInfo, listTags, listTriggers, listWorkspaces } from "@/lib/api/gtm";
 import { runGtmChecks } from "@/lib/gtm-checks";
@@ -201,14 +201,16 @@ export async function runSingleAICheck(checkKey: string, url: string): Promise<C
   return runAICheck(checkKey, url);
 }
 
-export async function runAllAIChecks(url: string, priorResults: CheckResult[] = []): Promise<CheckResult[]> {
-  if (!url || url.trim().length === 0) return [];
+export async function runAllAIChecks(url: string, priorResults: CheckResult[] = []): Promise<{ checks: CheckResult[]; cost: number }> {
+  if (!url || url.trim().length === 0) return { checks: [], cost: 0 };
 
+  resetSessionAICost();
   const results = await Promise.allSettled(
     AI_CHECK_KEYS.map((key) => runAICheck(key, url, priorResults))
   );
+  const cost = getSessionAICost();
 
-  return results.map((r, i) => {
+  const checks = results.map((r, i) => {
     if (r.status === "fulfilled") return r.value;
     return {
       checkKey: AI_CHECK_KEYS[i],
@@ -217,4 +219,6 @@ export async function runAllAIChecks(url: string, priorResults: CheckResult[] = 
       summary: "AI check failed",
     };
   });
+
+  return { checks, cost };
 }

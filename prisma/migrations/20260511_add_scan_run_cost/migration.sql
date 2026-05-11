@@ -1,0 +1,1 @@
+ALTER TABLE "scan_runs" ADD COLUMN "cost" DOUBLE PRECISION;

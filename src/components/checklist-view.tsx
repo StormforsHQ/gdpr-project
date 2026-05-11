@@ -91,9 +91,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     if (!initialStates) return {};
     const states: CheckState = {};
     for (const [key, value] of Object.entries(initialStates)) {
-      const status = value.status === "na" ? "not_checked" : value.status;
       states[key] = {
-        status: status as CheckStatus,
+        status: value.status as CheckStatus,
         notes: value.notes,
         internalNote: value.internalNote || "",
         source: (value.source as "manual" | "scan" | "ai") || "manual",

@@ -33,7 +33,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, ChevronRight, Scan, Loader2, AlertCircle, History, Clock, Trash2, X, RotateCcw, Filter, Check, MessageSquare, UserCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, Scan, Loader2, AlertCircle, History, Clock, Trash2, X, RotateCcw, Check, MessageSquare, UserCircle } from "lucide-react";
 
 
 const CLIENT_CONSENT_CHECKS = [
@@ -860,7 +860,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             onClick={() => setShowAllChecks(!showAllChecks)}
             title={showAllChecks ? "Show only essential checks for this coverage type" : "Show all checks"}
           >
-            <Badge variant="secondary" className={`text-[10px] cursor-pointer hover:ring-1 hover:ring-ring ${showAllChecks ? "" : COVERAGE_TYPES[coverageType].className}`}>
+            <Badge variant="secondary" className="text-[10px] cursor-pointer hover:ring-1 hover:ring-ring">
               {showAllChecks
                 ? `Showing all - click to filter for ${COVERAGE_TYPES[coverageType].label}`
                 : `${COVERAGE_TYPES[coverageType].label} essentials`}
@@ -875,98 +875,72 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground text-xs mr-1">
-          Progress: {totalChecked}/{totalChecks} checked
+          {totalChecked}/{totalChecks} checked
+          {totalIssues > 0 && ` - ${totalIssues} issue${totalIssues !== 1 ? "s" : ""}`}
         </span>
-        <button onClick={() => toggleFilter("not_checked")}>
-          <Badge
-            variant="secondary"
-            className={`cursor-pointer text-xs ${activeFilters.has("not_checked") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
-          >
-            Not checked ({totalNotChecked})
-          </Badge>
-        </button>
-        <button onClick={() => toggleFilter("ok")}>
-          <Badge
-            variant="secondary"
-            className={`cursor-pointer text-xs bg-green-500/15 text-green-600 dark:text-green-400 ${activeFilters.has("ok") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
-          >
-            OK ({totalOk})
-          </Badge>
-        </button>
-        {basicIssues > 0 && (
-          <button onClick={() => toggleFilter("issue")}>
-            <Badge
-              variant="destructive"
-              className={`cursor-pointer text-xs ${activeFilters.has("issue") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
-            >
-              {basicIssues} basic issue{basicIssues !== 1 ? "s" : ""}
-            </Badge>
-          </button>
-        )}
-        {fullIssues > 0 && (
-          <button onClick={() => toggleFilter("issue")}>
-            <Badge
-              variant="destructive"
-              className={`cursor-pointer text-xs  ${activeFilters.has("issue") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
-            >
-              {fullIssues} full issue{fullIssues !== 1 ? "s" : ""}
-            </Badge>
-          </button>
-        )}
-        {totalIssues === 0 && (
-          <button onClick={() => toggleFilter("issue")}>
-            <Badge
-              variant="destructive"
-              className={`cursor-pointer text-xs opacity-50 ${activeFilters.has("issue") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
-            >
-              Issues (0)
-            </Badge>
-          </button>
-        )}
-        {totalBlocked > 0 && (
-          <button onClick={() => toggleFilter("blocked")}>
-            <Badge
-              variant="secondary"
-              className={`cursor-pointer text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 ${activeFilters.has("blocked") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
-            >
-              Blocked ({totalBlocked})
-            </Badge>
-          </button>
-        )}
-        {totalClientManaged > 0 && (
-          <button onClick={() => toggleFilter("client_managed")}>
-            <Badge
-              variant="secondary"
-              className={`cursor-pointer text-xs bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 ${activeFilters.has("client_managed") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
-            >
-              Client managed? ({totalClientManaged})
-            </Badge>
-          </button>
-        )}
-        <button onClick={() => toggleFilter("na")}>
-          <Badge
-            variant="secondary"
-            className={`cursor-pointer text-xs ${activeFilters.has("na") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
-          >
-            N/A ({totalNa})
-          </Badge>
-        </button>
-        <button onClick={() => toggleFilter("has_comments")}>
-          <Badge
-            variant="outline"
-            className={`cursor-pointer text-xs ${activeFilters.has("has_comments") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
-          >
-            Has comments ({totalWithComments})
-          </Badge>
-        </button>
-        <button onClick={() => toggleFilter("has_internal_note")}>
-          <Badge
-            variant="outline"
-            className={`cursor-pointer text-xs bg-violet-500/10 text-violet-600 dark:text-violet-400 ${activeFilters.has("has_internal_note") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
-          >
-            Internal notes ({totalWithInternalNotes})
-          </Badge>
-        </button>
+        {(() => {
+          const activeStatusFilter = Array.from(activeFilters).find((f) => !f.startsWith("auto:") && f !== "has_comments" && f !== "has_internal_note");
+          const statusItems: { key: string; label: string; count: number }[] = [
+            { key: "not_checked", label: "Not checked", count: totalNotChecked },
+            { key: "ok", label: "OK", count: totalOk },
+            { key: "issue", label: "Issues", count: totalIssues },
+            { key: "blocked", label: "Blocked", count: totalBlocked },
+            { key: "client_managed", label: "Client managed", count: totalClientManaged },
+            { key: "na", label: "N/A", count: totalNa },
+            { key: "has_comments", label: "Has comments", count: totalWithComments },
+            { key: "has_internal_note", label: "Internal notes", count: totalWithInternalNotes },
+          ].filter((s) => s.count > 0 || s.key === "issue");
+          const activeLabel = statusItems.find((s) => activeFilters.has(s.key))?.label;
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center gap-1.5 outline-none">
+                <Badge
+                  variant="secondary"
+                  className={`cursor-pointer text-xs gap-1 ${activeStatusFilter || activeFilters.has("has_comments") || activeFilters.has("has_internal_note") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+                >
+                  {activeLabel ?? "Status"}
+                  <ChevronDown className="h-3 w-3 opacity-50" />
+                </Badge>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-52">
+                <DropdownMenuItem
+                  className="flex items-center gap-2 cursor-pointer"
+                  onClick={() => {
+                    setActiveFilters((prev) => {
+                      const next = new Set(prev);
+                      for (const s of statusItems) next.delete(s.key);
+                      return next;
+                    });
+                  }}
+                >
+                  <Check className={`h-3.5 w-3.5 shrink-0 ${!activeStatusFilter && !activeFilters.has("has_comments") && !activeFilters.has("has_internal_note") ? "opacity-100" : "opacity-0"}`} />
+                  <span>All</span>
+                </DropdownMenuItem>
+                {statusItems.map((item) => {
+                  const isActive = activeFilters.has(item.key);
+                  return (
+                    <DropdownMenuItem
+                      key={item.key}
+                      className="flex items-center gap-2 cursor-pointer"
+                      onClick={() => {
+                        setActiveFilters((prev) => {
+                          const next = new Set(prev);
+                          for (const s of statusItems) next.delete(s.key);
+                          if (!isActive) next.add(item.key);
+                          return next;
+                        });
+                      }}
+                    >
+                      <Check className={`h-3.5 w-3.5 shrink-0 ${isActive ? "opacity-100" : "opacity-0"}`} />
+                      <span>{item.label}</span>
+                      <span className="ml-auto text-muted-foreground text-xs">({item.count})</span>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        })()}
         {(() => {
           const typeCounts = Array.from(checkAutomation.values()).reduce<Record<string, number>>((acc, type) => {
             acc[type] = (acc[type] || 0) + 1;
@@ -983,7 +957,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                   variant="secondary"
                   className={`cursor-pointer text-xs gap-1 ${activeAutoFilter ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
                 >
-                  <Filter className="h-3 w-3" />
                   {activeLabel ?? "Check type"}
                   <ChevronDown className="h-3 w-3 opacity-50" />
                 </Badge>
@@ -1001,7 +974,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                 >
                   <Check className={`h-3.5 w-3.5 shrink-0 ${!activeAutoFilter ? "opacity-100" : "opacity-0"}`} />
                   <span>All</span>
-                  <span className="ml-auto text-muted-foreground text-xs">({totalChecks}/{totalChecks})</span>
+                  <span className="ml-auto text-muted-foreground text-xs">({totalChecks})</span>
                 </DropdownMenuItem>
                 {Object.entries(typeCounts)
                   .sort(([, a], [, b]) => b - a)
@@ -1027,7 +1000,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                         <span className={config.className.replace(/bg-\S+/g, "").trim()}>
                           {config.label}
                         </span>
-                        <span className="ml-auto text-muted-foreground text-xs">({count}/{totalChecks})</span>
+                        <span className="ml-auto text-muted-foreground text-xs">({count})</span>
                       </DropdownMenuItem>
                     );
                   })}
@@ -1122,9 +1095,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       })()}
 
       {coverageType === "us-based" && (
-        <Card className="border-blue-500/20 bg-blue-500/5">
+        <Card>
           <CardContent className="py-3">
-            <p className="text-xs text-blue-600 dark:text-blue-400">
+            <p className="text-xs text-muted-foreground">
               US-based site - EU GDPR cookie consent rules do not apply.
               US privacy laws (CCPA, state laws) may apply depending on audience.
               Most cookie/consent checks are hidden. Switch to "Show all" above if needed.

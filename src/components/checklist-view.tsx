@@ -1114,7 +1114,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                   <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                 )}
                 <CardTitle className="text-sm flex-1">
-                  {category.id}. {category.label}
+                  {category.id.length === 1 ? `${category.id}. ` : ""}{category.label}
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   {stats.issues > 0 && (

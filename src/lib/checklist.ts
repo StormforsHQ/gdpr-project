@@ -114,6 +114,20 @@ export const RESPONSIBILITY_CONFIG: Record<CheckResponsibility, { label: string;
 
 export const CHECKLIST: CheckCategory[] = [
   {
+    id: "pre",
+    label: "Pre-check",
+    checks: [
+      {
+        key: "H2", label: "Cookiebot GCM Check passed", description: "Run the Google Consent Mode Checker inside the Cookiebot admin panel. If all checks pass, the consent-to-GTM pipeline is working correctly. This is the single most important verification step for SLA clients.", automation: "human", tier: "basic",
+        manualHint: "Log into admin.cookiebot.com > select the site from the dropdown > Analytics tab > on the Consent Analytics tab, scroll down to User Consent Logging > click 'View more' > scroll down and click 'Start GCM check'. The checker tests that all Google Consent Mode V2 signals (ad_storage, analytics_storage, ad_user_data, ad_personalization) are correctly transmitted from Cookiebot through GTM. If all parameters show green: mark this check as OK. If any are red: the issue is usually a missing 'additional consent' setting on a tag in GTM, or Cookiebot not being set as an initialization tag. Check the GTM tag that failed and add the correct consent parameters.",
+        legalBasis: "Confirms that your Consent Mode setup actually works - that Google receives the right consent signals when visitors accept or decline.",
+        references: [
+          { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
+        ],
+      },
+    ],
+  },
+  {
     id: "A",
     label: "Script setup",
     checks: [
@@ -550,14 +564,6 @@ export const CHECKLIST: CheckCategory[] = [
         legalBasis: "You need documented proof that you've checked your cookie setup. The scan report serves as evidence of due diligence.",
         references: [
           { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
-        ],
-      },
-      {
-        key: "H2", label: "Cookiebot GCM Check passed", description: "Run the Google Consent Mode Checker inside the Cookiebot admin panel. If all checks pass, the consent-to-GTM pipeline is working correctly. This is the single most important verification step for SLA clients.", automation: "human", tier: "basic",
-        manualHint: "Log into admin.cookiebot.com > select the site from the dropdown > Analytics tab > on the Consent Analytics tab, scroll down to User Consent Logging > click 'View more' > scroll down and click 'Start GCM check'. The checker tests that all Google Consent Mode V2 signals (ad_storage, analytics_storage, ad_user_data, ad_personalization) are correctly transmitted from Cookiebot through GTM. If all parameters show green: mark this check as OK. If any are red: the issue is usually a missing 'additional consent' setting on a tag in GTM, or Cookiebot not being set as an initialization tag. Check the GTM tag that failed and add the correct consent parameters.",
-        legalBasis: "Confirms that your Consent Mode setup actually works - that Google receives the right consent signals when visitors accept or decline.",
-        references: [
-          { label: "ePrivacy Directive Art. 5(3)", url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219" },
         ],
       },
       {

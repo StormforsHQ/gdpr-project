@@ -677,7 +677,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             />
             <Button
               onClick={handleScan}
-              disabled={scanning || !scanUrl.trim()}
+              disabled={scanning || !scanUrl.trim() || checkView === "unknown"}
               size="sm"
               className="gap-2"
             >
@@ -863,7 +863,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           );
         })()}
         {checkView === "unknown" && (
-          <span className="text-xs text-amber-600 dark:text-amber-400">Choose an audit type to filter which checks are shown</span>
+          <span className="text-xs text-amber-600 dark:text-amber-400">Select a coverage type before scanning</span>
         )}
       </div>
 

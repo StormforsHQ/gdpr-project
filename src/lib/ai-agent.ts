@@ -102,7 +102,7 @@ function parseAIResponse(raw: string): AICheckResult {
   try {
     if (!raw || !raw.trim()) {
       console.error("AI returned empty response");
-      return { status: "na", findings: [{ detail: "AI returned an empty response", severity: "warning" }], summary: "AI analysis failed to parse" };
+      return { status: "blocked", findings: [{ detail: "AI returned an empty response", severity: "warning" }], summary: "AI check could not run" };
     }
     let cleaned = raw.replace(/^```json\s*/g, "").replace(/```\s*$/g, "").trim();
     let parsed: Record<string, unknown>;
@@ -116,7 +116,7 @@ function parseAIResponse(raw: string): AICheckResult {
         throw new Error("No JSON object found");
       }
     }
-    const status = VALID_AI_STATUSES.has(parsed.status as string) ? (parsed.status as string) : "na";
+    const status = VALID_AI_STATUSES.has(parsed.status as string) ? (parsed.status as string) : "blocked";
     const findings = Array.isArray(parsed.findings)
       ? parsed.findings
           .filter((f: Record<string, unknown>) => f && typeof f.detail === "string")
@@ -129,9 +129,9 @@ function parseAIResponse(raw: string): AICheckResult {
   } catch {
     console.error("Failed to parse AI response:", raw.slice(0, 500));
     return {
-      status: "na",
+      status: "blocked",
       findings: [{ detail: "Could not parse AI response", severity: "warning" }],
-      summary: "AI analysis failed to parse",
+      summary: "AI check could not run",
     };
   }
 }
@@ -182,13 +182,13 @@ export async function runAICheck(checkKey: string, url: string, priorResults: Ch
     console.error(`AI check ${checkKey} failed:`, err);
     return {
       checkKey,
-      status: "na",
+      status: "blocked",
       findings: [{
         element: "",
         detail: err instanceof Error ? err.message : "Unknown error",
         severity: "warning",
       }],
-      summary: "AI check failed",
+      summary: "AI check could not run",
     };
   }
 }

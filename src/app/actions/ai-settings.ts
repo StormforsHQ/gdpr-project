@@ -151,15 +151,17 @@ export async function getOpenRouterUsage(): Promise<{
   usage?: number;
   limit?: number;
   remaining?: number;
+  model?: string;
 } | null> {
   const apiKey = await getEffectiveAPIKey();
   if (!apiKey) return { configured: false };
 
   try {
+    const settings = await getAISettings();
     const res = await fetch("https://openrouter.ai/api/v1/auth/key", {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
-    if (!res.ok) return { configured: true };
+    if (!res.ok) return { configured: true, model: settings.primaryModel };
     const data = await res.json();
 
     const usage = data.data?.usage;
@@ -173,6 +175,7 @@ export async function getOpenRouterUsage(): Promise<{
       remaining: hasLimit && usage != null
         ? Math.round(Math.max(0, limit - usage) * 100) / 100
         : undefined,
+      model: settings.primaryModel,
     };
   } catch {
     return { configured: true };

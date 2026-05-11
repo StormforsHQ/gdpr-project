@@ -144,11 +144,11 @@ export function AddSiteDialog() {
         Add site
       </Button>
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg p-6">
         <DialogHeader>
           <DialogTitle>Add site</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="name">Site name</Label>
             <Input

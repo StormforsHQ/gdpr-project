@@ -79,8 +79,8 @@ export function CheckItem({
   const [expanded, setExpanded] = useState(false);
   const [reportNoteOpen, setReportNoteOpen] = useState(!!notes.trim());
   const [internalNoteOpen, setInternalNoteOpen] = useState(!!internalNote.trim());
-  const fellBackToManual = scanResult?.status === "blocked" && /check in browser/i.test(scanResult.summary || "");
-  const automationInfo = fellBackToManual ? AUTOMATION_CONFIG["human"] : AUTOMATION_CONFIG[check.automation];
+  const fellBackToBrowser = scanResult?.status === "blocked" && /check in browser/i.test(scanResult.summary || "");
+  const automationInfo = fellBackToBrowser ? AUTOMATION_CONFIG["browser-manual"] : AUTOMATION_CONFIG[check.automation];
 
   const requirements = CHECK_REQUIREMENTS[check.key] || [];
   const missingRequirements = siteFields
@@ -96,7 +96,9 @@ export function CheckItem({
       >
         {isBlockedByRequirement
           ? <CircleDashed className="h-4 w-4 text-amber-500" />
-          : STATUS_ICONS[status]}
+          : fellBackToBrowser
+            ? <CircleDashed className="h-4 w-4 text-muted-foreground" />
+            : STATUS_ICONS[status]}
         <span className="text-xs font-mono text-muted-foreground w-7 shrink-0">
           {check.key}
         </span>
@@ -137,7 +139,7 @@ export function CheckItem({
             </TooltipContent>
           </Tooltip>
         )}
-        {!isBlockedByRequirement && status === "blocked" && scanResult && (
+        {!isBlockedByRequirement && !fellBackToBrowser && status === "blocked" && scanResult && (
           <Tooltip>
             <TooltipTrigger>
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
@@ -198,12 +200,21 @@ export function CheckItem({
               </p>
             </div>
           )}
-          {status === "blocked" && scanResult && (
+          {status === "blocked" && scanResult && !fellBackToBrowser && (
             <div className="flex items-start gap-1.5">
               <AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-600 dark:text-amber-400">
                 {scanResult.summary}
               </p>
+            </div>
+          )}
+          {fellBackToBrowser && scanResult && (
+            <div className="flex items-start gap-1.5 p-2.5 rounded-md bg-blue-500/10 border border-blue-500/20">
+              <Info className="h-3 w-3 text-blue-500 mt-0.5 shrink-0" />
+              <div className="text-xs text-blue-700 dark:text-blue-400">
+                <p className="font-medium mb-0.5">Verify in browser</p>
+                <p>{scanResult.summary}</p>
+              </div>
             </div>
           )}
           {status === "client_managed" && (

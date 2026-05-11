@@ -166,11 +166,11 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); setConfirmDelete(false); }}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg p-6">
         <DialogHeader>
           <DialogTitle>Edit site</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="edit-name">Site name</Label>
             <Input

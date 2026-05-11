@@ -72,8 +72,7 @@ interface ChecklistViewProps {
 export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", coverageType = "unknown", initialStates, initialScanRuns, initialAuditNotes = "", siteFields: initialSiteFields }: ChecklistViewProps) {
   const { errors, addError, clearErrors } = useErrorLog();
   const [auditType, setAuditType] = useState<"basic" | "full">(initialAuditType);
-  const defaultView = coverageType !== "unknown" ? coverageType : initialAuditType;
-  const [checkView, setCheckView] = useState<string>(defaultView);
+  const [checkView, setCheckView] = useState<string>(coverageType);
   const essentialChecks = getEssentialChecks(coverageType);
   const [siteFields, setSiteFields] = useState(initialSiteFields);
 
@@ -828,6 +827,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       <div className="flex items-center gap-2 text-xs">
         {(() => {
           const viewOptions: { value: string; label: string }[] = [
+            { value: "unknown", label: `Not set (${CHECKLIST.reduce((s, c) => s + c.checks.length, 0)} checks)` },
             { value: "sla", label: `SLA client audit (${getEssentialChecks("sla").size} checks)` },
             { value: "no-sla", label: `Non-SLA client audit (${getEssentialChecks("no-sla").size} checks)` },
             { value: "us-based", label: `US-based audit (${getEssentialChecks("us-based").size} checks)` },
@@ -854,7 +854,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                         setAuditType(opt.value);
                         if (auditId) updateAuditType(auditId, opt.value);
                       }
-                      if (siteId && (opt.value === "sla" || opt.value === "no-sla" || opt.value === "us-based")) {
+                      if (siteId && (opt.value === "sla" || opt.value === "no-sla" || opt.value === "us-based" || opt.value === "unknown")) {
                         updateSite(siteId, { coverageType: opt.value });
                       }
                     }}
@@ -867,7 +867,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             </DropdownMenu>
           );
         })()}
-        {coverageType === "unknown" && (
+        {checkView === "unknown" && (
           <span className="text-xs text-amber-600 dark:text-amber-400">Choose an audit type to filter which checks are shown</span>
         )}
       </div>

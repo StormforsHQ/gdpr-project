@@ -218,9 +218,9 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
               <SelectContent className="min-w-[320px]">
                 {(Object.entries(COVERAGE_TYPES) as [CoverageType, typeof COVERAGE_TYPES[CoverageType]][]).map(([key, config]) => (
                   <SelectItem key={key} value={key}>
-                    <div>
+                    <div className="py-0.5">
                       <span>{config.label}</span>
-                      <span className="text-muted-foreground text-xs ml-2">- {config.description}</span>
+                      <p className="text-muted-foreground text-xs mt-0.5">{config.description}</p>
                     </div>
                   </SelectItem>
                 ))}

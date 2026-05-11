@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import { normalizeUrl } from "@/lib/url";
 import { detectVendors, type DetectedVendor } from "@/lib/vendors";
+import { prisma } from "@/lib/db";
 
 export interface ScanFinding {
   element: string;
@@ -85,14 +86,15 @@ const SOCIAL_EMBEDS = [
 ];
 
 
-const PAGE_CACHE_TTL = 24 * 60 * 60 * 1000;
-const pageCache = new Map<string, { html: string; fetchedAt: number }>();
+const PAGE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 
 async function fetchPage(url: string): Promise<{ $: cheerio.CheerioAPI; html: string } | null> {
-  const cached = pageCache.get(url);
-  if (cached && Date.now() - cached.fetchedAt < PAGE_CACHE_TTL) {
-    return { $: cheerio.load(cached.html), html: cached.html };
-  }
+  try {
+    const cached = await prisma.pageCache.findUnique({ where: { url } });
+    if (cached && Date.now() - cached.fetchedAt.getTime() < PAGE_CACHE_TTL) {
+      return { $: cheerio.load(cached.html), html: cached.html };
+    }
+  } catch {}
 
   try {
     const response = await fetch(url, {
@@ -102,7 +104,13 @@ async function fetchPage(url: string): Promise<{ $: cheerio.CheerioAPI; html: st
     });
     if (!response.ok) return null;
     const html = await response.text();
-    pageCache.set(url, { html, fetchedAt: Date.now() });
+    try {
+      await prisma.pageCache.upsert({
+        where: { url },
+        update: { html, fetchedAt: new Date() },
+        create: { url, html },
+      });
+    } catch {}
     return { $: cheerio.load(html), html };
   } catch {
     return null;

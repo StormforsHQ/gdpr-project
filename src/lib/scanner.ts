@@ -120,7 +120,7 @@ async function fetchPage(url: string): Promise<{ $: cheerio.CheerioAPI; html: st
 const PAGE_SPECIFIC_KEYS = new Set(["E1", "E3", "E4", "E5", "F1", "F3", "F5"]);
 
 function runSiteWideChecks($: cheerio.CheerioAPI, html: string, detectedGtmId: string | null, detectedCookiebotId: string | null): CheckResult[] {
-  const g1Result = checkG1($, html, detectedGtmId);
+  const g1Result = checkG1($, html, detectedGtmId, detectedCookiebotId);
   const hasBanner = g1Result.status === "ok";
   return [
     checkA1($, html),
@@ -911,7 +911,7 @@ function checkI4($: cheerio.CheerioAPI): CheckResult {
   };
 }
 
-function checkG1($: cheerio.CheerioAPI, html: string, detectedGtmId: string | null): CheckResult {
+function checkG1($: cheerio.CheerioAPI, html: string, detectedGtmId: string | null, detectedCookiebotId: string | null): CheckResult {
   const findings: ScanFinding[] = [];
 
   const hasCookiebotScript = $("script[src*='consent.cookiebot.com'], script[src*='consentcdn.cookiebot.com']").length > 0;
@@ -934,6 +934,15 @@ function checkG1($: cheerio.CheerioAPI, html: string, detectedGtmId: string | nu
       severity: "info",
     });
     return { checkKey: "G1", status: "ok", findings, summary: "Consent management platform detected" };
+  }
+
+  if (detectedGtmId && detectedCookiebotId) {
+    findings.push({
+      element: "GTM + Cookiebot",
+      detail: "Cookiebot is loaded through GTM (not directly in the HTML). The consent banner appears when the page loads via the Cookiebot CMP template in GTM.",
+      severity: "info",
+    });
+    return { checkKey: "G1", status: "ok", findings, summary: "Cookiebot consent banner loaded via GTM" };
   }
 
   if (detectedGtmId) {

@@ -16,7 +16,7 @@ import { AUTOMATION_CONFIG, RESPONSIBILITY_CONFIG } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { GlossaryText } from "@/components/glossary-text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench, Search, StickyNote, ClipboardList, UserCircle } from "lucide-react";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench, Search, StickyNote, UserCircle } from "lucide-react";
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -51,7 +51,6 @@ interface CheckItemProps {
   onNotesChange: (notes: string) => void;
   onInternalNoteChange?: (note: string) => void;
   onOpenGuide: (key: string) => void;
-  onViewScanDetails?: (key: string) => void;
   onRunCheck?: (key: string) => void;
   onApplyFix?: (key: string) => void;
   onAnalyzeFix?: (key: string) => void;
@@ -69,7 +68,6 @@ export function CheckItem({
   onNotesChange,
   onInternalNoteChange,
   onOpenGuide,
-  onViewScanDetails,
   onRunCheck,
   fixInfo,
   isFixing,
@@ -153,20 +151,6 @@ export function CheckItem({
               Likely managed by the client. Click to expand for details.
             </TooltipContent>
           </Tooltip>
-        )}
-        {scanResult && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 shrink-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewScanDetails?.(check.key);
-            }}
-            aria-label={`Scan results for ${check.key}`}
-          >
-            <ClipboardList className="h-4 w-4 text-primary" />
-          </Button>
         )}
         <Button
           variant="ghost"

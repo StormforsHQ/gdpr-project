@@ -326,26 +326,18 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   };
 
   const filteredChecklist = (() => {
-    let list = auditType === "basic"
-      ? CHECKLIST.map((cat) => ({ ...cat, checks: cat.checks.filter((c) => c.tier === "basic") }))
-      : CHECKLIST;
+    let list = CHECKLIST;
 
     if (!showAllChecks && coverageType !== "unknown") {
       list = list.map((cat) => ({
         ...cat,
         checks: cat.checks.filter((c) => essentialChecks.has(c.key)),
       }));
+    } else if (auditType === "basic") {
+      list = list.map((cat) => ({ ...cat, checks: cat.checks.filter((c) => c.tier === "basic") }));
     }
 
     return list.filter((cat) => cat.checks.length > 0);
-  })();
-
-  const hiddenCheckCount = (() => {
-    if (showAllChecks || coverageType === "unknown") return 0;
-    const tierList = auditType === "basic"
-      ? CHECKLIST.flatMap((cat) => cat.checks.filter((c) => c.tier === "basic"))
-      : CHECKLIST.flatMap((cat) => cat.checks);
-    return tierList.filter((c) => !essentialChecks.has(c.key)).length;
   })();
 
   const getCategoryStats = (categoryId: string) => {
@@ -619,14 +611,11 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   };
 
   const visibleCheckKeys = new Set(filteredChecklist.flatMap((c) => c.checks.map((ch) => ch.key)));
-  const basicCheckKeys = new Set(CHECKLIST.flatMap((c) => c.checks.filter((ch) => ch.tier === "basic").map((ch) => ch.key)));
   const checkAutomation = new Map(filteredChecklist.flatMap((c) => c.checks.map((ch) => [ch.key, ch.automation] as const)));
   const visibleStates = Object.entries(checkStates).filter(([key]) => visibleCheckKeys.has(key));
   const totalChecks = visibleCheckKeys.size;
   const totalChecked = visibleStates.filter(([, s]) => s.status !== "not_checked").length;
   const totalIssues = visibleStates.filter(([, s]) => s.status === "issue").length;
-  const basicIssues = visibleStates.filter(([key, s]) => s.status === "issue" && basicCheckKeys.has(key)).length;
-  const fullIssues = visibleStates.filter(([key, s]) => s.status === "issue" && !basicCheckKeys.has(key)).length;
   const totalOk = visibleStates.filter(([, s]) => s.status === "ok").length;
   const totalNa = visibleStates.filter(([, s]) => s.status === "na").length;
   const totalNotChecked = totalChecks - totalChecked;
@@ -678,8 +667,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
   const scannedCheckCount = scanResult?.checks.length ?? 0;
   const scanIssueCount = scanResult?.checks.filter((c) => c.status === "issue").length ?? 0;
-  const scanBasicIssues = scanResult?.checks.filter((c) => c.status === "issue" && basicCheckKeys.has(c.checkKey)).length ?? 0;
-  const scanFullIssues = scanResult?.checks.filter((c) => c.status === "issue" && !basicCheckKeys.has(c.checkKey)).length ?? 0;
   const scanFailedCount = scanResult?.checks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning")).length ?? 0;
 
   return (
@@ -712,11 +699,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
               <span>Scanned: {scanResult.url}</span>
               <span>{scannedCheckCount} checks run</span>
-              {scanBasicIssues > 0 && (
-                <Badge variant="destructive" className="text-xs">{scanBasicIssues} basic issue{scanBasicIssues !== 1 ? "s" : ""}</Badge>
-              )}
-              {scanFullIssues > 0 && (
-                <Badge variant="destructive" className="text-xs ">{scanFullIssues} full issue{scanFullIssues !== 1 ? "s" : ""}</Badge>
+              {scanIssueCount > 0 && (
+                <Badge variant="destructive" className="text-xs">{scanIssueCount} issue{scanIssueCount !== 1 ? "s" : ""}</Badge>
               )}
               {scanFailedCount > 0 && (
                 <Badge variant="secondary" className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400">{scanFailedCount} failed</Badge>
@@ -843,33 +827,33 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       )}
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <button
-          onClick={async () => {
-            const next = auditType === "basic" ? "full" : "basic";
-            setAuditType(next);
-            if (auditId) await updateAuditType(auditId, next);
-          }}
-          title="Click to switch between Basic and Full audit"
-        >
-          <Badge variant="secondary" className={`text-[10px] cursor-pointer hover:ring-1 hover:ring-ring ${auditType === "basic" ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" : "bg-purple-500/15 text-purple-600 dark:text-purple-400"}`}>
-            {auditType === "basic" ? "Basic" : "Full"} ({filteredChecklist.reduce((s, c) => s + c.checks.length, 0)} checks)
-          </Badge>
-        </button>
-        {coverageType !== "unknown" && (
+        {coverageType !== "unknown" ? (
           <button
             onClick={() => setShowAllChecks(!showAllChecks)}
             title={showAllChecks ? "Show only essential checks for this coverage type" : "Show all checks"}
           >
             <Badge variant="secondary" className="text-[10px] cursor-pointer hover:ring-1 hover:ring-ring">
               {showAllChecks
-                ? `Showing all - click to filter for ${COVERAGE_TYPES[coverageType].label}`
-                : `${COVERAGE_TYPES[coverageType].label} essentials`}
-              {hiddenCheckCount > 0 && !showAllChecks && ` (${hiddenCheckCount} hidden)`}
+                ? `Showing all (${filteredChecklist.reduce((s, c) => s + c.checks.length, 0)}) - click to filter for ${COVERAGE_TYPES[coverageType].label}`
+                : `${COVERAGE_TYPES[coverageType].label} essentials (${filteredChecklist.reduce((s, c) => s + c.checks.length, 0)})`}
             </Badge>
           </button>
-        )}
-        {coverageType === "unknown" && (
-          <span className="text-amber-600 dark:text-amber-400">Coverage type not set - showing all checks</span>
+        ) : (
+          <>
+            <button
+              onClick={async () => {
+                const next = auditType === "basic" ? "full" : "basic";
+                setAuditType(next);
+                if (auditId) await updateAuditType(auditId, next);
+              }}
+              title="Click to switch between Basic and Full audit"
+            >
+              <Badge variant="secondary" className={`text-[10px] cursor-pointer hover:ring-1 hover:ring-ring ${auditType === "basic" ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" : "bg-purple-500/15 text-purple-600 dark:text-purple-400"}`}>
+                {auditType === "basic" ? "Basic" : "Full"} ({filteredChecklist.reduce((s, c) => s + c.checks.length, 0)} checks)
+              </Badge>
+            </button>
+            <span className="text-amber-600 dark:text-amber-400">Coverage type not set - showing all checks</span>
+          </>
         )}
       </div>
 
@@ -1106,26 +1090,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         </Card>
       )}
 
-      {coverageType === "sla" && (
-        <Card>
-          <CardContent className="py-3">
-            <div className="flex items-start gap-2">
-              <span className="text-xs font-medium shrink-0">Manual pre-check:</span>
-              <div className="text-xs text-muted-foreground">
-                <p>
-                  Run the <strong>Cookiebot GCM Checker</strong> before reviewing the automated results below.
-                  This verifies that consent signals flow correctly from Cookiebot through GTM to Google services -
-                  the automated checks below can verify configuration, but only the GCM Checker confirms the full pipeline works end-to-end.
-                </p>
-                <p className="mt-1.5">
-                  admin.cookiebot.com &gt; select site &gt; Analytics &gt; Consent Analytics &gt; User Consent Logging &gt; View more &gt; Start GCM check.
-                  If all parameters show green, mark check H2 as OK.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {filteredChecklist.map((category) => {
         const isExpanded = expandedCategories.has(category.id);

@@ -48,9 +48,8 @@ const SLA_ESSENTIAL_CHECKS = new Set([
   "E1", "E2",
   "F3", "F4", "F5",
   "G1", "G2", "G3", "G6", "G7", "G8",
-  "H2", "H7",
+  "H2",
   "I1", "I2", "I4",
-  "J1", "J3",
 ]);
 
 const NO_SLA_ESSENTIAL_CHECKS = new Set([

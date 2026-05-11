@@ -85,7 +85,7 @@ const SOCIAL_EMBEDS = [
 ];
 
 
-const PAGE_CACHE_TTL = 30 * 60 * 1000;
+const PAGE_CACHE_TTL = 24 * 60 * 60 * 1000;
 const pageCache = new Map<string, { html: string; fetchedAt: number }>();
 
 async function fetchPage(url: string): Promise<{ $: cheerio.CheerioAPI; html: string } | null> {

@@ -60,8 +60,13 @@ const NO_SLA_ESSENTIAL_CHECKS = new Set([
 ]);
 
 const US_BASED_ESSENTIAL_CHECKS = new Set([
-  "F5",
-  "I4",
+  "A1",
+  "D3",
+  "E1", "E2",
+  "F3", "F4", "F5",
+  "I1", "I2", "I4",
+  "J1", "J3",
+  "K2", "K4",
 ]);
 
 export function getEssentialChecks(coverageType: CoverageType): Set<string> {
@@ -103,7 +108,7 @@ export const AUTOMATION_CONFIG: Record<AutomationType, { label: string; classNam
   "gtm-api": { label: "GTM API", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
   "cookiebot-api": { label: "Cookiebot", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
   "webflow-api": { label: "Webflow", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  "human": { label: "Manual", className: "bg-muted text-muted-foreground" },
+  "human": { label: "Manual", className: "bg-slate-500/15 text-slate-600 dark:text-slate-400" },
 };
 
 export const RESPONSIBILITY_CONFIG: Record<CheckResponsibility, { label: string; className: string; description: string }> = {

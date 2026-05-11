@@ -831,7 +831,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         </div>
       )}
 
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="flex items-center gap-2 text-xs">
         <ViewSelect
           value={checkView}
           onValueChange={(v) => {
@@ -843,35 +843,35 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             }
           }}
         >
-          <ViewSelectTrigger className="w-auto h-7 text-xs gap-1.5 px-2.5">
+          <ViewSelectTrigger className="w-auto h-7 text-xs gap-1.5 px-2.5 font-medium">
             <ViewSelectValue />
           </ViewSelectTrigger>
           <ViewSelectContent className="min-w-[220px]">
             {coverageType !== "unknown" && (
               <ViewSelectItem value={coverageType}>
-                {COVERAGE_TYPES[coverageType].label} essentials ({getEssentialChecks(coverageType).size})
+                {COVERAGE_TYPES[coverageType].label} audit ({getEssentialChecks(coverageType).size} checks)
               </ViewSelectItem>
             )}
             {coverageType !== "sla" && (
               <ViewSelectItem value="sla">
-                SLA client essentials ({getEssentialChecks("sla").size})
+                SLA client audit ({getEssentialChecks("sla").size} checks)
               </ViewSelectItem>
             )}
             {coverageType !== "no-sla" && (
               <ViewSelectItem value="no-sla">
-                Non-SLA client essentials ({getEssentialChecks("no-sla").size})
+                Non-SLA client audit ({getEssentialChecks("no-sla").size} checks)
               </ViewSelectItem>
             )}
             {coverageType !== "us-based" && (
               <ViewSelectItem value="us-based">
-                US-based essentials ({getEssentialChecks("us-based").size})
+                US-based audit ({getEssentialChecks("us-based").size} checks)
               </ViewSelectItem>
             )}
             <ViewSelectItem value="basic">
-              Basic - all ({CHECKLIST.reduce((s, c) => s + c.checks.filter((ch) => ch.tier === "basic").length, 0)})
+              Basic audit ({CHECKLIST.reduce((s, c) => s + c.checks.filter((ch) => ch.tier === "basic").length, 0)} checks)
             </ViewSelectItem>
             <ViewSelectItem value="full">
-              Full - all ({CHECKLIST.reduce((s, c) => s + c.checks.length, 0)})
+              Full audit ({CHECKLIST.reduce((s, c) => s + c.checks.length, 0)} checks)
             </ViewSelectItem>
           </ViewSelectContent>
         </ViewSelect>
@@ -1004,9 +1004,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                         }}
                       >
                         <Check className={`h-3.5 w-3.5 shrink-0 ${isActive ? "opacity-100" : "opacity-0"}`} />
-                        <span className={config.className.replace(/bg-\S+/g, "").trim()}>
-                          {config.label}
-                        </span>
+                        <span>{config.label}</span>
                         <span className="ml-auto text-muted-foreground text-xs">({count})</span>
                       </DropdownMenuItem>
                     );

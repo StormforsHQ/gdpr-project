@@ -1106,6 +1106,27 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         </Card>
       )}
 
+      {coverageType === "sla" && (
+        <Card>
+          <CardContent className="py-3">
+            <div className="flex items-start gap-2">
+              <span className="text-xs font-medium shrink-0">Manual pre-check:</span>
+              <div className="text-xs text-muted-foreground">
+                <p>
+                  Run the <strong>Cookiebot GCM Checker</strong> before reviewing the automated results below.
+                  This verifies that consent signals flow correctly from Cookiebot through GTM to Google services -
+                  the automated checks below can verify configuration, but only the GCM Checker confirms the full pipeline works end-to-end.
+                </p>
+                <p className="mt-1.5">
+                  admin.cookiebot.com &gt; select site &gt; Analytics &gt; Consent Analytics &gt; User Consent Logging &gt; View more &gt; Start GCM check.
+                  If all parameters show green, mark check H2 as OK.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {filteredChecklist.map((category) => {
         const isExpanded = expandedCategories.has(category.id);
         const stats = getCategoryStats(category.id);

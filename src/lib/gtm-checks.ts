@@ -368,6 +368,16 @@ export function runGtmChecks(tags: GtmTag[], triggers: GtmTrigger[]): CheckResul
   if (g1) {
     results.push(g1);
     results.push({
+      checkKey: "B5",
+      status: "ok",
+      findings: [{
+        element: g1.findings[0]?.element || "Cookiebot via GTM",
+        detail: "Google Consent Mode V2 is configured through the Cookiebot CMP template in GTM. The Cookiebot tag handles consent mode signals (ad_storage, analytics_storage, ad_user_data, ad_personalization) automatically.",
+        severity: "info",
+      }],
+      summary: "Consent Mode V2 configured via Cookiebot in GTM",
+    });
+    results.push({
       checkKey: "G8",
       status: "blocked",
       findings: [{

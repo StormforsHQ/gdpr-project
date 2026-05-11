@@ -18,7 +18,7 @@ const TOOLS = [
     function: {
       name: "listCategories",
       description:
-        "List all 11 audit categories with their IDs, names, check count, and check names. Use this to get an overview of what the audit covers, to find which category a topic belongs to, or to orient before answering a general question.",
+        "List all audit categories with their IDs, names, check count, and check names. Use this to get an overview of what the audit covers, to find which category a topic belongs to, or to orient before answering a general question.",
       parameters: { type: "object", properties: {}, required: [] },
     },
   },
@@ -33,7 +33,7 @@ const TOOLS = [
         properties: {
           categoryId: {
             type: "string",
-            description: "The category ID letter (A through K). Call listCategories first if you don't know the ID.",
+            description: "The category ID (e.g. 'pre', 'A', 'B', ... 'K'). Call listCategories first if you don't know the ID.",
           },
         },
         required: ["categoryId"],
@@ -63,7 +63,7 @@ const TOOLS = [
     function: {
       name: "searchChecks",
       description:
-        "Search all 69 checks by keyword. Searches check names, descriptions, and legal basis text. Returns matching checks with their category, name, and description. Use this when the user asks about a topic and you need to find relevant checks without knowing the category.",
+        "Search all checks by keyword. Searches check names, descriptions, and legal basis text. Returns matching checks with their category, name, and description. Use this when the user asks about a topic and you need to find relevant checks without knowing the category.",
       parameters: {
         type: "object",
         properties: {
@@ -198,8 +198,8 @@ function executeListCategories(): string {
 }
 
 function executeGetChecks(categoryId: string): string {
-  const cat = CHECKLIST.find((c) => c.id === categoryId.toUpperCase());
-  if (!cat) return JSON.stringify({ error: `Category '${categoryId}' not found. Valid IDs: A through K.` });
+  const cat = CHECKLIST.find((c) => c.id.toLowerCase() === categoryId.toLowerCase());
+  if (!cat) return JSON.stringify({ error: `Category '${categoryId}' not found. Call listCategories to see valid IDs.` });
 
   return JSON.stringify({
     category: cat.label,
@@ -644,7 +644,7 @@ NEVER answer with hardcoded knowledge about GDPR rules, check details, remediati
 
 ## Check metadata
 Each check has these properties (returned by tools):
-- **tier**: "basic" (enforcement risk, always checked) or "full" (best practice, only in full audits)
+- **tier**: "basic" (enforcement risk) or "full" (best practice). But the main filter is **coverage type**: SLA sites see a curated set of essential checks, no-SLA and US-based sites see their own smaller sets, and "unknown" coverage defaults to basic/full tiers
 - **automation**: how the check runs - "page-scan" (automatic), "ai-agent" (AI), "gtm-api", "cookiebot-api", "human" (manual), etc.
 - **responsibility**: who is responsible for this check:
   - "agency" (default) - our technical responsibility (scripts, config, setup)
@@ -669,8 +669,8 @@ Sites can be on different platforms (Webflow, HubSpot, Next.js, WordPress, other
 
 ## App structure (for navigation questions only)
 Pages in the sidebar: Dashboard, Sites (click to see audit), Reference (Technical Guide, Audit Protocol, Cheat Sheet, Fix Flow Guide, MCP Servers), Settings.
-On a site's audit page: checks in 11 categories, "Scan site" button, "AI Analyze" button, report generation, guide drawer (book icon).
-Filter bar: status badges (OK, Issue, N/A, Not checked) and a check type dropdown (Auto, AI, GTM API, etc.) to filter the checklist.
+On a site's audit page: checks grouped by category (Pre-check, then A through K), "Scan site" button, report generation, guide drawer (book icon).
+Filter bar: a view dropdown (SLA essentials, No SLA, US-based, Basic, Full) to scope checks by coverage type, plus status badges (OK, Issue, N/A, Not checked) and a check type dropdown. For no-SLA and US-based sites, Cookiebot and GTM API scans are skipped since those checks aren't in their essential sets.
 Warning triangles = missing Cookiebot ID or GTM Container ID. Add via Edit Site (pencil icon).
 "Sync from Webflow" button on Sites page imports all Webflow workspace sites. "Detect IDs from site" in Edit Site scans the URL for GTM, Cookiebot, and platform-specific IDs.`;
 

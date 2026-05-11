@@ -435,18 +435,10 @@ ${formsWithLabels.slice(0, 8000)}${scanContext}`
     }
 
     if (!bannerHtml) {
-      const g1Ok = /G1:\s*OK/i.test(scanContext);
-      if (g1Ok) {
-        return {
-          status: "blocked" as const,
-          findings: [{ detail: "The consent banner can't be checked automatically because it loads after the page renders. Open the site in a browser and check: is 'Allow all' a big colorful button while 'Deny' is just an outline or text link? They must look equally clickable - same size, same visual weight. IMY fined companies in 2025 for exactly this.", severity: "warning" as const }],
-          summary: "Check in browser: are Accept and Reject buttons equally visible?",
-        };
-      }
       return {
-        status: "blocked" as const,
-        findings: [{ detail: "No consent banner or Cookiebot script detected - prominence check not applicable", severity: "info" as const }],
-        summary: "No consent banner detected",
+        status: "na" as const,
+        findings: [{ detail: "The consent banner loads dynamically (via GTM/Cookiebot) and isn't in the static HTML. Open the site in a browser and check: are the Accept and Reject buttons equally visible - same size, same visual weight, same number of clicks?", severity: "info" as const }],
+        summary: "Browser check needed - banner loads dynamically",
       };
     }
 
@@ -529,18 +521,10 @@ ${text.slice(0, 6000)}${scanContext}`
     }
 
     if (!bannerHtml) {
-      const g1Ok = /G1:\s*OK/i.test(scanContext);
-      if (g1Ok) {
-        return {
-          status: "blocked" as const,
-          findings: [{ detail: "The consent banner can't be checked automatically because it loads after the page renders. Open the site in a browser and look for: pre-ticked checkboxes, a hidden or hard-to-find Reject button, guilt-tripping language, or content blocked until you accept cookies.", severity: "warning" as const }],
-          summary: "Check in browser: any dark patterns in the consent banner?",
-        };
-      }
       return {
-        status: "blocked" as const,
-        findings: [{ detail: "No consent banner or Cookiebot script detected - dark pattern check not applicable", severity: "info" as const }],
-        summary: "No consent banner detected",
+        status: "na" as const,
+        findings: [{ detail: "The consent banner loads dynamically (via GTM/Cookiebot) and isn't in the static HTML. Open the site in a browser and look for: pre-ticked checkboxes, a hidden or hard-to-find Reject button, guilt-tripping language, or content blocked until you accept cookies.", severity: "info" as const }],
+        summary: "Browser check needed - banner loads dynamically",
       };
     }
 

@@ -484,7 +484,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "G2", label: "Accept and Reject equally prominent", description: "The 'Accept' and 'Reject/Decline' buttons must be equally visible - same size, same visual weight, same number of clicks to reach. Hiding or de-emphasizing 'Reject' is a dark pattern.", automation: "ai-agent", tier: "basic",
+        key: "G2", label: "Accept and Reject equally prominent", description: "The 'Accept' and 'Reject/Decline' buttons must be equally visible - same size, same visual weight, same number of clicks to reach. Hiding or de-emphasizing 'Reject' is a dark pattern.", automation: "browser-manual", tier: "basic",
         legalBasis: "Consent must be freely given. If rejecting is harder than accepting, the consent is not truly free. IMY reprimanded three Swedish companies in 2025 for exactly this.",
         references: [
           { label: "GDPR Art. 7 - Conditions for consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
@@ -525,7 +525,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "G6", label: "Banner in correct language(s)", description: "The consent banner must be in the same language as the site content. A Swedish site needs a Swedish banner. Cookiebot supports multiple languages - make sure the right ones are configured.", automation: "ai-agent", tier: "basic",
+        key: "G6", label: "Banner in correct language(s)", description: "The consent banner must be in the same language as the site content. A Swedish site needs a Swedish banner. Cookiebot supports multiple languages - make sure the right ones are configured.", automation: "browser-manual", tier: "basic",
         legalBasis: "Consent information must be in clear, plain language the visitor understands. An English banner on a Swedish site fails this requirement.",
         references: [
           { label: "GDPR Art. 12 - Transparent communication", url: "https://gdpr-info.eu/art-12-gdpr/" },
@@ -534,7 +534,7 @@ export const CHECKLIST: CheckCategory[] = [
         imyNote: "For Swedish-language sites: the consent banner must be in Swedish. An English-only banner on a Swedish site fails the 'clear and plain language' requirement. Cookiebot supports Swedish (sv) - ensure it is configured.",
       },
       {
-        key: "G7", label: "No dark patterns", description: "The consent banner must not use manipulative design: no pre-ticked boxes, no cookie walls that block content, no guilt-tripping language ('You'll miss out!'), no hidden reject button, no 'pay or accept cookies' without a free alternative.", automation: "ai-agent", tier: "basic",
+        key: "G7", label: "No dark patterns", description: "The consent banner must not use manipulative design: no pre-ticked boxes, no cookie walls that block content, no guilt-tripping language ('You'll miss out!'), no hidden reject button, no 'pay or accept cookies' without a free alternative.", automation: "browser-manual", tier: "basic",
         legalBasis: "Dark patterns make consent invalid because the visitor was manipulated, not freely choosing. This is now an active enforcement area - IMY issued its first cookie banner fines in 2025.",
         references: [
           { label: "EDPB Cookie Banner Taskforce Report 2023 (8 dark pattern violations)", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/other/report-work-undertaken-cookie-banner-taskforce_en" },

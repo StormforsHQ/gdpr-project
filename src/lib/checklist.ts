@@ -21,12 +21,12 @@ export type CoverageType = "sla" | "no-sla" | "us-based" | "unknown";
 
 export const COVERAGE_TYPES: Record<CoverageType, { label: string; description: string; className: string }> = {
   sla: {
-    label: "SLA",
+    label: "SLA client",
     description: "We manage their Cookiebot and GDPR compliance",
     className: "bg-green-500/15 text-green-600 dark:text-green-400",
   },
   "no-sla": {
-    label: "No SLA",
+    label: "Non-SLA client",
     description: "EU-based but manages their own GDPR compliance",
     className: "bg-orange-500/15 text-orange-600 dark:text-orange-400",
   },
@@ -55,13 +55,13 @@ const SLA_ESSENTIAL_CHECKS = new Set([
 const NO_SLA_ESSENTIAL_CHECKS = new Set([
   "E1", "E2",
   "F3", "F5",
-  "I1", "I2", "I4",
+  "I2", "I4",
   "J1", "J3",
 ]);
 
 const US_BASED_ESSENTIAL_CHECKS = new Set([
   "F5",
-  "I1", "I4",
+  "I4",
 ]);
 
 export function getEssentialChecks(coverageType: CoverageType): Set<string> {

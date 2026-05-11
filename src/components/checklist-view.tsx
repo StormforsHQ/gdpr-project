@@ -861,12 +861,12 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             )}
             {coverageType !== "sla" && (
               <ViewSelectItem value="sla">
-                SLA essentials ({getEssentialChecks("sla").size})
+                SLA client essentials ({getEssentialChecks("sla").size})
               </ViewSelectItem>
             )}
             {coverageType !== "no-sla" && (
               <ViewSelectItem value="no-sla">
-                No SLA essentials ({getEssentialChecks("no-sla").size})
+                Non-SLA client essentials ({getEssentialChecks("no-sla").size})
               </ViewSelectItem>
             )}
             {coverageType !== "us-based" && (

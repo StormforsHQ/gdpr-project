@@ -120,16 +120,9 @@ export function CheckItem({
           {automationInfo.label}
         </span>
         {check.responsibility && check.responsibility !== "agency" && (
-          <Tooltip>
-            <TooltipTrigger>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 ${RESPONSIBILITY_CONFIG[check.responsibility].className}`}>
-                {RESPONSIBILITY_CONFIG[check.responsibility].label}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs text-xs text-black dark:text-black">
-              {RESPONSIBILITY_CONFIG[check.responsibility].description}
-            </TooltipContent>
-          </Tooltip>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 ${RESPONSIBILITY_CONFIG[check.responsibility].className}`}>
+            {RESPONSIBILITY_CONFIG[check.responsibility].label}
+          </span>
         )}
         {isBlockedByRequirement && (
           <Tooltip>

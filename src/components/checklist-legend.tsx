@@ -23,7 +23,7 @@ export function ChecklistLegend() {
             <div className="space-y-1.5">
               <div className="flex items-start gap-2">
                 <Scan className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <p><span className="text-foreground">Scan site</span> - Runs all checks in one go: page HTML analysis, Cookiebot API, GTM API, and AI evaluation (consent language, dark patterns, privacy policy). Uses OpenRouter credits for the AI portion.</p>
+                <p><span className="text-foreground">Scan site</span> - Runs all applicable checks based on the selected coverage view: page HTML analysis, Cookiebot API, GTM API, and AI evaluation. Cookiebot and GTM checks only run for SLA clients. Uses OpenRouter credits for the AI portion.</p>
               </div>
             </div>
           </div>
@@ -67,15 +67,15 @@ export function ChecklistLegend() {
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 bg-amber-500/15 text-amber-600 dark:text-amber-400 mt-0.5">Cookiebot</span>
-                <p>Runs automatically with the Scan site button if a Cookiebot ID is set. Queries the Cookiebot API.</p>
+                <p>Queries the Cookiebot API. Requires a Cookiebot ID on the site. Only runs for SLA clients.</p>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 bg-amber-500/15 text-amber-600 dark:text-amber-400 mt-0.5">GTM API</span>
-                <p>Run individually per check using the Run check button. Queries the Google Tag Manager API. Requires a GTM container ID on the site.</p>
+                <p>Queries the Google Tag Manager API. Requires a GTM container ID on the site. Only runs for SLA clients.</p>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 bg-purple-500/15 text-purple-600 dark:text-purple-400 mt-0.5">AI</span>
-                <p>Runs automatically with the AI Analyze button. An LLM reviews the page content and evaluates compliance. Uses OpenRouter credits.</p>
+                <p>An LLM reviews the page content and evaluates compliance. Uses OpenRouter credits. Cost per run is shown in the header.</p>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium shrink-0 bg-blue-500/15 text-blue-600 dark:text-blue-400 mt-0.5">Browser</span>

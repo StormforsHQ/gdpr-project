@@ -665,9 +665,10 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     return matchesStatus && matchesAuto;
   };
 
-  const scannedCheckCount = scanResult?.checks.length ?? 0;
-  const scanIssueCount = scanResult?.checks.filter((c) => c.status === "issue").length ?? 0;
-  const scanFailedCount = scanResult?.checks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning")).length ?? 0;
+  const visibleScanChecks = scanResult?.checks.filter((c) => visibleCheckKeys.has(c.checkKey)) ?? [];
+  const scannedCheckCount = visibleScanChecks.length;
+  const scanIssueCount = visibleScanChecks.filter((c) => c.status === "issue").length;
+  const scanFailedCount = visibleScanChecks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning")).length;
 
   return (
     <div className="space-y-4">
@@ -736,7 +737,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               onClick={() => setShowHistory(!showHistory)}
             >
               <History className="h-3.5 w-3.5" />
-              {scanRuns.length} scan run{scanRuns.length !== 1 ? "s" : ""}
+              Scan history ({scanRuns.length})
               {showHistory ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
             </button>
             {showHistory && scanRuns.length > 1 && (

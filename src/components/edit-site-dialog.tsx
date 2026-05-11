@@ -199,13 +199,13 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="min-w-[320px]">
                 {(Object.entries(COVERAGE_TYPES) as [CoverageType, typeof COVERAGE_TYPES[CoverageType]][]).map(([key, config]) => (
                   <SelectItem key={key} value={key}>
-                    <span className="flex items-center gap-2">
-                      {config.label}
-                      <span className="text-muted-foreground text-xs">- {config.description}</span>
-                    </span>
+                    <div>
+                      <span>{config.label}</span>
+                      <span className="text-muted-foreground text-xs ml-2">- {config.description}</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>

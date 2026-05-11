@@ -77,6 +77,10 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const [siteFields, setSiteFields] = useState(initialSiteFields);
 
   useEffect(() => {
+    setShowAllChecks(coverageType === "unknown");
+  }, [coverageType]);
+
+  useEffect(() => {
     setSiteFields(initialSiteFields);
   }, [initialSiteFields?.cookiebotId, initialSiteFields?.gtmId, initialSiteFields?.webflowId, initialSiteFields?.platform]);
 
@@ -411,7 +415,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
         const gtmId = result.detectedGtmId || siteFields?.gtmId;
         if (gtmId) {
-          setScanStatus("Checking GTM...");
+          setScanStatus("Checking GTM (may take a minute)...");
           try {
             const gtmResults = await runGtmScan(gtmId);
             totalSkipped += applyCheckResults(gtmResults, "scan");

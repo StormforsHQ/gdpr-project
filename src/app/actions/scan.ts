@@ -51,7 +51,10 @@ export async function runPageScan(url: string, siteId?: string): Promise<ScanRes
 
   try {
     const site = siteId ? await prisma.site.findUnique({ where: { id: siteId }, select: { id: true, platform: true, cookiebotId: true, gtmId: true, webflowId: true, url: true } }) : null;
-    const result = await scanSite(url, site?.platform);
+    const result = await scanSite(url, site?.platform, {
+      storedCookiebotId: site?.cookiebotId || undefined,
+      storedGtmId: site?.gtmId || undefined,
+    });
 
     if (result.detectedGtmId && !result.detectedCookiebotId && !site?.cookiebotId && isGtmConfigured()) {
       try {

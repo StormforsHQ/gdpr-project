@@ -317,11 +317,33 @@ ${scanContext}`
     return parseAIResponse(raw);
   },
 
-  F2: async (_html, text, _url, scanContext) => {
+  F2: async (html, text, url, scanContext) => {
+    const $ = cheerio.load(html);
+    const formEntries = $("form").toArray().map((el, i) => {
+      const $form = $(el);
+      const action = $form.attr("action") || "";
+      const id = $form.attr("id") || "";
+      const nearestHeading = $form.prevAll("h1,h2,h3,h4").first().text().trim()
+        || $form.find("h1,h2,h3,h4").first().text().trim()
+        || $form.closest("section").find("h1,h2,h3,h4").first().text().trim();
+      const label = nearestHeading || id || action || `Form #${i + 1}`;
+      return { label, html: $.html(el) };
+    });
+
+    if (formEntries.length === 0) {
+      return { status: "ok" as const, findings: [], summary: "No forms found on page" };
+    }
+
+    const formsWithLabels = formEntries.map((f) =>
+      `=== FORM: "${f.label}" ===\n${f.html}`
+    ).join("\n---\n");
+
     const raw = await callOpenRouter(
       `You are a GDPR compliance auditor analyzing web forms for data minimization (GDPR Art. 5(1)(c)).
-${RESPONSE_FORMAT_INSTRUCTION}`,
-      `Analyze this page text for forms that collect personal data. Check if each form collects only what's necessary for its stated purpose.
+${RESPONSE_FORMAT_INSTRUCTION}
+
+IMPORTANT: In each finding, start the detail text with the form name in brackets, e.g. [Contact form] or [Newsletter signup]. This tells the auditor exactly which form has the issue.`,
+      `Analyze forms from ${url} for data minimization. Check if each form collects only what's necessary for its stated purpose.
 
 Flag issues like:
 - Newsletter signup asking for more than email (name is borderline, anything beyond that is excessive)
@@ -329,25 +351,41 @@ Flag issues like:
 - Hidden fields that collect tracking data
 - Multiple optional fields that seem unrelated to the form's purpose
 - Note: contact forms asking for both phone and email may be justified if the business offers multiple contact channels - only flag if the form purpose clearly doesn't need both
-${scanContext}
-Page content:
-${text.slice(0, 8000)}`
+
+${formEntries.length} form${formEntries.length !== 1 ? "s" : ""} found on this page:
+
+${formsWithLabels.slice(0, 8000)}${scanContext}`
     );
     return parseAIResponse(raw);
   },
 
-  F4: async (html, _text, _url, scanContext) => {
+  F4: async (html, _text, url, scanContext) => {
     const $ = cheerio.load(html);
-    const forms = $("form").toArray().map((el) => $.html(el)).join("\n---\n");
+    const formEntries = $("form").toArray().map((el, i) => {
+      const $form = $(el);
+      const action = $form.attr("action") || "";
+      const id = $form.attr("id") || "";
+      const nearestHeading = $form.prevAll("h1,h2,h3,h4").first().text().trim()
+        || $form.find("h1,h2,h3,h4").first().text().trim()
+        || $form.closest("section").find("h1,h2,h3,h4").first().text().trim();
+      const label = nearestHeading || id || action || `Form #${i + 1}`;
+      return { label, html: $.html(el) };
+    });
 
-    if (!forms) {
+    if (formEntries.length === 0) {
       return { status: "na" as const, findings: [], summary: "No forms found on page" };
     }
 
+    const formsWithLabels = formEntries.map((f, i) =>
+      `=== FORM: "${f.label}" ===\n${f.html}`
+    ).join("\n---\n");
+
     const raw = await callOpenRouter(
       `You are a GDPR compliance auditor checking consent separation in web forms.
-${RESPONSE_FORMAT_INSTRUCTION}`,
-      `Analyze these HTML forms for proper consent separation (GDPR Art. 6-7):
+${RESPONSE_FORMAT_INSTRUCTION}
+
+IMPORTANT: In each finding, start the detail text with the form name in brackets, e.g. [Contact form] or [Newsletter signup]. This tells the auditor exactly which form has the issue.`,
+      `Analyze these HTML forms from ${url} for proper consent separation (GDPR Art. 6-7):
 
 Check for:
 - Single checkbox covering multiple purposes (e.g., "I agree to receive marketing AND my data being shared with partners")
@@ -355,8 +393,9 @@ Check for:
 - Missing separate consent for marketing vs. service communication
 - Bundled consent (inquiry + newsletter in one checkbox)
 
-Forms HTML:
-${forms.slice(0, 8000)}${scanContext}`
+${formEntries.length} form${formEntries.length !== 1 ? "s" : ""} found on this page:
+
+${formsWithLabels.slice(0, 8000)}${scanContext}`
     );
     return parseAIResponse(raw);
   },

@@ -231,6 +231,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     }, 500);
   };
 
+  const automationByKey = new Map(CHECKLIST.flatMap((c) => c.checks.map((ch) => [ch.key, ch.automation] as const)));
+
   const applyCheckResults = (results: CheckResult[], source: "scan" | "ai"): number => {
     let skipped = 0;
     const hasClientManaged = results.some((r) => r.status === "client_managed");
@@ -238,6 +240,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     setCheckStates((prev) => {
       const next = { ...prev };
       for (const check of results) {
+        if (automationByKey.get(check.checkKey) === "browser-manual" && check.status === "na") {
+          continue;
+        }
         const existing = prev[check.checkKey];
         if (existing?.source === "manual" && existing.status !== "not_checked") {
           skipped++;

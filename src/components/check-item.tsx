@@ -79,7 +79,8 @@ export function CheckItem({
   const [expanded, setExpanded] = useState(false);
   const [reportNoteOpen, setReportNoteOpen] = useState(!!notes.trim());
   const [internalNoteOpen, setInternalNoteOpen] = useState(!!internalNote.trim());
-  const automationInfo = AUTOMATION_CONFIG[check.automation];
+  const fellBackToManual = scanResult?.status === "blocked" && /check in browser/i.test(scanResult.summary || "");
+  const automationInfo = fellBackToManual ? AUTOMATION_CONFIG["human"] : AUTOMATION_CONFIG[check.automation];
 
   const requirements = CHECK_REQUIREMENTS[check.key] || [];
   const missingRequirements = siteFields

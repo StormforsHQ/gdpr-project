@@ -243,10 +243,13 @@ export async function scanSite(url: string, platform?: string | null, opts?: { s
 
   const allPageSpecific: CheckResult[][] = [homePageSpecific];
 
-  for (const pageUrl of subpageUrls) {
-    const page = await fetchPage(pageUrl);
-    if (!page) continue;
-    allPageSpecific.push(runPageSpecificChecks(page.$, page.html, pageUrl));
+  const CONCURRENCY = 5;
+  for (let i = 0; i < subpageUrls.length; i += CONCURRENCY) {
+    const batch = subpageUrls.slice(i, i + CONCURRENCY);
+    const pages = await Promise.all(batch.map((pageUrl) => fetchPage(pageUrl).then((page) => page ? { page, pageUrl } : null)));
+    for (const result of pages) {
+      if (result) allPageSpecific.push(runPageSpecificChecks(result.page.$, result.page.html, result.pageUrl));
+    }
   }
 
   const mergedPageChecks = mergePageSpecificResults(allPageSpecific);

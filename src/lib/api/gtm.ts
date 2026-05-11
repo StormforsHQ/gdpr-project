@@ -5,7 +5,7 @@ let cachedToken: { value: string; expiresAt: number } | null = null;
 
 type ContainerInfo = { accountId: string; containerId: string; name: string; publicId: string };
 let containerMapCache: { map: Map<string, ContainerInfo>; expiresAt: number } | null = null;
-const CONTAINER_CACHE_TTL = 10 * 60 * 1000;
+const CONTAINER_CACHE_TTL = 60 * 60 * 1000; // 1 hour - containers rarely change
 
 function getOAuthConfig() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -53,22 +53,32 @@ async function getAccessToken(): Promise<string> {
 
 async function gtmFetch(path: string, options?: RequestInit) {
   const token = await getAccessToken();
+  const maxRetries = 3;
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
-  });
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...options?.headers,
+      },
+    });
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`GTM API ${res.status}: ${body}`);
+    if (res.status === 429 && attempt < maxRetries) {
+      const retryAfter = parseInt(res.headers.get("Retry-After") || "0", 10);
+      const delay = Math.max(retryAfter * 1000, (attempt + 1) * 15_000);
+      await new Promise((r) => setTimeout(r, delay));
+      continue;
+    }
+
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`GTM API ${res.status}: ${body}`);
+    }
+
+    return res.json();
   }
-
-  return res.json();
 }
 
 export interface GtmTag {

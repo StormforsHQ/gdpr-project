@@ -36,12 +36,8 @@ import {
 import { ChevronDown, ChevronRight, Scan, Loader2, AlertCircle, History, Clock, Trash2, X, RotateCcw, Check, MessageSquare, UserCircle } from "lucide-react";
 
 
-const CLIENT_CONSENT_CHECKS = [
-  "B5",
-  "C1", "C2", "C3", "C4", "C5", "C6",
-  "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9",
-  "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8",
-  "K1", "K2", "K3", "K4",
+const GTM_DEPENDENT_CHECKS = [
+  "A3", "A4", "A5", "B2", "B3", "B4", "B5",
 ];
 
 type CheckEntry = { status: CheckStatus; notes: string; internalNote: string; source: "manual" | "scan" | "ai" };
@@ -266,7 +262,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       }
 
       if (hasClientManaged) {
-        for (const key of CLIENT_CONSENT_CHECKS) {
+        for (const key of GTM_DEPENDENT_CHECKS) {
           const existing = prev[key];
           if (existing?.source === "manual" && existing.status !== "not_checked") continue;
           if (existing?.status === "ok" || existing?.status === "issue") continue;
@@ -302,7 +298,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       });
       let allChecks = [...updatedChecks, ...newChecks];
       if (hasClientManaged) {
-        const clientKeys = new Set(CLIENT_CONSENT_CHECKS);
+        const clientKeys = new Set(GTM_DEPENDENT_CHECKS);
         allChecks = allChecks.map((c) =>
           clientKeys.has(c.checkKey) && c.status !== "ok" && c.status !== "issue"
             ? { ...c, status: "client_managed" as const }

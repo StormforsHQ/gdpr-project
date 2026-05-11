@@ -19,6 +19,14 @@ export type AuditTier = "basic" | "full";
 
 export type CoverageType = "sla" | "no-sla" | "us-based" | "unknown";
 
+export const PLATFORM_LABELS: Record<string, string> = {
+  webflow: "Webflow",
+  hubspot: "HubSpot",
+  nextjs: "Next.js",
+  wordpress: "WordPress",
+  other: "Other",
+};
+
 export const COVERAGE_TYPES: Record<CoverageType, { label: string; description: string; className: string }> = {
   sla: {
     label: "SLA client",
@@ -36,7 +44,7 @@ export const COVERAGE_TYPES: Record<CoverageType, { label: string; description: 
     className: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
   },
   unknown: {
-    label: "Unknown",
+    label: "Not set",
     description: "Coverage type not yet determined",
     className: "bg-muted text-muted-foreground",
   },

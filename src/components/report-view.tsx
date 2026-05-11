@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateReportText, updateCategoryComment, type ReportData } from "@/app/actions/report";
+import { CHECKLIST } from "@/lib/checklist";
 
 interface ReportViewProps {
   report: ReportData;
@@ -110,7 +111,9 @@ export function ReportView({ report, siteId, showVersion = true }: ReportViewPro
           </div>
           <div>
             <div style={{ color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "10px", marginBottom: "2px" }}>Type</div>
-            <div style={{ fontWeight: 500 }}>{report.auditType === "basic" ? "Basic (34 checks)" : "Full (69 checks)"}</div>
+            <div style={{ fontWeight: 500 }}>{report.auditType === "basic"
+              ? `Basic (${CHECKLIST.reduce((s, c) => s + c.checks.filter((ch) => ch.tier === "basic").length, 0)} checks)`
+              : `Full (${CHECKLIST.reduce((s, c) => s + c.checks.length, 0)} checks)`}</div>
           </div>
           {showVersion && (
             <div>

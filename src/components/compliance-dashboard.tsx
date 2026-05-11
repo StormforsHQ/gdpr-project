@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CHECKLIST } from "@/lib/checklist";
 import {
   ChartConfig,
   ChartContainer,
@@ -85,7 +86,9 @@ export function ComplianceDashboard({ data }: { data: DashboardData }) {
               variant="secondary"
               className={`mt-1 text-xs ${auditType === "basic" ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" : "bg-purple-500/15 text-purple-600 dark:text-purple-400"}`}
             >
-              {auditType === "basic" ? "Basic (34 checks)" : "Full (69 checks)"}
+              {auditType === "basic"
+                ? `Basic (${CHECKLIST.reduce((s, c) => s + c.checks.filter((ch) => ch.tier === "basic").length, 0)} checks)`
+                : `Full (${CHECKLIST.reduce((s, c) => s + c.checks.length, 0)} checks)`}
             </Badge>
           </CardContent>
         </Card>

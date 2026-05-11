@@ -11,16 +11,36 @@ const BUILTIN_TRIGGER_IDS = {
   allPages: "2147479553",
 };
 
-function isCookiebotTag(tag: GtmTag): boolean {
-  return /cookiebot/i.test(tag.type) || /cookiebot/i.test(tag.name);
+const COOKIEBOT_PARAM_KEYS = /^(serial|cbid|cookiebotId|CookiebotID|altCbid)$/i;
+const COOKIEBOT_TEMPLATE_PARAMS = /^(consentModeEnabled|cdnRegion|waitForUpdate|iabFramework)$/i;
+
+function isCookiebotTag(tag: GtmTag, storedCookiebotId?: string): boolean {
+  if (/cookiebot/i.test(tag.type) || /cookiebot/i.test(tag.name)) return true;
+
+  const params = tag.parameter || [];
+
+  if (/^cvt_/i.test(tag.type)) {
+    const hasCookiebotParam = params.some((p) => COOKIEBOT_PARAM_KEYS.test(p.key));
+    const hasTemplateSignature = params.some((p) => COOKIEBOT_TEMPLATE_PARAMS.test(p.key));
+    if (hasCookiebotParam && hasTemplateSignature) return true;
+  }
+
+  if (storedCookiebotId) {
+    const matchesStoredId = params.some(
+      (p) => COOKIEBOT_PARAM_KEYS.test(p.key) && p.value === storedCookiebotId
+    );
+    if (matchesStoredId) return true;
+  }
+
+  return false;
 }
 
 function isGoogleTag(tag: GtmTag): boolean {
   return GOOGLE_BUILT_IN_TYPES.includes(tag.type);
 }
 
-function isSystemTag(tag: GtmTag): boolean {
-  return isCookiebotTag(tag);
+function isSystemTag(tag: GtmTag, storedCookiebotId?: string): boolean {
+  return isCookiebotTag(tag, storedCookiebotId);
 }
 
 function isConsentAwareTrigger(trigger: GtmTrigger): boolean {
@@ -38,14 +58,14 @@ function hasConsentAwareTriggers(tag: GtmTag, triggers: GtmTrigger[]): boolean {
   });
 }
 
-export function checkA3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
-  const cookiebotTag = tags.find(isCookiebotTag);
+export function checkA3(tags: GtmTag[], triggers: GtmTrigger[], storedCookiebotId?: string): CheckResult {
+  const cookiebotTag = tags.find((t) => isCookiebotTag(t, storedCookiebotId));
   if (!cookiebotTag) {
     return {
       checkKey: "A3",
-      status: "na",
-      findings: [{ element: "GTM", detail: "No Cookiebot CMP tag found in container", severity: "warning" }],
-      summary: "No Cookiebot tag to check",
+      status: "blocked",
+      findings: [{ element: "GTM", detail: "No Cookiebot CMP tag found in this GTM container. Verify the tag exists and is using the official Cookiebot CMP template from the Template Gallery.", severity: "warning" }],
+      summary: "Cookiebot tag not found in GTM",
     };
   }
 
@@ -94,14 +114,14 @@ export function checkA3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
   };
 }
 
-export function checkA4(tags: GtmTag[]): CheckResult {
-  const cookiebotTag = tags.find(isCookiebotTag);
+export function checkA4(tags: GtmTag[], storedCookiebotId?: string): CheckResult {
+  const cookiebotTag = tags.find((t) => isCookiebotTag(t, storedCookiebotId));
   if (!cookiebotTag) {
     return {
       checkKey: "A4",
-      status: "na",
-      findings: [{ element: "GTM", detail: "No Cookiebot CMP tag found in container", severity: "warning" }],
-      summary: "No Cookiebot tag to check",
+      status: "blocked",
+      findings: [{ element: "GTM", detail: "No Cookiebot CMP tag found in this GTM container. Verify the tag exists and is using the official Cookiebot CMP template from the Template Gallery.", severity: "warning" }],
+      summary: "Cookiebot tag not found in GTM",
     };
   }
 
@@ -130,14 +150,14 @@ export function checkA4(tags: GtmTag[]): CheckResult {
   };
 }
 
-export function checkA5(tags: GtmTag[]): CheckResult {
-  const cookiebotTag = tags.find((t) => isCookiebotTag(t) && t.type !== "html");
+export function checkA5(tags: GtmTag[], storedCookiebotId?: string): CheckResult {
+  const cookiebotTag = tags.find((t) => isCookiebotTag(t, storedCookiebotId) && t.type !== "html");
   if (!cookiebotTag) {
     return {
       checkKey: "A5",
-      status: "na",
-      findings: [{ element: "GTM", detail: "No Cookiebot CMP template tag found (check is only for the official template)", severity: "warning" }],
-      summary: "No Cookiebot template tag to check",
+      status: "blocked",
+      findings: [{ element: "GTM", detail: "No Cookiebot CMP template tag found. This check only applies to the official template (not Custom HTML). Verify the tag exists in the GTM container.", severity: "warning" }],
+      summary: "Cookiebot template tag not found in GTM",
     };
   }
 
@@ -212,8 +232,8 @@ export function checkB2(tags: GtmTag[]): CheckResult {
   };
 }
 
-export function checkB3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
-  const nonGoogleNonSystem = tags.filter((t) => !isGoogleTag(t) && !isSystemTag(t) && !t.paused);
+export function checkB3(tags: GtmTag[], triggers: GtmTrigger[], storedCookiebotId?: string): CheckResult {
+  const nonGoogleNonSystem = tags.filter((t) => !isGoogleTag(t) && !isSystemTag(t, storedCookiebotId) && !t.paused);
 
   if (nonGoogleNonSystem.length === 0) {
     return {
@@ -277,8 +297,8 @@ export function checkB3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
   };
 }
 
-export function checkB4(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
-  const nonGoogleNonSystem = tags.filter((t) => !isGoogleTag(t) && !isSystemTag(t) && !t.paused);
+export function checkB4(tags: GtmTag[], triggers: GtmTrigger[], storedCookiebotId?: string): CheckResult {
+  const nonGoogleNonSystem = tags.filter((t) => !isGoogleTag(t) && !isSystemTag(t, storedCookiebotId) && !t.paused);
 
   if (nonGoogleNonSystem.length === 0) {
     return {
@@ -338,9 +358,20 @@ export function checkB4(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
   };
 }
 
-export function checkG1Gtm(tags: GtmTag[]): CheckResult | null {
-  const cookiebotTag = tags.find(isCookiebotTag);
-  if (!cookiebotTag) return null;
+export function checkG1Gtm(tags: GtmTag[], storedCookiebotId?: string): CheckResult {
+  const cookiebotTag = tags.find((t) => isCookiebotTag(t, storedCookiebotId));
+  if (!cookiebotTag) {
+    return {
+      checkKey: "G1",
+      status: "issue",
+      findings: [{
+        element: "GTM",
+        detail: "GTM container found but no Cookiebot CMP tag detected inside it. Visitors will not see a cookie consent banner unless one is loaded another way. Verify that the Cookiebot tag exists in this GTM container.",
+        severity: "error",
+      }],
+      summary: "No consent banner tag found in GTM",
+    };
+  }
 
   return {
     checkKey: "G1",
@@ -354,19 +385,20 @@ export function checkG1Gtm(tags: GtmTag[]): CheckResult | null {
   };
 }
 
-export function runGtmChecks(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult[] {
+export function runGtmChecks(tags: GtmTag[], triggers: GtmTrigger[], storedCookiebotId?: string): CheckResult[] {
   const results: CheckResult[] = [
-    checkA3(tags, triggers),
-    checkA4(tags),
-    checkA5(tags),
+    checkA3(tags, triggers, storedCookiebotId),
+    checkA4(tags, storedCookiebotId),
+    checkA5(tags, storedCookiebotId),
     checkB2(tags),
-    checkB3(tags, triggers),
-    checkB4(tags, triggers),
+    checkB3(tags, triggers, storedCookiebotId),
+    checkB4(tags, triggers, storedCookiebotId),
   ];
 
-  const g1 = checkG1Gtm(tags);
-  if (g1) {
-    results.push(g1);
+  const g1 = checkG1Gtm(tags, storedCookiebotId);
+  results.push(g1);
+
+  if (g1.status === "ok") {
     results.push({
       checkKey: "B5",
       status: "ok",
@@ -376,16 +408,6 @@ export function runGtmChecks(tags: GtmTag[], triggers: GtmTrigger[]): CheckResul
         severity: "info",
       }],
       summary: "Consent Mode V2 configured via Cookiebot in GTM",
-    });
-    results.push({
-      checkKey: "G8",
-      status: "blocked",
-      findings: [{
-        element: "Cookiebot via GTM",
-        detail: "The consent widget can't be checked automatically because it loads after the page renders. Open the site in a browser and look for a small floating cookie icon (usually bottom-left) or a 'Cookie settings' link in the footer. Visitors need one of these to change their consent choice.",
-        severity: "warning",
-      }],
-      summary: "Check in browser: can visitors change their cookie choice?",
     });
   }
 

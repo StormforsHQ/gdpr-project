@@ -154,7 +154,7 @@ function gtmFailureResults(detail: string, summary: string, status: "blocked" | 
   }));
 }
 
-export async function runGtmScan(gtmId: string): Promise<CheckResult[]> {
+export async function runGtmScan(gtmId: string, storedCookiebotId?: string): Promise<CheckResult[]> {
   if (!gtmId || gtmId.trim().length === 0) {
     return gtmFailureResults("GTM ID is required", "No GTM ID provided");
   }
@@ -180,7 +180,7 @@ export async function runGtmScan(gtmId: string): Promise<CheckResult[]> {
     const tags = await listTags(container.accountId, container.containerId, defaultWs.workspaceId);
     const triggers = await listTriggers(container.accountId, container.containerId, defaultWs.workspaceId);
 
-    return runGtmChecks(tags, triggers);
+    return runGtmChecks(tags, triggers, storedCookiebotId);
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     const isNoAccess = /forbidden|403|permission|access|not found/i.test(msg);

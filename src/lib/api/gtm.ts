@@ -183,22 +183,28 @@ export async function findCookiebotIdInContainer(gtmPublicId: string): Promise<s
 
   const tags = await listTags(container.accountId, container.containerId, defaultWs.workspaceId);
 
+  const CBID_PARAM_KEYS = /^(serial|cbid|cookiebotId|CookiebotID|altCbid)$/i;
+  const COOKIEBOT_TEMPLATE_PARAMS = /^(consentModeEnabled|cdnRegion|waitForUpdate|iabFramework)$/i;
+
   for (const tag of tags) {
     const isCookiebotType = /cookiebot/i.test(tag.type) || /cookiebot/i.test(tag.name);
-    if (!isCookiebotType) continue;
+    const isCvtWithSignature = /^cvt_/i.test(tag.type)
+      && (tag.parameter || []).some((p) => CBID_PARAM_KEYS.test(p.key))
+      && (tag.parameter || []).some((p) => COOKIEBOT_TEMPLATE_PARAMS.test(p.key));
+
+    if (!isCookiebotType && !isCvtWithSignature) continue;
 
     for (const param of tag.parameter || []) {
-      if (/cbid|cookiebotId|CookiebotID/i.test(param.key)) {
+      if (CBID_PARAM_KEYS.test(param.key) && param.value) {
         return param.value;
       }
     }
   }
 
-  // Fallback: check all tags for a parameter value that looks like a Cookiebot UUID
   for (const tag of tags) {
     for (const param of tag.parameter || []) {
       if (/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(param.value)) {
-        if (/cookiebot|consent|cookie/i.test(tag.name) || /cookiebot|cbid/i.test(param.key)) {
+        if (/cookiebot|consent|cookie/i.test(tag.name) || CBID_PARAM_KEYS.test(param.key)) {
           return param.value;
         }
       }

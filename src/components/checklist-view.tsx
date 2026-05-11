@@ -411,7 +411,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         if (gtmId && needsCookiebotGtm) {
           setScanStatus("Checking GTM (may take a minute)...");
           try {
-            const gtmResults = await runGtmScan(gtmId);
+            const gtmResults = await runGtmScan(gtmId, cbid || undefined);
             totalSkipped += applyCheckResults(gtmResults, "scan");
             collectedResults.push(...gtmResults);
             if (auditId) {

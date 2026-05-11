@@ -195,7 +195,7 @@ export async function runSingleAICheck(checkKey: string, url: string): Promise<C
   if (!url || url.trim().length === 0) {
     return {
       checkKey,
-      status: "na",
+      status: "blocked",
       findings: [{ element: "", detail: "URL is required", severity: "warning" }],
       summary: "No URL provided",
     };
@@ -217,9 +217,9 @@ export async function runAllAIChecks(url: string, priorResults: CheckResult[] = 
     if (r.status === "fulfilled") return r.value;
     return {
       checkKey: AI_CHECK_KEYS[i],
-      status: "na" as const,
+      status: "blocked" as const,
       findings: [{ element: "", detail: `AI check failed: ${r.reason instanceof Error ? r.reason.message : "Unknown error"}`, severity: "warning" as const }],
-      summary: "AI check failed",
+      summary: "AI check could not run",
     };
   });
 

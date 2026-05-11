@@ -1087,6 +1087,48 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         </Card>
       )}
 
+      {coverageType === "no-sla" && scanResult && (() => {
+        const trackingFindings = scanResult.checks.filter(
+          (c) => c.checkKey === "A1" && c.status === "issue"
+        );
+        const hasTracking = trackingFindings.length > 0 || scanResult.checks.some(
+          (c) => c.findings?.some((f) => /google.analytics|gtag|_ga|facebook|linkedin|pixel/i.test(f.detail || f.element || ""))
+        );
+        if (!hasTracking) return null;
+        return (
+          <Card className="border-orange-500/30 bg-orange-500/5">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Tracking scripts detected on a non-SLA site</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    This site has tracking scripts (Google Analytics, pixels, etc.) but we don't manage their GDPR compliance.
+                    Without proper consent management, these scripts may be collecting visitor data without consent.
+                  </p>
+                  <p className="text-xs text-orange-600 dark:text-orange-400 mt-2 font-medium">
+                    Consider reaching out to this client to suggest either an SLA for GDPR management,
+                    or that they disable tracking until they have consent management in place.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {coverageType === "us-based" && (
+        <Card className="border-blue-500/20 bg-blue-500/5">
+          <CardContent className="py-3">
+            <p className="text-xs text-blue-600 dark:text-blue-400">
+              US-based site - EU GDPR cookie consent rules do not apply.
+              US privacy laws (CCPA, state laws) may apply depending on audience.
+              Most cookie/consent checks are hidden. Switch to "Show all" above if needed.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {filteredChecklist.map((category) => {
         const isExpanded = expandedCategories.has(category.id);
         const stats = getCategoryStats(category.id);

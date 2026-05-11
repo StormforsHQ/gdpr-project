@@ -946,7 +946,12 @@ function checkG1($: cheerio.CheerioAPI, html: string, detectedGtmId: string | nu
   }
 
   if (detectedGtmId) {
-    return { checkKey: "G1", status: "na", findings: [], summary: "Checked via GTM scan" };
+    return {
+      checkKey: "G1",
+      status: "blocked",
+      findings: [{ element: "GTM", detail: "GTM detected but no Cookiebot script in page HTML. The GTM scan will check if Cookiebot is loaded via GTM.", severity: "info" }],
+      summary: "Waiting for GTM scan to check consent banner",
+    };
   }
 
   findings.push({

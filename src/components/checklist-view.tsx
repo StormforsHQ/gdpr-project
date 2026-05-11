@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckItem, type FixInfo } from "@/components/check-item";
 import { CheckGuideDrawer } from "@/components/check-guide-drawer";
-import { ScanResultsDrawer } from "@/components/scan-results-drawer";
 import { CHECKLIST, AUTOMATION_CONFIG, COVERAGE_TYPES, getEssentialChecks, type CheckStatus, type CoverageType } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan, runGtmScan } from "@/app/actions/scan";
@@ -164,8 +163,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       : null;
   });
   const [lastScanType, setLastScanType] = useState<string | null>(null);
-  const [scanDrawerOpen, setScanDrawerOpen] = useState(false);
-  const [scanDrawerCheckKey, setScanDrawerCheckKey] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<"scan" | null>(null);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
@@ -529,8 +526,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     try {
       const result = await analyzeFix(checkKey, siteFields?.webflowId, siteFields?.gtmId);
       setAnalysisResult(result);
-      setScanDrawerCheckKey(checkKey);
-      setScanDrawerOpen(true);
+      setGuideKey(checkKey);
+      setGuideOpen(true);
     } catch (err) {
       addError("fix", `Analysis for ${checkKey} failed`, err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -616,10 +613,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     return scanResult?.checks.find((c) => c.checkKey === key);
   };
 
-  const openScanDetails = (key: string) => {
-    setScanDrawerCheckKey(key);
-    setScanDrawerOpen(true);
-  };
 
   const visibleCheckKeys = new Set(filteredChecklist.flatMap((c) => c.checks.map((ch) => ch.key)));
   const checkAutomation = new Map(filteredChecklist.flatMap((c) => c.checks.map((ch) => [ch.key, ch.automation] as const)));
@@ -1191,7 +1184,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                       onNotesChange={(n) => updateCheck(check.key, "notes", n)}
                       onInternalNoteChange={(n) => updateInternalNote(check.key, n)}
                       onOpenGuide={openGuide}
-                      onViewScanDetails={scanCheck ? openScanDetails : undefined}
                       onRunCheck={(check.automation === "ai-agent" || check.automation === "page-scan" || check.automation === "cookiebot-api") ? (key) => handleRunCheck(key, check.automation) : undefined}
                       onApplyFix={handleApplyFix}
                       onAnalyzeFix={handleAnalyzeFix}
@@ -1268,34 +1260,28 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       <CheckGuideDrawer
         checkKey={guideKey}
         open={guideOpen}
-        onOpenChange={setGuideOpen}
-      />
-
-      <ScanResultsDrawer
-        checkKey={scanDrawerCheckKey}
+        onOpenChange={(open) => {
+          setGuideOpen(open);
+          if (!open) setAnalysisResult(null);
+        }}
         scanResult={scanResult}
         analysisResult={analysisResult}
         site={siteFields}
-        open={scanDrawerOpen}
-        onOpenChange={(open) => {
-          setScanDrawerOpen(open);
-          if (!open) setAnalysisResult(null);
-        }}
         onVerifyGtm={verifyGtmSetup}
         onPushGtmSnippet={pushGtmSnippetToSite}
         onDeleteScript={deleteApiManagedScript}
         onRescan={() => {
-          setScanDrawerOpen(false);
+          setGuideOpen(false);
           executeScan();
         }}
         onSaveNote={(step, note) => {
-          if (!auditId || !scanDrawerCheckKey) return;
-          const current = checkStates[scanDrawerCheckKey];
+          if (!auditId || !guideKey) return;
+          const current = checkStates[guideKey];
           const existingNotes = current?.notes || "";
           const updatedNotes = existingNotes
             ? `${existingNotes}\n[Fix flow] ${step}: ${note}`
             : `[Fix flow] ${step}: ${note}`;
-          updateCheck(scanDrawerCheckKey, "notes", updatedNotes);
+          updateCheck(guideKey, "notes", updatedNotes);
         }}
       />
 

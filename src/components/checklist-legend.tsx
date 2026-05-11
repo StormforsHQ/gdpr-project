@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, HelpCircle, CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, ClipboardList, Scan, UserCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, HelpCircle, CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, Scan, UserCircle } from "lucide-react";
 
 export function ChecklistLegend() {
   const [open, setOpen] = useState(false);
@@ -107,12 +107,8 @@ export function ChecklistLegend() {
             <p className="font-medium text-foreground">Row icons</p>
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <ClipboardList className="h-4 w-4 text-primary shrink-0" />
-                <p>Findings & fixes - shows what was found and how to fix it.</p>
-              </div>
-              <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-muted-foreground shrink-0" />
-                <p>Check guide - explains what this check looks for, how to verify it, and how to fix issues.</p>
+                <p>Check guide - explains what this check looks for, how to verify it, and shows scan findings and fix steps after a scan has run.</p>
               </div>
             </div>
           </div>

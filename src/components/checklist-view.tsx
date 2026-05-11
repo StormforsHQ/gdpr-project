@@ -69,6 +69,8 @@ interface ChecklistViewProps {
   siteFields?: { platform?: string | null; webflowId?: string | null; cookiebotId?: string | null; gtmId?: string | null };
 }
 
+const automationByKey = new Map(CHECKLIST.flatMap((c) => c.checks.map((ch) => [ch.key, ch.automation] as const)));
+
 export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", coverageType = "unknown", initialStates, initialScanRuns, initialAuditNotes = "", siteFields: initialSiteFields }: ChecklistViewProps) {
   const { errors, addError, clearErrors } = useErrorLog();
   const [auditType, setAuditType] = useState<"basic" | "full">(initialAuditType);
@@ -89,8 +91,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     if (!initialStates) return {};
     const states: CheckState = {};
     for (const [key, value] of Object.entries(initialStates)) {
+      const status = value.status === "na" ? "not_checked" : value.status;
       states[key] = {
-        status: value.status as CheckStatus,
+        status: status as CheckStatus,
         notes: value.notes,
         internalNote: value.internalNote || "",
         source: (value.source as "manual" | "scan" | "ai") || "manual",
@@ -230,8 +233,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       });
     }, 500);
   };
-
-  const automationByKey = new Map(CHECKLIST.flatMap((c) => c.checks.map((ch) => [ch.key, ch.automation] as const)));
 
   const applyCheckResults = (results: CheckResult[], source: "scan" | "ai"): number => {
     let skipped = 0;

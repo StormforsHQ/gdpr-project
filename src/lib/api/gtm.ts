@@ -3,6 +3,10 @@ const TOKEN_URL = "https://oauth2.googleapis.com/token";
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
+type ContainerInfo = { accountId: string; containerId: string; name: string; publicId: string };
+let containerMapCache: { map: Map<string, ContainerInfo>; expiresAt: number } | null = null;
+const CONTAINER_CACHE_TTL = 10 * 60 * 1000;
+
 function getOAuthConfig() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -121,30 +125,44 @@ export async function listWorkspaces(accountId: string, containerId: string): Pr
   }));
 }
 
-export async function getContainerInfo(containerId: string): Promise<{
-  accountId: string;
-  containerId: string;
-  name: string;
-  publicId: string;
-}> {
+async function loadContainerMap(): Promise<Map<string, ContainerInfo>> {
+  if (containerMapCache && Date.now() < containerMapCache.expiresAt) {
+    return containerMapCache.map;
+  }
+
+  const map = new Map<string, ContainerInfo>();
   const accounts = await gtmFetch("/accounts");
+  const errors: string[] = [];
+
   for (const account of accounts.account || []) {
     try {
       const containers = await gtmFetch(`/accounts/${account.accountId}/containers`);
-      const container = (containers.container || []).find(
-        (c: { publicId: string }) => c.publicId === containerId
-      );
-      if (container) {
-        return {
+      for (const c of (containers.container || []) as { containerId: string; name: string; publicId: string }[]) {
+        map.set(c.publicId, {
           accountId: account.accountId,
-          containerId: container.containerId,
-          name: container.name,
-          publicId: container.publicId,
-        };
+          containerId: c.containerId,
+          name: c.name,
+          publicId: c.publicId,
+        });
       }
-    } catch {}
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+    }
   }
-  throw new Error(`GTM container ${containerId} not found`);
+
+  if (map.size === 0 && errors.length > 0) {
+    throw new Error(`Failed to list GTM containers: ${errors[0]}`);
+  }
+
+  containerMapCache = { map, expiresAt: Date.now() + CONTAINER_CACHE_TTL };
+  return map;
+}
+
+export async function getContainerInfo(publicId: string): Promise<ContainerInfo> {
+  const map = await loadContainerMap();
+  const info = map.get(publicId);
+  if (info) return info;
+  throw new Error(`GTM container ${publicId} not found in any accessible account`);
 }
 
 export async function findCookiebotIdInContainer(gtmPublicId: string): Promise<string | null> {

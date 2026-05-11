@@ -863,9 +863,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             </DropdownMenu>
           );
         })()}
-        {coverageType === "unknown" && (
-          <span className="text-amber-600 dark:text-amber-400">Set coverage in Edit site - different checks run based on coverage level</span>
-        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-sm">

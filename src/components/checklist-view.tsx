@@ -84,8 +84,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const [siteFields, setSiteFields] = useState(initialSiteFields);
 
   useEffect(() => {
-    setCheckView(coverageType !== "unknown" ? coverageType : auditType);
-  }, [coverageType, auditType]);
+    if (coverageType !== "unknown") setCheckView(coverageType);
+  }, [coverageType]);
 
   useEffect(() => {
     setSiteFields(initialSiteFields);
@@ -395,7 +395,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           }));
         }
 
-        const needsCookiebotGtm = coverageType === "unknown" || coverageType === "sla";
+        const needsCookiebotGtm = checkView === "sla" || checkView === "basic" || checkView === "full" || (coverageType === "unknown" && checkView !== "no-sla" && checkView !== "us-based");
 
         const cbid = result.detectedCookiebotId || siteFields?.cookiebotId;
         if (cbid && needsCookiebotGtm) {
@@ -843,30 +843,19 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             }
           }}
         >
-          <ViewSelectTrigger className="w-auto h-7 text-xs gap-1.5 px-2.5 font-medium">
+          <ViewSelectTrigger className="w-auto min-w-[200px] h-7 text-xs gap-1.5 px-2.5 font-medium">
             <ViewSelectValue />
           </ViewSelectTrigger>
-          <ViewSelectContent className="min-w-[220px]">
-            {coverageType !== "unknown" && (
-              <ViewSelectItem value={coverageType}>
-                {COVERAGE_TYPES[coverageType].label} audit ({getEssentialChecks(coverageType).size} checks)
-              </ViewSelectItem>
-            )}
-            {coverageType !== "sla" && (
-              <ViewSelectItem value="sla">
-                SLA client audit ({getEssentialChecks("sla").size} checks)
-              </ViewSelectItem>
-            )}
-            {coverageType !== "no-sla" && (
-              <ViewSelectItem value="no-sla">
-                Non-SLA client audit ({getEssentialChecks("no-sla").size} checks)
-              </ViewSelectItem>
-            )}
-            {coverageType !== "us-based" && (
-              <ViewSelectItem value="us-based">
-                US-based audit ({getEssentialChecks("us-based").size} checks)
-              </ViewSelectItem>
-            )}
+          <ViewSelectContent className="min-w-[280px]">
+            <ViewSelectItem value="sla">
+              SLA client audit ({getEssentialChecks("sla").size} checks)
+            </ViewSelectItem>
+            <ViewSelectItem value="no-sla">
+              Non-SLA client audit ({getEssentialChecks("no-sla").size} checks)
+            </ViewSelectItem>
+            <ViewSelectItem value="us-based">
+              US-based audit ({getEssentialChecks("us-based").size} checks)
+            </ViewSelectItem>
             <ViewSelectItem value="basic">
               Basic audit ({CHECKLIST.reduce((s, c) => s + c.checks.filter((ch) => ch.tier === "basic").length, 0)} checks)
             </ViewSelectItem>
@@ -876,7 +865,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           </ViewSelectContent>
         </ViewSelect>
         {coverageType === "unknown" && (
-          <span className="text-amber-600 dark:text-amber-400">Coverage type not set</span>
+          <span className="text-amber-600 dark:text-amber-400">Set coverage in Edit site - different checks run based on coverage level</span>
         )}
       </div>
 

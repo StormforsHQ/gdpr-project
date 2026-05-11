@@ -230,10 +230,10 @@ export function CheckItem({
             </div>
           )}
           {status === "not_checked" && !isBlockedByRequirement && check.manualHint && (
-            <div className="flex items-start gap-1.5 p-2.5 rounded-md bg-blue-500/10 border border-blue-500/20">
-              <Info className="h-3 w-3 text-blue-500 mt-0.5 shrink-0" />
-              <div className="text-xs text-blue-700 dark:text-blue-400">
-                <p className="font-medium mb-0.5">How to check this manually</p>
+            <div className="flex items-start gap-1.5 p-2.5 rounded-md bg-muted/50 border border-border">
+              <Info className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="text-xs text-muted-foreground">
+                <p className="font-medium mb-0.5 text-foreground">How to check this manually</p>
                 <p>{check.manualHint}</p>
               </div>
             </div>

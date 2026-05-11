@@ -5,6 +5,7 @@ import { runAICheck, AI_CHECK_KEYS, getSessionAICost, resetSessionAICost } from 
 import { fetchCookiebotData, runCookiebotChecks } from "@/lib/cookiebot";
 import { isGtmConfigured, findCookiebotIdInContainer, getContainerInfo, listTags, listTriggers, listWorkspaces } from "@/lib/api/gtm";
 import { runGtmChecks } from "@/lib/gtm-checks";
+import { CHECKLIST } from "@/lib/checklist";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { getEffectiveAPIKey } from "@/app/actions/ai-settings";
@@ -204,19 +205,26 @@ export async function runSingleAICheck(checkKey: string, url: string): Promise<C
   return runAICheck(checkKey, url);
 }
 
+const AI_ONLY_CHECKS = (() => {
+  const aiAutomationKeys = new Set(
+    CHECKLIST.flatMap((c) => c.checks.filter((ch) => ch.automation === "ai-agent").map((ch) => ch.key))
+  );
+  return AI_CHECK_KEYS.filter((key) => aiAutomationKeys.has(key));
+})();
+
 export async function runAllAIChecks(url: string, priorResults: CheckResult[] = []): Promise<{ checks: CheckResult[]; cost: number }> {
   if (!url || url.trim().length === 0) return { checks: [], cost: 0 };
 
   resetSessionAICost();
   const results = await Promise.allSettled(
-    AI_CHECK_KEYS.map((key) => runAICheck(key, url, priorResults))
+    AI_ONLY_CHECKS.map((key) => runAICheck(key, url, priorResults))
   );
   const cost = getSessionAICost();
 
   const checks = results.map((r, i) => {
     if (r.status === "fulfilled") return r.value;
     return {
-      checkKey: AI_CHECK_KEYS[i],
+      checkKey: AI_ONLY_CHECKS[i],
       status: "blocked" as const,
       findings: [{ element: "", detail: `AI check failed: ${r.reason instanceof Error ? r.reason.message : "Unknown error"}`, severity: "warning" as const }],
       summary: "AI check could not run",

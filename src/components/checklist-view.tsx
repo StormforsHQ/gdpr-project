@@ -236,7 +236,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     setCheckStates((prev) => {
       const next = { ...prev };
       for (const check of results) {
-        if (automationByKey.get(check.checkKey) === "browser-manual" && check.status === "na") {
+        if (automationByKey.get(check.checkKey) === "browser-manual") {
           continue;
         }
         const existing = prev[check.checkKey];
@@ -276,17 +276,18 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     });
 
     setScanResult((prev) => {
+      const filteredResults = results.filter((r) => automationByKey.get(r.checkKey) !== "browser-manual");
       if (!prev) {
         return {
           url: scanUrl,
           scannedAt: new Date().toISOString(),
-          checks: results,
+          checks: filteredResults,
         };
       }
       const existingKeys = new Set(prev.checks.map((c) => c.checkKey));
-      const newChecks = results.filter((r) => !existingKeys.has(r.checkKey));
+      const newChecks = filteredResults.filter((r) => !existingKeys.has(r.checkKey));
       const updatedChecks = prev.checks.map((c) => {
-        const updated = results.find((r) => r.checkKey === c.checkKey);
+        const updated = filteredResults.find((r) => r.checkKey === c.checkKey);
         if (!updated) return c;
         if (source === "ai" && c.status === "client_managed") return c;
         if (source === "ai" && updated.status === "na" && c.status !== "na") return c;

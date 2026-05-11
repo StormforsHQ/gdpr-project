@@ -85,7 +85,15 @@ const SOCIAL_EMBEDS = [
 ];
 
 
+const PAGE_CACHE_TTL = 30 * 60 * 1000;
+const pageCache = new Map<string, { html: string; fetchedAt: number }>();
+
 async function fetchPage(url: string): Promise<{ $: cheerio.CheerioAPI; html: string } | null> {
+  const cached = pageCache.get(url);
+  if (cached && Date.now() - cached.fetchedAt < PAGE_CACHE_TTL) {
+    return { $: cheerio.load(cached.html), html: cached.html };
+  }
+
   try {
     const response = await fetch(url, {
       headers: { "User-Agent": "StormforsGDPRAudit/1.0" },
@@ -94,6 +102,7 @@ async function fetchPage(url: string): Promise<{ $: cheerio.CheerioAPI; html: st
     });
     if (!response.ok) return null;
     const html = await response.text();
+    pageCache.set(url, { html, fetchedAt: Date.now() });
     return { $: cheerio.load(html), html };
   } catch {
     return null;

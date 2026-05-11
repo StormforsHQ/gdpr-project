@@ -34,6 +34,13 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, ChevronRight, Scan, Loader2, AlertCircle, History, Clock, Trash2, X, RotateCcw, Check, MessageSquare, UserCircle } from "lucide-react";
+import {
+  Select as ViewSelect,
+  SelectContent as ViewSelectContent,
+  SelectItem as ViewSelectItem,
+  SelectTrigger as ViewSelectTrigger,
+  SelectValue as ViewSelectValue,
+} from "@/components/ui/select";
 
 
 const CLIENT_CONSENT_CHECKS = [
@@ -72,13 +79,14 @@ interface ChecklistViewProps {
 export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", coverageType = "unknown", initialStates, initialScanRuns, initialAuditNotes = "", siteFields: initialSiteFields }: ChecklistViewProps) {
   const { errors, addError, clearErrors } = useErrorLog();
   const [auditType, setAuditType] = useState<"basic" | "full">(initialAuditType);
-  const [showAllChecks, setShowAllChecks] = useState(coverageType === "unknown");
+  const defaultView = coverageType !== "unknown" ? coverageType : initialAuditType;
+  const [checkView, setCheckView] = useState<string>(defaultView);
   const essentialChecks = getEssentialChecks(coverageType);
   const [siteFields, setSiteFields] = useState(initialSiteFields);
 
   useEffect(() => {
-    setShowAllChecks(coverageType === "unknown");
-  }, [coverageType]);
+    setCheckView(coverageType !== "unknown" ? coverageType : auditType);
+  }, [coverageType, auditType]);
 
   useEffect(() => {
     setSiteFields(initialSiteFields);
@@ -328,12 +336,13 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const filteredChecklist = (() => {
     let list = CHECKLIST;
 
-    if (!showAllChecks && coverageType !== "unknown") {
+    if (checkView === "sla" || checkView === "no-sla" || checkView === "us-based") {
+      const viewEssentials = getEssentialChecks(checkView as CoverageType);
       list = list.map((cat) => ({
         ...cat,
-        checks: cat.checks.filter((c) => essentialChecks.has(c.key)),
+        checks: cat.checks.filter((c) => viewEssentials.has(c.key)),
       }));
-    } else if (auditType === "basic") {
+    } else if (checkView === "basic") {
       list = list.map((cat) => ({ ...cat, checks: cat.checks.filter((c) => c.tier === "basic") }));
     }
 
@@ -828,33 +837,51 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       )}
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        {coverageType !== "unknown" ? (
-          <button
-            onClick={() => setShowAllChecks(!showAllChecks)}
-            title={showAllChecks ? "Show only essential checks for this coverage type" : "Show all checks"}
-          >
-            <Badge variant="secondary" className="text-[10px] cursor-pointer hover:ring-1 hover:ring-ring">
-              {showAllChecks
-                ? `Showing all (${filteredChecklist.reduce((s, c) => s + c.checks.length, 0)}) - click to filter for ${COVERAGE_TYPES[coverageType].label}`
-                : `${COVERAGE_TYPES[coverageType].label} essentials (${filteredChecklist.reduce((s, c) => s + c.checks.length, 0)})`}
-            </Badge>
-          </button>
-        ) : (
-          <>
-            <button
-              onClick={async () => {
-                const next = auditType === "basic" ? "full" : "basic";
-                setAuditType(next);
-                if (auditId) await updateAuditType(auditId, next);
-              }}
-              title="Click to switch between Basic and Full audit"
-            >
-              <Badge variant="secondary" className={`text-[10px] cursor-pointer hover:ring-1 hover:ring-ring ${auditType === "basic" ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" : "bg-purple-500/15 text-purple-600 dark:text-purple-400"}`}>
-                {auditType === "basic" ? "Basic" : "Full"} ({filteredChecklist.reduce((s, c) => s + c.checks.length, 0)} checks)
-              </Badge>
-            </button>
-            <span className="text-amber-600 dark:text-amber-400">Coverage type not set - showing all checks</span>
-          </>
+        <ViewSelect
+          value={checkView}
+          onValueChange={(v) => {
+            if (!v) return;
+            setCheckView(v);
+            if (v === "basic" || v === "full") {
+              setAuditType(v);
+              if (auditId) updateAuditType(auditId, v);
+            }
+          }}
+        >
+          <ViewSelectTrigger className="w-auto h-7 text-xs gap-1.5 px-2.5">
+            <ViewSelectValue />
+          </ViewSelectTrigger>
+          <ViewSelectContent className="min-w-[220px]">
+            {coverageType !== "unknown" && (
+              <ViewSelectItem value={coverageType}>
+                {COVERAGE_TYPES[coverageType].label} essentials ({getEssentialChecks(coverageType).size})
+              </ViewSelectItem>
+            )}
+            {coverageType !== "sla" && (
+              <ViewSelectItem value="sla">
+                SLA essentials ({getEssentialChecks("sla").size})
+              </ViewSelectItem>
+            )}
+            {coverageType !== "no-sla" && (
+              <ViewSelectItem value="no-sla">
+                No SLA essentials ({getEssentialChecks("no-sla").size})
+              </ViewSelectItem>
+            )}
+            {coverageType !== "us-based" && (
+              <ViewSelectItem value="us-based">
+                US-based essentials ({getEssentialChecks("us-based").size})
+              </ViewSelectItem>
+            )}
+            <ViewSelectItem value="basic">
+              Basic - all ({CHECKLIST.reduce((s, c) => s + c.checks.filter((ch) => ch.tier === "basic").length, 0)})
+            </ViewSelectItem>
+            <ViewSelectItem value="full">
+              Full - all ({CHECKLIST.reduce((s, c) => s + c.checks.length, 0)})
+            </ViewSelectItem>
+          </ViewSelectContent>
+        </ViewSelect>
+        {coverageType === "unknown" && (
+          <span className="text-amber-600 dark:text-amber-400">Coverage type not set</span>
         )}
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -59,6 +59,17 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
   const [gtmId, setGtmId] = useState(site.gtmId || "");
   const [webflowId, setWebflowId] = useState(site.webflowId || "");
   const [hubspotId, setHubspotId] = useState(site.hubspotId || "");
+
+  useEffect(() => {
+    setName(site.name);
+    setUrl(site.url);
+    setPlatform(site.platform);
+    setCoverageType((site.coverageType as CoverageType) || "unknown");
+    setCookiebotId(site.cookiebotId || "");
+    setGtmId(site.gtmId || "");
+    setWebflowId(site.webflowId || "");
+    setHubspotId(site.hubspotId || "");
+  }, [site.name, site.url, site.platform, site.coverageType, site.cookiebotId, site.gtmId, site.webflowId, site.hubspotId]);
 
   const handleDetect = async () => {
     if (!url.trim()) return;

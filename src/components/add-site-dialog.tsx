@@ -24,6 +24,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { createSite, detectSiteIds } from "@/app/actions/sites";
+import { COVERAGE_TYPES, type CoverageType } from "@/lib/checklist";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -36,6 +37,7 @@ export function AddSiteDialog() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [platform, setPlatform] = useState("webflow");
+  const [coverageType, setCoverageType] = useState<CoverageType>("unknown");
   const [cookiebotId, setCookiebotId] = useState("");
   const [gtmId, setGtmId] = useState("");
   const [webflowId, setWebflowId] = useState("");
@@ -51,6 +53,7 @@ export function AddSiteDialog() {
         name: name.trim(),
         url: url.trim().replace(/^https?:\/\//, "").replace(/\/$/, ""),
         platform,
+        coverageType,
         cookiebotId: cookiebotId.trim() || undefined,
         gtmId: gtmId.trim() || undefined,
         webflowId: platform === "webflow" ? (webflowId.trim() || undefined) : undefined,
@@ -126,6 +129,7 @@ export function AddSiteDialog() {
     setName("");
     setUrl("");
     setPlatform("webflow");
+    setCoverageType("unknown");
     setCookiebotId("");
     setGtmId("");
     setWebflowId("");
@@ -177,6 +181,24 @@ export function AddSiteDialog() {
                 <SelectItem value="nextjs">Next.js</SelectItem>
                 <SelectItem value="wordpress">WordPress</SelectItem>
                 <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="coverage">Coverage</Label>
+            <Select value={coverageType} onValueChange={(v) => v && setCoverageType(v as CoverageType)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="min-w-[320px]">
+                {(Object.entries(COVERAGE_TYPES) as [CoverageType, typeof COVERAGE_TYPES[CoverageType]][]).map(([key, config]) => (
+                  <SelectItem key={key} value={key}>
+                    <div>
+                      <span>{config.label}</span>
+                      <span className="text-muted-foreground text-xs ml-2">- {config.description}</span>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

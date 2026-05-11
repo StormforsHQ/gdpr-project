@@ -41,6 +41,7 @@ export async function createSite(data: {
   name: string;
   url: string;
   platform?: string;
+  coverageType?: string;
   webflowId?: string;
   hubspotId?: string;
   cookiebotId?: string;
@@ -67,6 +68,7 @@ export async function createSite(data: {
       name: data.name,
       url: cleanUrl,
       platform: data.platform || "webflow",
+      coverageType: data.coverageType || "unknown",
       webflowId: data.webflowId || null,
       hubspotId: data.hubspotId || null,
       cookiebotId: data.cookiebotId || null,

@@ -10,6 +10,7 @@ import { CheckGuideDrawer } from "@/components/check-guide-drawer";
 import { CHECKLIST, AUTOMATION_CONFIG, COVERAGE_TYPES, getEssentialChecks, type CheckStatus, type CoverageType } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan, runGtmScan } from "@/app/actions/scan";
+import { updateSite } from "@/app/actions/sites";
 import { isValidUrl } from "@/lib/url";
 import { saveCheckResult, saveInternalNote, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType, resetAllChecks, saveAuditNotes } from "@/app/actions/audits";
 import { getFixAvailability, applyFix, analyzeFix, verifyGtmSetup, pushGtmSnippetToSite, deleteApiManagedScript, type FixAvailability, type FixAnalysisResult } from "@/app/actions/fixes";
@@ -852,6 +853,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                       if (opt.value === "basic" || opt.value === "full") {
                         setAuditType(opt.value);
                         if (auditId) updateAuditType(auditId, opt.value);
+                      }
+                      if (siteId && (opt.value === "sla" || opt.value === "no-sla" || opt.value === "us-based")) {
+                        updateSite(siteId, { coverageType: opt.value });
                       }
                     }}
                   >

@@ -102,7 +102,7 @@ async function fetchPage(url: string): Promise<{ $: cheerio.CheerioAPI; html: st
 
 const PAGE_SPECIFIC_KEYS = new Set(["E1", "E3", "E4", "E5", "F1", "F3", "F5"]);
 
-function runSiteWideChecks($: cheerio.CheerioAPI, html: string, detectedGtmId: string | null): CheckResult[] {
+function runSiteWideChecks($: cheerio.CheerioAPI, html: string, detectedGtmId: string | null, detectedCookiebotId: string | null): CheckResult[] {
   const g1Result = checkG1($, html, detectedGtmId);
   const hasBanner = g1Result.status === "ok";
   return [
@@ -116,7 +116,7 @@ function runSiteWideChecks($: cheerio.CheerioAPI, html: string, detectedGtmId: s
     checkI4($),
     g1Result,
     checkG8($, html, hasBanner),
-    checkB5($, html),
+    checkB5($, html, detectedGtmId, detectedCookiebotId),
   ];
 }
 
@@ -210,7 +210,7 @@ function mergePageSpecificResults(allResults: CheckResult[][]): CheckResult[] {
   return [...merged.values()];
 }
 
-export async function scanSite(url: string, platform?: string | null): Promise<ScanResult> {
+export async function scanSite(url: string, platform?: string | null, opts?: { storedCookiebotId?: string; storedGtmId?: string }): Promise<ScanResult> {
   const normalizedUrl = normalizeUrl(url);
 
   const homePage = await fetchPage(normalizedUrl);
@@ -226,11 +226,13 @@ export async function scanSite(url: string, platform?: string | null): Promise<S
   const { $: home$, html: homeHtml } = homePage;
   const detectedCookiebotId = detectCookiebotId(home$);
   const detectedGtmId = detectGtmId(home$, homeHtml);
+  const effectiveCookiebotId = detectedCookiebotId || opts?.storedCookiebotId || null;
+  const effectiveGtmId = detectedGtmId || opts?.storedGtmId || null;
 
   const allScripts = getScriptSources(home$);
   const vendors = detectVendors(allScripts, platform);
 
-  const siteWideChecks = runSiteWideChecks(home$, homeHtml, detectedGtmId);
+  const siteWideChecks = runSiteWideChecks(home$, homeHtml, effectiveGtmId, effectiveCookiebotId);
   siteWideChecks.push(checkJ1(vendors), checkJ3(vendors));
 
   const homePageSpecific = runPageSpecificChecks(home$, homeHtml, normalizedUrl);
@@ -996,7 +998,7 @@ function checkG8($: cheerio.CheerioAPI, html: string, hasBanner: boolean): Check
   return { checkKey: "G8", status: "issue", findings, summary: "No consent withdrawal mechanism found" };
 }
 
-function checkB5($: cheerio.CheerioAPI, html: string): CheckResult {
+function checkB5($: cheerio.CheerioAPI, html: string, gtmId: string | null, cookiebotId: string | null): CheckResult {
   const findings: ScanFinding[] = [];
 
   const hasGtag = /googletagmanager\.com\/gtag\/js|gtag\s*\(\s*['"]consent['"]/i.test(html);
@@ -1035,12 +1037,21 @@ function checkB5($: cheerio.CheerioAPI, html: string): CheckResult {
     return { checkKey: "B5", status: "issue", findings, summary: "Google tag without Consent Mode V2 default" };
   }
 
+  if (gtmId && cookiebotId) {
+    findings.push({
+      element: "GTM + Cookiebot",
+      detail: "Both GTM and Cookiebot are configured for this site. Google Consent Mode V2 is enabled through the Cookiebot CMP template inside GTM - this is the standard and recommended setup.",
+      severity: "info",
+    });
+    return { checkKey: "B5", status: "ok", findings, summary: "Consent Mode V2 configured via Cookiebot CMP in GTM" };
+  }
+
   findings.push({
     element: "page",
-    detail: "No Consent Mode V2 configuration found in the page HTML. This is usually configured inside GTM via the Cookiebot CMP template. To verify: add the GTM Container ID in Edit Site (click 'Detect IDs' or enter it manually), then run 'Scan Site' again - the GTM API scan will check the Cookiebot template settings.",
+    detail: "No Consent Mode V2 configuration found in the page HTML. This is usually configured inside GTM via the Cookiebot CMP template. To verify: add the GTM Container ID and Cookiebot ID in Edit Site, then run the scan again.",
     severity: "info",
   });
-  return { checkKey: "B5", status: "blocked", findings, summary: "Needs GTM Container ID to check Consent Mode" };
+  return { checkKey: "B5", status: "blocked", findings, summary: "Needs GTM Container ID and Cookiebot ID to check Consent Mode" };
 }
 
 function checkJ1(vendors: DetectedVendor[]): CheckResult {

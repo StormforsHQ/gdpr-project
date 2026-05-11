@@ -80,7 +80,6 @@ export function CheckItem({
   const [reportNoteOpen, setReportNoteOpen] = useState(!!notes.trim());
   const [internalNoteOpen, setInternalNoteOpen] = useState(!!internalNote.trim());
   const [legalOpen, setLegalOpen] = useState(false);
-  const [imyOpen, setImyOpen] = useState(false);
   const [issuesOpen, setIssuesOpen] = useState(false);
   const fellBackToBrowser = scanResult?.status === "blocked" && /check in browser/i.test(scanResult.summary || "");
   const automationInfo = fellBackToBrowser ? AUTOMATION_CONFIG["browser-manual"] : AUTOMATION_CONFIG[check.automation];
@@ -241,10 +240,10 @@ export function CheckItem({
               </div>
             </div>
           )}
-          {check.legalBasis && (
+          {(check.legalBasis || check.imyNote) && (
             <div className="space-y-1.5">
               <button
-                className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 onClick={(e) => { e.stopPropagation(); setLegalOpen(!legalOpen); }}
               >
                 <Scale className="h-3 w-3 shrink-0" />
@@ -252,10 +251,37 @@ export function CheckItem({
               </button>
               {legalOpen && (
                 <>
-                  <p className="text-xs text-amber-600 dark:text-amber-400 pl-[18px]">{check.legalBasis}</p>
+                  {check.legalBasis && (
+                    <p className="text-xs text-muted-foreground pl-[18px]">{check.legalBasis}</p>
+                  )}
                   {check.references && check.references.length > 0 && (
                     <div className="flex flex-wrap gap-x-3 gap-y-1 pl-[18px]">
                       {check.references.map((ref, i) => (
+                        <a
+                          key={i}
+                          href={ref.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] text-primary hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {ref.label}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  {check.imyNote && (
+                    <div className="flex items-start gap-1.5 pl-[18px] pt-1">
+                      <Landmark className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-semibold">SE/IMY: </span>
+                        {check.imyNote}
+                      </p>
+                    </div>
+                  )}
+                  {check.imyReferences && check.imyReferences.length > 0 && (
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 pl-[18px]">
+                      {check.imyReferences.map((ref, i) => (
                         <a
                           key={i}
                           href={ref.url}
@@ -273,56 +299,24 @@ export function CheckItem({
               )}
             </div>
           )}
-          {check.imyNote && (
-            <div className="space-y-1.5">
-              <button
-                className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                onClick={(e) => { e.stopPropagation(); setImyOpen(!imyOpen); }}
-              >
-                <Landmark className="h-3 w-3 shrink-0" />
-                <span className="font-medium">SE/IMY</span>
-              </button>
-              {imyOpen && (
-                <>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 pl-[18px]">{check.imyNote}</p>
-                  {check.imyReferences && check.imyReferences.length > 0 && (
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 pl-[18px]">
-                      {check.imyReferences.map((ref, i) => (
-                        <a
-                          key={i}
-                          href={ref.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[11px] text-blue-500 hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {ref.label}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
           {scanResult && (
             <div className="space-y-1.5">
               <button
                 className={`flex items-center gap-1.5 text-xs transition-colors ${scanResult.status === "issue" ? "text-destructive hover:text-destructive/80" : "text-muted-foreground hover:text-foreground"}`}
                 onClick={(e) => { e.stopPropagation(); setIssuesOpen(!issuesOpen); }}
               >
-                {scanResult.status === "issue" ? <AlertCircle className="h-3 w-3 shrink-0" /> : <CheckCircle2 className="h-3 w-3 shrink-0" />}
-                <span className="font-medium">{scanResult.status === "issue" ? "Issues found" : "Scan result"}</span>
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                <span className="font-medium">Issues ({scanResult.findings.filter((f) => f.severity === "error").length})</span>
               </button>
               {issuesOpen && (
                 <>
-                  <p className={`text-xs pl-[18px] ${scanResult.status === "issue" ? "text-destructive" : "text-muted-foreground"}`}>
+                  <p className="text-xs pl-[18px] text-muted-foreground">
                     {scanResult.summary}
                   </p>
                   {scanResult.status === "issue" && scanResult.findings.filter((f) => f.severity === "error").length > 0 && (
                     <ul className="space-y-1 pl-[18px]">
                       {scanResult.findings.filter((f) => f.severity === "error").map((f, i) => (
-                        <li key={i} className="text-xs text-destructive/80 flex gap-1.5">
+                        <li key={i} className="text-xs text-muted-foreground flex gap-1.5">
                           <span className="shrink-0">-</span>
                           <span>
                             {f.element && f.element !== "page" && <span className="font-medium">{f.element}: </span>}
@@ -463,7 +457,7 @@ export function CheckItem({
           <div className="space-y-2">
             <div>
               <button
-                className="flex items-center gap-1.5 text-[11px] text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors mb-1"
+                className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors mb-1"
                 onClick={(e) => {
                   e.stopPropagation();
                   setReportNoteOpen(!reportNoteOpen);
@@ -479,14 +473,14 @@ export function CheckItem({
                   value={notes}
                   onChange={(e) => onNotesChange(e.target.value)}
                   rows={2}
-                  className="w-full rounded-lg border border-violet-300 dark:border-violet-700 bg-violet-50/50 dark:bg-violet-950/20 px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-violet-500 focus-visible:ring-3 focus-visible:ring-violet-500/30 resize-y min-h-[2rem]"
+                  className="w-full rounded-lg border border-border bg-muted/30 px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 resize-y min-h-[2rem]"
                 />
               )}
             </div>
             {onInternalNoteChange && (
               <div>
                 <button
-                  className="flex items-center gap-1.5 text-[11px] text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors mb-1"
+                  className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors mb-1"
                   onClick={(e) => {
                     e.stopPropagation();
                     setInternalNoteOpen(!internalNoteOpen);
@@ -502,7 +496,7 @@ export function CheckItem({
                     value={internalNote}
                     onChange={(e) => onInternalNoteChange(e.target.value)}
                     rows={2}
-                    className="w-full rounded-lg border border-violet-300 dark:border-violet-700 bg-violet-50/50 dark:bg-violet-950/20 px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-violet-500 focus-visible:ring-3 focus-visible:ring-violet-500/30 resize-y min-h-[2rem]"
+                    className="w-full rounded-lg border border-border bg-muted/30 px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 resize-y min-h-[2rem]"
                   />
                 )}
               </div>

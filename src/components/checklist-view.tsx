@@ -33,13 +33,6 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, ChevronRight, Scan, Loader2, AlertCircle, History, Clock, Trash2, X, RotateCcw, Check, MessageSquare, UserCircle } from "lucide-react";
-import {
-  Select as ViewSelect,
-  SelectContent as ViewSelectContent,
-  SelectItem as ViewSelectItem,
-  SelectTrigger as ViewSelectTrigger,
-  SelectValue as ViewSelectValue,
-} from "@/components/ui/select";
 
 
 const CLIENT_CONSENT_CHECKS = [
@@ -832,38 +825,44 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       )}
 
       <div className="flex items-center gap-2 text-xs">
-        <ViewSelect
-          value={checkView}
-          onValueChange={(v) => {
-            if (!v) return;
-            setCheckView(v);
-            if (v === "basic" || v === "full") {
-              setAuditType(v);
-              if (auditId) updateAuditType(auditId, v);
-            }
-          }}
-        >
-          <ViewSelectTrigger className="w-auto min-w-[200px] h-7 text-xs gap-1.5 px-2.5 font-medium">
-            <ViewSelectValue />
-          </ViewSelectTrigger>
-          <ViewSelectContent className="min-w-[280px]">
-            <ViewSelectItem value="sla">
-              SLA client audit ({getEssentialChecks("sla").size} checks)
-            </ViewSelectItem>
-            <ViewSelectItem value="no-sla">
-              Non-SLA client audit ({getEssentialChecks("no-sla").size} checks)
-            </ViewSelectItem>
-            <ViewSelectItem value="us-based">
-              US-based audit ({getEssentialChecks("us-based").size} checks)
-            </ViewSelectItem>
-            <ViewSelectItem value="basic">
-              Basic audit ({CHECKLIST.reduce((s, c) => s + c.checks.filter((ch) => ch.tier === "basic").length, 0)} checks)
-            </ViewSelectItem>
-            <ViewSelectItem value="full">
-              Full audit ({CHECKLIST.reduce((s, c) => s + c.checks.length, 0)} checks)
-            </ViewSelectItem>
-          </ViewSelectContent>
-        </ViewSelect>
+        {(() => {
+          const viewOptions: { value: string; label: string }[] = [
+            { value: "sla", label: `SLA client audit (${getEssentialChecks("sla").size} checks)` },
+            { value: "no-sla", label: `Non-SLA client audit (${getEssentialChecks("no-sla").size} checks)` },
+            { value: "us-based", label: `US-based audit (${getEssentialChecks("us-based").size} checks)` },
+            { value: "basic", label: `Basic audit (${CHECKLIST.reduce((s, c) => s + c.checks.filter((ch) => ch.tier === "basic").length, 0)} checks)` },
+            { value: "full", label: `Full audit (${CHECKLIST.reduce((s, c) => s + c.checks.length, 0)} checks)` },
+          ];
+          const activeLabel = viewOptions.find((o) => o.value === checkView)?.label ?? checkView;
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center gap-1.5 outline-none">
+                <Badge variant="secondary" className="cursor-pointer text-xs gap-1 font-medium">
+                  {activeLabel}
+                  <ChevronDown className="h-3 w-3 opacity-50" />
+                </Badge>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-64">
+                {viewOptions.map((opt) => (
+                  <DropdownMenuItem
+                    key={opt.value}
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={() => {
+                      setCheckView(opt.value);
+                      if (opt.value === "basic" || opt.value === "full") {
+                        setAuditType(opt.value);
+                        if (auditId) updateAuditType(auditId, opt.value);
+                      }
+                    }}
+                  >
+                    <Check className={`h-3.5 w-3.5 shrink-0 ${checkView === opt.value ? "opacity-100" : "opacity-0"}`} />
+                    <span>{opt.label}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        })()}
         {coverageType === "unknown" && (
           <span className="text-amber-600 dark:text-amber-400">Set coverage in Edit site - different checks run based on coverage level</span>
         )}

@@ -136,7 +136,8 @@ export async function saveScanRun(
   scanType: "page-scan" | "ai-agent" | "cookiebot" | "gtm-api",
   url: string,
   findings: { checkKey: string; status: string; summary: string; findings?: { element: string; detail: string; severity: string }[] }[],
-  error?: string
+  error?: string,
+  cost?: number
 ) {
   const run = await prisma.scanRun.create({
     data: {
@@ -146,6 +147,7 @@ export async function saveScanRun(
       status: error ? "failed" : "completed",
       findings: JSON.stringify(findings),
       error: error || null,
+      cost: cost && cost > 0 ? cost : null,
       completedAt: new Date(),
     },
   });

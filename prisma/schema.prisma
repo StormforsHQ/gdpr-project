@@ -114,6 +114,7 @@ model ScanRun {
   status      String   @default("running")
   findings    String   @default("[]")
   error       String?
+  cost        Float?
   startedAt   DateTime @default(now()) @map("started_at")
   completedAt DateTime? @map("completed_at")
 

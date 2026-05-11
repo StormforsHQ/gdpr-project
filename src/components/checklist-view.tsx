@@ -864,7 +864,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           );
         })()}
         {coverageType === "unknown" && (
-          <span className="text-xs text-amber-600 dark:text-amber-400">Choose an audit type - different checks run depending on coverage</span>
+          <span className="text-xs text-amber-600 dark:text-amber-400">Choose an audit type to filter which checks are shown</span>
         )}
       </div>
 

@@ -76,7 +76,12 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
     setDetecting(true);
     setDetectResult(null);
     try {
-      const result = await detectSiteIds(url.trim());
+      const result = await detectSiteIds(url.trim(), {
+        gtmId: gtmId.trim() || undefined,
+        cookiebotId: cookiebotId.trim() || undefined,
+        webflowId: webflowId.trim() || undefined,
+        hubspotId: hubspotId.trim() || undefined,
+      });
       if (result.error) {
         setDetectResult(result.error);
         return;

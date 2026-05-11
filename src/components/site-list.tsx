@@ -17,12 +17,14 @@ import { DeleteSiteButton } from "@/components/delete-site-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, ArrowUpDown, BarChart3, Eye, EyeOff } from "lucide-react";
 import { toggleSiteActive } from "@/app/actions/sites";
+import { COVERAGE_TYPES, type CoverageType } from "@/lib/checklist";
 
 export type SiteWithAudit = {
   id: string;
   name: string;
   url: string;
   platform: string;
+  coverageType: string;
   active: boolean;
   status: string;
   auditType: "basic" | "full" | null;
@@ -63,6 +65,7 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("active");
   const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
   const [platformFilter, setPlatformFilter] = useState<Set<string>>(new Set());
+  const [coverageFilter, setCoverageFilter] = useState<Set<string>>(new Set());
   const [flaggedOnly, setFlaggedOnly] = useState(false);
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -93,6 +96,21 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
     for (const s of visibleSites) counts[s.platform] = (counts[s.platform] || 0) + 1;
     return counts;
   }, [visibleSites]);
+
+  const coverageCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const s of visibleSites) counts[s.coverageType] = (counts[s.coverageType] || 0) + 1;
+    return counts;
+  }, [visibleSites]);
+
+  const toggleCoverage = (type: string) => {
+    setCoverageFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  };
 
   const toggleStatus = (status: string) => {
     setStatusFilter((prev) => {
@@ -142,6 +160,10 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
       result = result.filter((s) => platformFilter.has(s.platform));
     }
 
+    if (coverageFilter.size > 0) {
+      result = result.filter((s) => coverageFilter.has(s.coverageType));
+    }
+
     if (flaggedOnly) {
       result = result.filter((s) => s.hasInternalNotes);
     }
@@ -156,9 +178,9 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
     });
 
     return result;
-  }, [sites, search, activeFilter, statusFilter, platformFilter, flaggedOnly, sortField, sortDir]);
+  }, [sites, search, activeFilter, statusFilter, platformFilter, coverageFilter, flaggedOnly, sortField, sortDir]);
 
-  const hasFilters = search.trim() || statusFilter.size > 0 || platformFilter.size > 0 || flaggedOnly || activeFilter !== "active";
+  const hasFilters = search.trim() || statusFilter.size > 0 || platformFilter.size > 0 || coverageFilter.size > 0 || flaggedOnly || activeFilter !== "active";
 
   return (
     <Card>
@@ -170,7 +192,7 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
           </CardTitle>
           {hasFilters && (
             <button
-              onClick={() => { setSearch(""); setActiveFilter("active"); setStatusFilter(new Set()); setPlatformFilter(new Set()); setFlaggedOnly(false); }}
+              onClick={() => { setSearch(""); setActiveFilter("active"); setStatusFilter(new Set()); setPlatformFilter(new Set()); setCoverageFilter(new Set()); setFlaggedOnly(false); }}
               className="text-xs text-muted-foreground hover:text-foreground"
             >
               Clear filters
@@ -229,6 +251,26 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
               </Badge>
             </button>
           ))}
+          {Object.keys(coverageCounts).length > 1 && (
+            <>
+              <span className="w-px h-5 bg-border self-center mx-1" />
+              {(Object.keys(COVERAGE_TYPES) as CoverageType[]).map((type) => {
+                const count = coverageCounts[type] || 0;
+                if (count === 0) return null;
+                const config = COVERAGE_TYPES[type];
+                return (
+                  <button key={type} onClick={() => toggleCoverage(type)}>
+                    <Badge
+                      variant="secondary"
+                      className={`cursor-pointer text-xs ${config.className} ${coverageFilter.has(type) ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+                    >
+                      {config.label} ({count})
+                    </Badge>
+                  </button>
+                );
+              })}
+            </>
+          )}
           {flaggedCount > 0 && (
             <>
               <span className="w-px h-5 bg-border self-center mx-1" />
@@ -257,12 +299,13 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
                   </button>
                 </TableHead>
                 <TableHead className="w-[25%]">URL</TableHead>
-                <TableHead className="w-[10%]">
+                <TableHead className="w-[9%]">
                   <button className="flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort("platform")}>
                     Platform
                     {sortField === "platform" && <ArrowUpDown className="h-3 w-3" />}
                   </button>
                 </TableHead>
+                <TableHead className="w-[8%]">Coverage</TableHead>
                 <TableHead className="w-[7%]">Audit</TableHead>
                 <TableHead className="w-[10%]">Progress</TableHead>
                 <TableHead className="w-[10%]">
@@ -310,6 +353,17 @@ export function SiteList({ sites }: { sites: SiteWithAudit[] }) {
                       <Badge variant="secondary" className="text-xs capitalize">
                         {PLATFORM_LABELS[site.platform] || site.platform}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const ct = (site.coverageType || "unknown") as CoverageType;
+                        const config = COVERAGE_TYPES[ct];
+                        return (
+                          <Badge variant="secondary" className={`text-xs ${config.className}`}>
+                            {config.label}
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       {site.auditType ? (

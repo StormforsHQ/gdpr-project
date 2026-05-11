@@ -26,6 +26,7 @@ async function loadSites(): Promise<SiteWithAudit[]> {
         name: site.name,
         url: site.url,
         platform: site.platform,
+        coverageType: site.coverageType,
         active: site.active,
         status: getAuditStatus(results),
         auditType: ((latestAudit as Record<string, unknown>)?.auditType as "basic" | "full") ?? null,

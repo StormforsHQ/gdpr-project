@@ -90,6 +90,7 @@ export default async function SitePage({ params }: SitePageProps) {
         siteId={site.id}
         auditId={audit.id}
         auditType={(audit as Record<string, unknown>).auditType as "basic" | "full" ?? "full"}
+        coverageType={(site.coverageType as "sla" | "no-sla" | "us-based" | "unknown") ?? "unknown"}
         initialStates={initialStates}
         initialScanRuns={scanRuns}
         initialAuditNotes={audit.notes}

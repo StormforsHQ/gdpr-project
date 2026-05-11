@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EditSiteDialog } from "@/components/edit-site-dialog";
 import { CHECK_REQUIREMENTS, type CheckRequirement } from "@/lib/glossary";
+import { COVERAGE_TYPES, type CoverageType } from "@/lib/checklist";
 import { Settings, ExternalLink, AlertTriangle, FileText, ChevronDown, Trash2, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import type { ReportListItem } from "@/app/actions/report";
@@ -17,6 +18,7 @@ interface SiteHeaderProps {
     name: string;
     url: string;
     platform: string;
+    coverageType?: string;
     cookiebotId?: string | null;
     gtmId?: string | null;
     webflowId?: string | null;
@@ -90,6 +92,15 @@ export function SiteHeader({ site, auditId, reportVersions }: SiteHeaderProps) {
             <Badge variant="secondary" className="text-xs">
               {PLATFORM_LABELS[site.platform] || site.platform}
             </Badge>
+            {(() => {
+              const ct = (site.coverageType || "unknown") as CoverageType;
+              const config = COVERAGE_TYPES[ct];
+              return (
+                <Badge variant="secondary" className={`text-xs ${config.className}`}>
+                  {config.label}
+                </Badge>
+              );
+            })()}
           </div>
           <div className="flex items-center gap-2">
             <Link href={`/sites/${site.id}/dashboard`}>

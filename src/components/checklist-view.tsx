@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { CheckItem, type FixInfo } from "@/components/check-item";
 import { CheckGuideDrawer } from "@/components/check-guide-drawer";
 import { ScanResultsDrawer } from "@/components/scan-results-drawer";
-import { CHECKLIST, AUTOMATION_CONFIG, type CheckStatus } from "@/lib/checklist";
+import { CHECKLIST, AUTOMATION_CONFIG, COVERAGE_TYPES, getEssentialChecks, type CheckStatus, type CoverageType } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan, runGtmScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
@@ -62,15 +62,18 @@ interface ChecklistViewProps {
   siteId?: string;
   auditId?: string;
   auditType?: "basic" | "full";
+  coverageType?: CoverageType;
   initialStates?: Record<string, { status: string; notes: string; internalNote?: string; source: string }>;
   initialScanRuns?: ScanRunEntry[];
   initialAuditNotes?: string;
   siteFields?: { platform?: string | null; webflowId?: string | null; cookiebotId?: string | null; gtmId?: string | null };
 }
 
-export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", initialStates, initialScanRuns, initialAuditNotes = "", siteFields: initialSiteFields }: ChecklistViewProps) {
+export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", coverageType = "unknown", initialStates, initialScanRuns, initialAuditNotes = "", siteFields: initialSiteFields }: ChecklistViewProps) {
   const { errors, addError, clearErrors } = useErrorLog();
   const [auditType, setAuditType] = useState<"basic" | "full">(initialAuditType);
+  const [showAllChecks, setShowAllChecks] = useState(coverageType === "unknown");
+  const essentialChecks = getEssentialChecks(coverageType);
   const [siteFields, setSiteFields] = useState(initialSiteFields);
 
   useEffect(() => {
@@ -318,9 +321,28 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     });
   };
 
-  const filteredChecklist = auditType === "basic"
-    ? CHECKLIST.map((cat) => ({ ...cat, checks: cat.checks.filter((c) => c.tier === "basic") })).filter((cat) => cat.checks.length > 0)
-    : CHECKLIST;
+  const filteredChecklist = (() => {
+    let list = auditType === "basic"
+      ? CHECKLIST.map((cat) => ({ ...cat, checks: cat.checks.filter((c) => c.tier === "basic") }))
+      : CHECKLIST;
+
+    if (!showAllChecks && coverageType !== "unknown") {
+      list = list.map((cat) => ({
+        ...cat,
+        checks: cat.checks.filter((c) => essentialChecks.has(c.key)),
+      }));
+    }
+
+    return list.filter((cat) => cat.checks.length > 0);
+  })();
+
+  const hiddenCheckCount = (() => {
+    if (showAllChecks || coverageType === "unknown") return 0;
+    const tierList = auditType === "basic"
+      ? CHECKLIST.flatMap((cat) => cat.checks.filter((c) => c.tier === "basic"))
+      : CHECKLIST.flatMap((cat) => cat.checks);
+    return tierList.filter((c) => !essentialChecks.has(c.key)).length;
+  })();
 
   const getCategoryStats = (categoryId: string) => {
     const category = filteredChecklist.find((c) => c.id === categoryId);
@@ -826,10 +848,25 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           title="Click to switch between Basic and Full audit"
         >
           <Badge variant="secondary" className={`text-[10px] cursor-pointer hover:ring-1 hover:ring-ring ${auditType === "basic" ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" : "bg-purple-500/15 text-purple-600 dark:text-purple-400"}`}>
-            {auditType === "basic" ? `Basic audit (${filteredChecklist.reduce((s, c) => s + c.checks.length, 0)} checks)` : `Full audit (${filteredChecklist.reduce((s, c) => s + c.checks.length, 0)} checks)`}
+            {auditType === "basic" ? "Basic" : "Full"} ({filteredChecklist.reduce((s, c) => s + c.checks.length, 0)} checks)
           </Badge>
         </button>
-        <span>Website compliance (consent, cookies, tracking, privacy information, third-party integrations)</span>
+        {coverageType !== "unknown" && (
+          <button
+            onClick={() => setShowAllChecks(!showAllChecks)}
+            title={showAllChecks ? "Show only essential checks for this coverage type" : "Show all checks"}
+          >
+            <Badge variant="secondary" className={`text-[10px] cursor-pointer hover:ring-1 hover:ring-ring ${showAllChecks ? "" : COVERAGE_TYPES[coverageType].className}`}>
+              {showAllChecks
+                ? `Showing all - click to filter for ${COVERAGE_TYPES[coverageType].label}`
+                : `${COVERAGE_TYPES[coverageType].label} essentials`}
+              {hiddenCheckCount > 0 && !showAllChecks && ` (${hiddenCheckCount} hidden)`}
+            </Badge>
+          </button>
+        )}
+        {coverageType === "unknown" && (
+          <span className="text-amber-600 dark:text-amber-400">Coverage type not set - showing all checks</span>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-sm">

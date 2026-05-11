@@ -193,7 +193,7 @@ export function AddSiteDialog() {
             <Label htmlFor="coverage">Coverage</Label>
             <Select value={coverageType} onValueChange={(v) => v && setCoverageType(v as CoverageType)}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue>{COVERAGE_TYPES[coverageType].label}</SelectValue>
               </SelectTrigger>
               <SelectContent className="min-w-[320px]">
                 {(Object.entries(COVERAGE_TYPES) as [CoverageType, typeof COVERAGE_TYPES[CoverageType]][]).map(([key, config]) => (

@@ -100,9 +100,23 @@ const VALID_SEVERITIES = new Set(["error", "warning", "info"]);
 
 function parseAIResponse(raw: string): AICheckResult {
   try {
-    const cleaned = raw.replace(/^```json\s*/, "").replace(/```\s*$/, "").trim();
-    const parsed = JSON.parse(cleaned);
-    const status = VALID_AI_STATUSES.has(parsed.status) ? parsed.status : "na";
+    if (!raw || !raw.trim()) {
+      console.error("AI returned empty response");
+      return { status: "na", findings: [{ detail: "AI returned an empty response", severity: "warning" }], summary: "AI analysis failed to parse" };
+    }
+    let cleaned = raw.replace(/^```json\s*/g, "").replace(/```\s*$/g, "").trim();
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      const jsonMatch = raw.match(/\{[\s\S]*"status"\s*:\s*"[\s\S]*\}/);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("No JSON object found");
+      }
+    }
+    const status = VALID_AI_STATUSES.has(parsed.status as string) ? (parsed.status as string) : "na";
     const findings = Array.isArray(parsed.findings)
       ? parsed.findings
           .filter((f: Record<string, unknown>) => f && typeof f.detail === "string")
@@ -111,7 +125,7 @@ function parseAIResponse(raw: string): AICheckResult {
             severity: VALID_SEVERITIES.has(f.severity as string) ? f.severity as "error" | "warning" | "info" : "warning",
           }))
       : [];
-    return { status, findings, summary: parsed.summary || "AI analysis complete" };
+    return { status: status as AICheckResult["status"], findings, summary: (parsed.summary as string) || "AI analysis complete" };
   } catch {
     console.error("Failed to parse AI response:", raw.slice(0, 500));
     return {

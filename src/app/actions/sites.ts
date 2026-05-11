@@ -78,7 +78,12 @@ export async function createSite(data: {
 
   if (!data.cookiebotId || !data.gtmId || (!data.webflowId && (data.platform || "webflow") === "webflow")) {
     try {
-      const detected = await detectSiteIds(cleanUrl);
+      const detected = await detectSiteIds(cleanUrl, {
+        gtmId: data.gtmId || undefined,
+        cookiebotId: data.cookiebotId || undefined,
+        webflowId: data.webflowId || undefined,
+        hubspotId: data.hubspotId || undefined,
+      });
       const updates: Record<string, string> = {};
       if (!data.gtmId && detected.gtmId) updates.gtmId = detected.gtmId;
       if (!data.cookiebotId && detected.cookiebotId) updates.cookiebotId = detected.cookiebotId;
@@ -164,7 +169,14 @@ export interface DetectIdsResult {
   error: string | null;
 }
 
-export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
+export interface ExistingIds {
+  gtmId?: string;
+  cookiebotId?: string;
+  webflowId?: string;
+  hubspotId?: string;
+}
+
+export async function detectSiteIds(url: string, existing?: ExistingIds): Promise<DetectIdsResult> {
   const result: DetectIdsResult = {
     webflowId: null, webflowSource: null,
     hubspotId: null, hubspotSource: null,
@@ -172,6 +184,14 @@ export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
     gtmSource: null, cookiebotSource: null,
     error: null,
   };
+
+  if (existing?.gtmId) { result.gtmId = existing.gtmId; result.gtmSource = "Already set"; }
+  if (existing?.cookiebotId) { result.cookiebotId = existing.cookiebotId; result.cookiebotSource = "Already set"; }
+  if (existing?.webflowId) { result.webflowId = existing.webflowId; result.webflowSource = "Already set"; }
+  if (existing?.hubspotId) { result.hubspotId = existing.hubspotId; result.hubspotSource = "Already set"; }
+
+  const needsDetection = !result.gtmId || !result.cookiebotId || !result.hubspotId || !result.webflowId;
+  if (!needsDetection) return result;
 
   try {
     const normalizedUrl = normalizeUrl(url);
@@ -189,14 +209,20 @@ export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    result.gtmId = detectGtmId($, html);
-    if (result.gtmId) result.gtmSource = "Found in site HTML";
+    if (!result.gtmId) {
+      result.gtmId = detectGtmId($, html);
+      if (result.gtmId) result.gtmSource = "Found in site HTML";
+    }
 
-    result.cookiebotId = detectCookiebotId($);
-    if (result.cookiebotId) result.cookiebotSource = "Found in site HTML";
+    if (!result.cookiebotId) {
+      result.cookiebotId = detectCookiebotId($);
+      if (result.cookiebotId) result.cookiebotSource = "Found in site HTML";
+    }
 
-    result.hubspotId = detectHubspotId($, html);
-    if (result.hubspotId) result.hubspotSource = "Found in site HTML";
+    if (!result.hubspotId) {
+      result.hubspotId = detectHubspotId($, html);
+      if (result.hubspotId) result.hubspotSource = "Found in site HTML";
+    }
 
     if (result.gtmId && !result.cookiebotId && isGtmConfigured()) {
       try {
@@ -210,7 +236,7 @@ export async function detectSiteIds(url: string): Promise<DetectIdsResult> {
       }
     }
 
-    {
+    if (!result.webflowId) {
       const domain = new URL(normalizedUrl).hostname.replace(/^www\./, "").toLowerCase();
       const match = await prisma.site.findFirst({
         where: {

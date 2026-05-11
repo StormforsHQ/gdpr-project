@@ -371,10 +371,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         if (result.pagesScanned) {
           setScanResult((prev) => prev ? { ...prev, pagesScanned: result.pagesScanned } : prev);
         }
-        const failedChecks = result.checks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
-        for (const check of failedChecks) {
-          addError("scan", `Check ${check.checkKey} failed`, check.summary);
-        }
         if (auditId) {
           const run = await saveScanRun(auditId, "page-scan", scanUrl, result.checks);
           setScanRuns((prev) => [run, ...prev]);
@@ -438,10 +434,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       if (credits.available) {
         const aiResult = await runAllAIChecks(scanUrl, collectedResults);
         totalSkipped += applyCheckResults(aiResult.checks, "ai");
-        const failedAI = aiResult.checks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning"));
-        for (const check of failedAI) {
-          addError("ai", `AI check ${check.checkKey} failed`, check.summary);
-        }
         if (auditId) {
           const run = await saveScanRun(auditId, "ai-agent", scanUrl, aiResult.checks, undefined, aiResult.cost);
           setScanRuns((prev) => [run, ...prev]);
@@ -665,7 +657,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const visibleScanChecks = scanResult?.checks.filter((c) => visibleCheckKeys.has(c.checkKey)) ?? [];
   const scannedCheckCount = visibleScanChecks.length;
   const scanIssueCount = visibleScanChecks.filter((c) => c.status === "issue").length;
-  const scanFailedCount = visibleScanChecks.filter((c) => c.status === "na" && c.findings.some((f) => f.severity === "warning")).length;
 
   return (
     <div className="space-y-4">
@@ -700,10 +691,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               {scanIssueCount > 0 && (
                 <Badge variant="destructive" className="text-xs">{scanIssueCount} issue{scanIssueCount !== 1 ? "s" : ""}</Badge>
               )}
-              {scanFailedCount > 0 && (
-                <Badge variant="secondary" className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400">{scanFailedCount} failed</Badge>
-              )}
-              {scanIssueCount === 0 && scanFailedCount === 0 && (
+              {scanIssueCount === 0 && (
                 <Badge variant="secondary" className="text-xs bg-green-500/15 text-green-600 dark:text-green-400">All clear</Badge>
               )}
               {lastSkippedCount > 0 && (

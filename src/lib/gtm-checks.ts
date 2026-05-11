@@ -218,9 +218,9 @@ export function checkB3(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
   if (nonGoogleNonSystem.length === 0) {
     return {
       checkKey: "B3",
-      status: "na",
-      findings: [{ element: "GTM", detail: "No non-Google tags found in container", severity: "info" }],
-      summary: "No non-Google tags to check",
+      status: "ok",
+      findings: [{ element: "GTM", detail: "No non-Google tags found in container. All tags are Google tags which self-adapt to consent state.", severity: "info" }],
+      summary: "Only Google tags in container - consent handled automatically",
     };
   }
 
@@ -283,9 +283,9 @@ export function checkB4(tags: GtmTag[], triggers: GtmTrigger[]): CheckResult {
   if (nonGoogleNonSystem.length === 0) {
     return {
       checkKey: "B4",
-      status: "na",
-      findings: [{ element: "GTM", detail: "No non-Google tags found in container", severity: "info" }],
-      summary: "No non-Google tags to check",
+      status: "ok",
+      findings: [{ element: "GTM", detail: "No non-Google tags found in container. All tags are Google tags which self-adapt to consent state.", severity: "info" }],
+      summary: "Only Google tags in container - no trigger order concerns",
     };
   }
 

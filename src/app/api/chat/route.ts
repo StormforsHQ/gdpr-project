@@ -670,7 +670,7 @@ Sites can be on different platforms (Webflow, HubSpot, Next.js, WordPress, other
 ## App structure (for navigation questions only)
 Pages in the sidebar: Dashboard, Sites (click to see audit), Reference (Technical Guide, Audit Protocol, Cheat Sheet, Fix Flow Guide, MCP Servers), Settings.
 On a site's audit page: checks grouped by category (Pre-check, then A through K), "Scan site" button, report generation, guide drawer (book icon).
-Filter bar: a view dropdown (SLA essentials, No SLA, US-based, Basic, Full) to scope checks by coverage type, plus status badges (OK, Issue, N/A, Not checked) and a check type dropdown. For no-SLA and US-based sites, Cookiebot and GTM API scans are skipped since those checks aren't in their essential sets.
+Filter bar: a view dropdown (SLA client essentials, Non-SLA client essentials, US-based, Basic, Full) to scope checks by coverage type, plus status badges (OK, Issue, N/A, Not checked) and a check type dropdown. For Non-SLA and US-based sites, Cookiebot and GTM API scans are skipped since those checks aren't in their essential sets.
 Warning triangles = missing Cookiebot ID or GTM Container ID. Add via Edit Site (pencil icon).
 "Sync from Webflow" button on Sites page imports all Webflow workspace sites. "Detect IDs from site" in Edit Site scans the URL for GTM, Cookiebot, and platform-specific IDs.`;
 

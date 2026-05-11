@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { CheckItem, type FixInfo } from "@/components/check-item";
 import { CheckGuideDrawer } from "@/components/check-guide-drawer";
 import { ScanResultsDrawer } from "@/components/scan-results-drawer";
-import { CHECKLIST, AUTOMATION_CONFIG, type CheckStatus } from "@/lib/checklist";
+import { CHECKLIST, AUTOMATION_CONFIG, COVERAGE_TYPES, getEssentialChecks, type CheckStatus, type CoverageType } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan, runGtmScan } from "@/app/actions/scan";
 import { isValidUrl } from "@/lib/url";
@@ -62,15 +62,18 @@ interface ChecklistViewProps {
   siteId?: string;
   auditId?: string;
   auditType?: "basic" | "full";
+  coverageType?: CoverageType;
   initialStates?: Record<string, { status: string; notes: string; internalNote?: string; source: string }>;
   initialScanRuns?: ScanRunEntry[];
   initialAuditNotes?: string;
   siteFields?: { platform?: string | null; webflowId?: string | null; cookiebotId?: string | null; gtmId?: string | null };
 }
 
-export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", initialStates, initialScanRuns, initialAuditNotes = "", siteFields: initialSiteFields }: ChecklistViewProps) {
+export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", coverageType = "unknown", initialStates, initialScanRuns, initialAuditNotes = "", siteFields: initialSiteFields }: ChecklistViewProps) {
   const { errors, addError, clearErrors } = useErrorLog();
   const [auditType, setAuditType] = useState<"basic" | "full">(initialAuditType);
+  const [showAllChecks, setShowAllChecks] = useState(coverageType === "unknown");
+  const essentialChecks = getEssentialChecks(coverageType);
   const [siteFields, setSiteFields] = useState(initialSiteFields);
 
   useEffect(() => {
@@ -318,9 +321,28 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     });
   };
 
-  const filteredChecklist = auditType === "basic"
-    ? CHECKLIST.map((cat) => ({ ...cat, checks: cat.checks.filter((c) => c.tier === "basic") })).filter((cat) => cat.checks.length > 0)
-    : CHECKLIST;
+  const filteredChecklist = (() => {
+    let list = auditType === "basic"
+      ? CHECKLIST.map((cat) => ({ ...cat, checks: cat.checks.filter((c) => c.tier === "basic") }))
+      : CHECKLIST;
+
+    if (!showAllChecks && coverageType !== "unknown") {
+      list = list.map((cat) => ({
+        ...cat,
+        checks: cat.checks.filter((c) => essentialChecks.has(c.key)),
+      }));
+    }
+
+    return list.filter((cat) => cat.checks.length > 0);
+  })();
+
+  const hiddenCheckCount = (() => {
+    if (showAllChecks || coverageType === "unknown") return 0;
+    const tierList = auditType === "basic"
+      ? CHECKLIST.flatMap((cat) => cat.checks.filter((c) => c.tier === "basic"))
+      : CHECKLIST.flatMap((cat) => cat.checks);
+    return tierList.filter((c) => !essentialChecks.has(c.key)).length;
+  })();
 
   const getCategoryStats = (categoryId: string) => {
     const category = filteredChecklist.find((c) => c.id === categoryId);
@@ -826,10 +848,25 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           title="Click to switch between Basic and Full audit"
         >
           <Badge variant="secondary" className={`text-[10px] cursor-pointer hover:ring-1 hover:ring-ring ${auditType === "basic" ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" : "bg-purple-500/15 text-purple-600 dark:text-purple-400"}`}>
-            {auditType === "basic" ? `Basic audit (${filteredChecklist.reduce((s, c) => s + c.checks.length, 0)} checks)` : `Full audit (${filteredChecklist.reduce((s, c) => s + c.checks.length, 0)} checks)`}
+            {auditType === "basic" ? "Basic" : "Full"} ({filteredChecklist.reduce((s, c) => s + c.checks.length, 0)} checks)
           </Badge>
         </button>
-        <span>Website compliance (consent, cookies, tracking, privacy information, third-party integrations)</span>
+        {coverageType !== "unknown" && (
+          <button
+            onClick={() => setShowAllChecks(!showAllChecks)}
+            title={showAllChecks ? "Show only essential checks for this coverage type" : "Show all checks"}
+          >
+            <Badge variant="secondary" className={`text-[10px] cursor-pointer hover:ring-1 hover:ring-ring ${showAllChecks ? "" : COVERAGE_TYPES[coverageType].className}`}>
+              {showAllChecks
+                ? `Showing all - click to filter for ${COVERAGE_TYPES[coverageType].label}`
+                : `${COVERAGE_TYPES[coverageType].label} essentials`}
+              {hiddenCheckCount > 0 && !showAllChecks && ` (${hiddenCheckCount} hidden)`}
+            </Badge>
+          </button>
+        )}
+        {coverageType === "unknown" && (
+          <span className="text-amber-600 dark:text-amber-400">Coverage type not set - showing all checks</span>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -1046,6 +1083,48 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {coverageType === "no-sla" && scanResult && (() => {
+        const trackingFindings = scanResult.checks.filter(
+          (c) => c.checkKey === "A1" && c.status === "issue"
+        );
+        const hasTracking = trackingFindings.length > 0 || scanResult.checks.some(
+          (c) => c.findings?.some((f) => /google.analytics|gtag|_ga|facebook|linkedin|pixel/i.test(f.detail || f.element || ""))
+        );
+        if (!hasTracking) return null;
+        return (
+          <Card className="border-orange-500/30 bg-orange-500/5">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Tracking scripts detected on a non-SLA site</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    This site has tracking scripts (Google Analytics, pixels, etc.) but we don't manage their GDPR compliance.
+                    Without proper consent management, these scripts may be collecting visitor data without consent.
+                  </p>
+                  <p className="text-xs text-orange-600 dark:text-orange-400 mt-2 font-medium">
+                    Consider reaching out to this client to suggest either an SLA for GDPR management,
+                    or that they disable tracking until they have consent management in place.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {coverageType === "us-based" && (
+        <Card className="border-blue-500/20 bg-blue-500/5">
+          <CardContent className="py-3">
+            <p className="text-xs text-blue-600 dark:text-blue-400">
+              US-based site - EU GDPR cookie consent rules do not apply.
+              US privacy laws (CCPA, state laws) may apply depending on audience.
+              Most cookie/consent checks are hidden. Switch to "Show all" above if needed.
+            </p>
           </CardContent>
         </Card>
       )}

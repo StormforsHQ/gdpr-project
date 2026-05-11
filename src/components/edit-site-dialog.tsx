@@ -24,6 +24,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { updateSite, deleteSite, detectSiteIds } from "@/app/actions/sites";
+import { COVERAGE_TYPES, type CoverageType } from "@/lib/checklist";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -33,6 +34,7 @@ interface EditSiteDialogProps {
     name: string;
     url: string;
     platform: string;
+    coverageType?: string;
     cookiebotId?: string | null;
     gtmId?: string | null;
     webflowId?: string | null;
@@ -52,6 +54,7 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
   const [name, setName] = useState(site.name);
   const [url, setUrl] = useState(site.url);
   const [platform, setPlatform] = useState(site.platform);
+  const [coverageType, setCoverageType] = useState<CoverageType>((site.coverageType as CoverageType) || "unknown");
   const [cookiebotId, setCookiebotId] = useState(site.cookiebotId || "");
   const [gtmId, setGtmId] = useState(site.gtmId || "");
   const [webflowId, setWebflowId] = useState(site.webflowId || "");
@@ -117,6 +120,7 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
         name: name.trim(),
         url: url.trim().replace(/^https?:\/\//, "").replace(/\/$/, ""),
         platform,
+        coverageType,
         cookiebotId: cookiebotId.trim() || null,
         gtmId: gtmId.trim() || null,
         webflowId: platform === "webflow" ? (webflowId.trim() || null) : null,
@@ -186,6 +190,24 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
                 <SelectItem value="nextjs">Next.js</SelectItem>
                 <SelectItem value="wordpress">WordPress</SelectItem>
                 <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-coverage">Coverage</Label>
+            <Select value={coverageType} onValueChange={(v) => v && setCoverageType(v as CoverageType)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.entries(COVERAGE_TYPES) as [CoverageType, typeof COVERAGE_TYPES[CoverageType]][]).map(([key, config]) => (
+                  <SelectItem key={key} value={key}>
+                    <span className="flex items-center gap-2">
+                      {config.label}
+                      <span className="text-muted-foreground text-xs">- {config.description}</span>
+                    </span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

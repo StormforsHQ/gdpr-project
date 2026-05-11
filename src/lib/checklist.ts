@@ -108,7 +108,7 @@ export const AUTOMATION_CONFIG: Record<AutomationType, { label: string; classNam
   "gtm-api": { label: "GTM API", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
   "cookiebot-api": { label: "Cookiebot", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
   "webflow-api": { label: "Webflow", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  "human": { label: "Manual", className: "bg-rose-500/15 text-rose-600 dark:text-rose-400" },
+  "human": { label: "Manual", className: "bg-teal-500/15 text-teal-600 dark:text-teal-400" },
 };
 
 export const RESPONSIBILITY_CONFIG: Record<CheckResponsibility, { label: string; className: string; description: string }> = {

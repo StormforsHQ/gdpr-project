@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EditSiteDialog } from "@/components/edit-site-dialog";
 import { CHECK_REQUIREMENTS, type CheckRequirement } from "@/lib/glossary";
 import { COVERAGE_TYPES, type CoverageType } from "@/lib/checklist";
-import { Settings, ExternalLink, AlertTriangle, FileText, ChevronDown, Trash2, BarChart3 } from "lucide-react";
+import { Settings, ExternalLink, AlertTriangle, FileText, ChevronDown, Trash2, BarChart3, Info } from "lucide-react";
 import Link from "next/link";
 import type { ReportListItem } from "@/app/actions/report";
 import { deleteReport, deleteAllReports } from "@/app/actions/report";
@@ -96,7 +96,7 @@ export function SiteHeader({ site, auditId, reportVersions }: SiteHeaderProps) {
               const ct = (site.coverageType || "unknown") as CoverageType;
               const config = COVERAGE_TYPES[ct];
               return (
-                <Badge variant="secondary" className={`text-xs ${config.className}`}>
+                <Badge variant="secondary" className="text-xs">
                   {config.label}
                 </Badge>
               );
@@ -256,7 +256,25 @@ export function SiteHeader({ site, auditId, reportVersions }: SiteHeaderProps) {
           )}
         </div>
 
-        {missingFields.length > 0 && (
+        {missingFields.length > 0 && site.coverageType === "us-based" && (
+          <div className="flex items-start gap-2 rounded-md bg-muted px-3 py-2">
+            <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              Cookiebot ID and GTM Container ID are not relevant for US-based sites.
+            </p>
+          </div>
+        )}
+
+        {missingFields.length > 0 && site.coverageType === "no-sla" && (
+          <div className="flex items-start gap-2 rounded-md bg-muted px-3 py-2">
+            <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              Cookiebot ID and GTM Container ID are not set. This client manages their own GDPR compliance, so these IDs are only needed if you want to run automated checks on their setup.
+            </p>
+          </div>
+        )}
+
+        {missingFields.length > 0 && site.coverageType !== "us-based" && site.coverageType !== "no-sla" && (
           <div className="flex items-start gap-2 rounded-md bg-amber-500/10 px-3 py-2">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
             <div className="text-xs text-amber-600 dark:text-amber-400">

@@ -16,7 +16,7 @@ import { AUTOMATION_CONFIG, RESPONSIBILITY_CONFIG } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { GlossaryText } from "@/components/glossary-text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { ScanFinding } from "@/lib/scanner";
+import type { ScanFinding, HeadElementType } from "@/lib/scanner";
 import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench, Search, StickyNote, UserCircle, ChevronDown, ChevronRight, Code2 } from "lucide-react";
 
 const SEVERITY_STYLES = {
@@ -25,18 +25,41 @@ const SEVERITY_STYLES = {
   info: { icon: <CheckCircle2 className="h-3 w-3 text-green-500 shrink-0 mt-0.5" />, border: "border-border", bg: "" },
 };
 
+const ELEMENT_TYPE_STYLES: Record<HeadElementType, { badge: string; badgeLabel: string; border: string; bg: string }> = {
+  script: { badge: "", badgeLabel: "", border: "", bg: "" },
+  style: { badge: "bg-violet-500/15 text-violet-600 dark:text-violet-400", badgeLabel: "style", border: "border-violet-500/20", bg: "bg-violet-500/5" },
+  meta: { badge: "bg-sky-500/15 text-sky-600 dark:text-sky-400", badgeLabel: "meta", border: "border-sky-500/20", bg: "bg-sky-500/5" },
+  link: { badge: "bg-sky-500/15 text-sky-600 dark:text-sky-400", badgeLabel: "link", border: "border-sky-500/20", bg: "bg-sky-500/5" },
+  comment: { badge: "bg-zinc-500/15 text-zinc-500", badgeLabel: "comment", border: "border-zinc-500/20", bg: "bg-zinc-500/5" },
+  noscript: { badge: "bg-teal-500/15 text-teal-600 dark:text-teal-400", badgeLabel: "noscript", border: "border-teal-500/20", bg: "bg-teal-500/5" },
+  other: { badge: "bg-zinc-500/15 text-zinc-500", badgeLabel: "other", border: "border-zinc-500/20", bg: "bg-zinc-500/5" },
+};
+
 function FindingItem({ finding }: { finding: ScanFinding }) {
   const [codeOpen, setCodeOpen] = useState(false);
-  const style = SEVERITY_STYLES[finding.severity];
+  const elType = finding.elementType || "script";
+  const isNonScript = elType !== "script";
+  const severityStyle = SEVERITY_STYLES[finding.severity];
+  const typeStyle = ELEMENT_TYPE_STYLES[elType];
+  const border = isNonScript ? typeStyle.border : severityStyle.border;
+  const bg = isNonScript ? typeStyle.bg : severityStyle.bg;
+  const icon = isNonScript ? <Info className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" /> : severityStyle.icon;
 
   return (
-    <li className={`text-xs border rounded-md p-2 ${style.border} ${style.bg}`}>
+    <li className={`text-xs border rounded-md p-2 ${border} ${bg}`}>
       <div className="flex gap-1.5">
-        {style.icon}
+        {icon}
         <div className="min-w-0 flex-1">
-          {finding.element && finding.element !== "page" && (
-            <p className="font-mono text-[11px] text-foreground/70 truncate mb-0.5">{finding.element}</p>
-          )}
+          <div className="flex items-center gap-1.5 mb-0.5">
+            {typeStyle.badge && (
+              <span className={`text-[9px] font-medium px-1 py-0.5 rounded ${typeStyle.badge}`}>
+                {typeStyle.badgeLabel}
+              </span>
+            )}
+            {finding.element && finding.element !== "page" && !codeOpen && (
+              <p className="font-mono text-[11px] text-foreground/70 truncate">{finding.element}</p>
+            )}
+          </div>
           <p className="text-muted-foreground whitespace-pre-line">{finding.detail}</p>
           {finding.scriptContent && (
             <button
@@ -45,7 +68,7 @@ function FindingItem({ finding }: { finding: ScanFinding }) {
             >
               {codeOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
               <Code2 className="h-3 w-3" />
-              {codeOpen ? "Hide full script" : "Show full script"}
+              {codeOpen ? "Hide full code" : "Show full code"}
             </button>
           )}
           {codeOpen && finding.scriptContent && (

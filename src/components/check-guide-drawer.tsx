@@ -17,7 +17,7 @@ import { GlossaryText } from "@/components/glossary-text";
 import { REMEDIATION } from "@/lib/remediation";
 import { AUTO_FIXES } from "@/lib/fixes";
 import { FixFlowPanel } from "@/components/fix-flow-panel";
-import type { ScanResult } from "@/lib/scanner";
+import type { ScanResult, HeadElementType } from "@/lib/scanner";
 import type { FixAnalysisResult, ScriptAnalysis } from "@/app/actions/fixes";
 import { Wrench, Lightbulb, AlertTriangle, Info, AlertCircle, CheckCircle2, ExternalLink, Search, ChevronDown, ChevronRight, Code2 } from "lucide-react";
 
@@ -48,15 +48,34 @@ const SEVERITY_ICON = {
   info: <Info className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />,
 };
 
-function DrawerFinding({ finding }: { finding: { element: string; detail: string; severity: "error" | "warning" | "info"; pageUrl?: string; scriptContent?: string } }) {
+const DRAWER_TYPE_BADGE: Record<HeadElementType, { className: string; label: string } | null> = {
+  script: null,
+  style: { className: "bg-violet-500/15 text-violet-600 dark:text-violet-400", label: "style" },
+  meta: { className: "bg-sky-500/15 text-sky-600 dark:text-sky-400", label: "meta" },
+  link: { className: "bg-sky-500/15 text-sky-600 dark:text-sky-400", label: "link" },
+  comment: { className: "bg-zinc-500/15 text-zinc-500", label: "comment" },
+  noscript: { className: "bg-teal-500/15 text-teal-600 dark:text-teal-400", label: "noscript" },
+  other: { className: "bg-zinc-500/15 text-zinc-500", label: "other" },
+};
+
+function DrawerFinding({ finding }: { finding: { element: string; detail: string; severity: "error" | "warning" | "info"; pageUrl?: string; scriptContent?: string; elementType?: HeadElementType } }) {
   const [codeOpen, setCodeOpen] = useState(false);
+  const elType = finding.elementType || "script";
+  const badge = DRAWER_TYPE_BADGE[elType];
   return (
     <div className="space-y-1">
       <div className="flex items-start gap-2">
         {SEVERITY_ICON[finding.severity]}
-        <p className="text-sm whitespace-pre-line">{finding.detail}</p>
+        <div className="flex-1 min-w-0">
+          {badge && (
+            <span className={`inline-block text-[9px] font-medium px-1 py-0.5 rounded mr-1.5 ${badge.className}`}>
+              {badge.label}
+            </span>
+          )}
+          <span className="text-sm whitespace-pre-line">{finding.detail}</span>
+        </div>
       </div>
-      {finding.element && finding.element !== "page" && (
+      {finding.element && finding.element !== "page" && !codeOpen && (
         <code className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded block ml-5 break-all">
           {finding.element}
         </code>
@@ -74,7 +93,7 @@ function DrawerFinding({ finding }: { finding: { element: string; detail: string
           >
             {codeOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
             <Code2 className="h-3 w-3" />
-            {codeOpen ? "Hide full script" : "Show full script"}
+            {codeOpen ? "Hide full code" : "Show full code"}
           </button>
           {codeOpen && (
             <pre className="ml-5 p-2 bg-muted rounded text-[11px] font-mono overflow-x-auto max-h-[400px] overflow-y-auto whitespace-pre-wrap break-all">

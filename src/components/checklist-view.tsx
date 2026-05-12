@@ -753,6 +753,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               </span>
             )}
           </div>
+          {!scanning && !scanResult && (
+            <p className="text-xs text-muted-foreground mt-2">Scanning checks the page, Cookiebot, GTM, and runs AI analysis. This can take a couple of minutes.</p>
+          )}
           {scanResult && !scanResult.error && (
             <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
               <span>Scanned: {scanResult.url}</span>

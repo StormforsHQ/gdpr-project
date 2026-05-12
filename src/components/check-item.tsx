@@ -79,8 +79,7 @@ export function CheckItem({
   const [internalNoteOpen, setInternalNoteOpen] = useState(!!internalNote.trim());
   const [legalOpen, setLegalOpen] = useState(false);
   const [issuesOpen, setIssuesOpen] = useState(false);
-  const hasManualStatus = status !== "not_checked";
-  const fellBackToBrowser = !hasManualStatus && scanResult?.status === "blocked" && /check in browser/i.test(scanResult.summary || "");
+  const fellBackToBrowser = scanResult?.status === "blocked" && /check in browser/i.test(scanResult.summary || "");
   const automationInfo = fellBackToBrowser ? AUTOMATION_CONFIG["browser-manual"] : AUTOMATION_CONFIG[check.automation];
 
   const requirements = CHECK_REQUIREMENTS[check.key] || [];
@@ -97,9 +96,7 @@ export function CheckItem({
       >
         {isBlockedByRequirement
           ? <CircleDashed className="h-4 w-4 text-amber-500" />
-          : fellBackToBrowser
-            ? <CircleDashed className="h-4 w-4 text-muted-foreground" />
-            : STATUS_ICONS[status]}
+          : STATUS_ICONS[status]}
         <span className="text-xs font-mono text-muted-foreground w-7 shrink-0">
           {check.key}
         </span>

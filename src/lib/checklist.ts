@@ -549,8 +549,8 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "G8", label: "Consent withdrawal accessible at all times", description: "Visitors must be able to change their consent choice at any time. This is usually done via a small floating widget or a 'Cookie settings' link in the footer that reopens the consent banner.", automation: "page-scan", tier: "basic",
-        legalBasis: "Withdrawing consent must be as easy as giving it. If accepting takes one click, changing your mind should also take one click.",
+        key: "G8", label: "Consent withdrawal accessible at all times", description: "Visitors must be able to change their consent choice at any time. This is usually done via a small floating widget or a 'Cookie settings' link in the footer that reopens the consent banner. The withdrawal mechanism must be as easy as giving consent (GDPR Art. 7(3)) - same number of clicks, same level of visibility. It must allow granular withdrawal per category (not just all-or-nothing), take effect immediately, and not require login or add friction that wasn't present when giving consent.", automation: "page-scan", tier: "basic",
+        legalBasis: "GDPR Art. 7(3): withdrawing consent must be as easy as giving it. EDPB Guidelines 05/2020 (paragraphs 113-117): the mechanism must be clearly visible and easily accessible at all times, not buried in a footer or privacy policy. If consent was given via a banner, the same interface should be re-openable for withdrawal.",
         references: [
           { label: "GDPR Art. 7(3) - Withdrawal of consent", url: "https://gdpr-info.eu/art-7-gdpr/" },
           { label: "EDPB Guidelines 05/2020 on consent", url: "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en" },

@@ -525,7 +525,7 @@ export const CHECKLIST: CheckCategory[] = [
         ],
       },
       {
-        key: "G6", label: "Banner in correct language(s)", description: "The consent banner must be in the same language as the site content. A Swedish site needs a Swedish banner. Cookiebot supports multiple languages - make sure the right ones are configured.", automation: "browser-manual", tier: "basic",
+        key: "G6", label: "Banner in correct language(s)", description: "The consent banner must be in the same language as the site content. A Swedish site needs a Swedish banner. Cookiebot supports multiple languages - make sure the right ones are configured. Note: Cookiebot has an \"Auto-detect language\" option (Configuration > Content tab) that matches the banner language to the user's browser preferences. If enabled, this satisfies the requirement as long as the relevant languages are added to the CMP.", automation: "browser-manual", tier: "basic",
         legalBasis: "Consent information must be in clear, plain language the visitor understands. An English banner on a Swedish site fails this requirement.",
         references: [
           { label: "GDPR Art. 12 - Transparent communication", url: "https://gdpr-info.eu/art-12-gdpr/" },

@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useErrorLog } from "@/components/error-log";
-import { ChecklistLegend } from "@/components/checklist-legend";
+import { ChecklistLegendTrigger, ChecklistLegendContent } from "@/components/checklist-legend";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -164,6 +164,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const [urlError, setUrlError] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [showHistory, setShowHistory] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
   const [fixAvailability, setFixAvailability] = useState<Record<string, FixAvailability>>({});
   const [fixingChecks, setFixingChecks] = useState<Set<string>>(new Set());
   const [lastSkippedCount, setLastSkippedCount] = useState(0);
@@ -758,7 +759,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               </Button>
             )}
           </div>
-          <p className="text-xs text-amber-500 mt-2">Scanning may take a few minutes.</p>
+          <p className="text-xs text-amber-500 mt-2 text-right">Scanning may take a few minutes.</p>
           {scanResult && !scanResult.error && (
             <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
               <span>Scanned: {scanResult.url}</span>
@@ -789,8 +790,20 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         </CardContent>
       </Card>
 
-      {scanRuns.length > 0 && (
-        <div>
+      <div className="flex items-center gap-6">
+        <ChecklistLegendTrigger open={legendOpen} onToggle={() => setLegendOpen(!legendOpen)} />
+        {auditId && (
+          <button
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setAuditNotesOpen(!auditNotesOpen)}
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            Auditor notes
+            {auditNotes.trim() && <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />}
+            {auditNotesOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          </button>
+        )}
+        {scanRuns.length > 0 && (
           <div className="flex items-center gap-3">
             <button
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -815,127 +828,65 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               </button>
             )}
           </div>
-          {showHistory && (
-            <div className="mt-2 space-y-1">
-              {scanRuns.map((run) => {
-                const findings = JSON.parse(run.findings) as { checkKey: string; status: string; summary: string }[];
-                const issues = findings.filter((f) => f.status === "issue").length;
-                return (
-                  <div key={run.id} className="flex items-center gap-3 text-xs text-muted-foreground px-2 py-1.5 rounded-md bg-muted/50">
-                    <Clock className="h-3 w-3 shrink-0" />
-                    <span>{new Date(run.startedAt).toLocaleString()}</span>
-                    <Badge variant="secondary" className="text-[10px]">
-                      {run.scanType === "page-scan" ? "Scan" : run.scanType === "cookiebot" ? "Cookiebot" : "AI"}
-                    </Badge>
-                    <span className="truncate">{run.url}</span>
-                    {run.status === "completed" ? (
-                      <>
-                        <span>{findings.length} checks</span>
-                        {issues > 0 && <Badge variant="destructive" className="text-[10px]">{issues}</Badge>}
-                      </>
-                    ) : (
-                      <Badge variant="secondary" className="text-[10px] bg-amber-500/15 text-amber-600">Failed</Badge>
-                    )}
-                    <button
-                      className="ml-auto text-muted-foreground hover:text-destructive shrink-0"
-                      onClick={async () => {
-                        await deleteScanRun(run.id);
-                        setScanRuns((prev) => prev.filter((r) => r.id !== run.id));
-                      }}
-                      aria-label="Delete scan run"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      <ChecklistLegend />
-
-      {auditId && (
-        <div className="text-sm">
-          <button
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => setAuditNotesOpen(!auditNotesOpen)}
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            Auditor notes
-            {auditNotes.trim() && <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />}
-            {auditNotesOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-          </button>
-          {auditNotesOpen && (
-            <div className="mt-2">
-              <textarea
-                className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
-                placeholder="General notes about this audit - observations, patterns, client communication, things to follow up on. Not included in the client report."
-                value={auditNotes}
-                onChange={(e) => {
-                  setAuditNotes(e.target.value);
-                  if (auditNotesTimer.current) clearTimeout(auditNotesTimer.current);
-                  auditNotesTimer.current = setTimeout(() => {
-                    if (auditId) saveAuditNotes(auditId, e.target.value);
-                  }, 800);
-                }}
-              />
-              <p className="text-[10px] text-muted-foreground mt-1">Internal only - not included in client reports. Auto-saves.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="flex items-center gap-2 text-xs">
-        {(() => {
-          const allCount = CHECKLIST.reduce((s, c) => s + c.checks.length, 0);
-          const basicCount = CHECKLIST.reduce((s, c) => s + c.checks.filter((ch) => ch.tier === "basic").length, 0);
-          const viewOptions: { value: string; label: string }[] = [
-            { value: "unknown", label: `${COVERAGE_TYPES.unknown.label} (${allCount} checks)` },
-            { value: "sla", label: `${COVERAGE_TYPES.sla.label} (${getEssentialChecks("sla").size} checks)` },
-            { value: "no-sla", label: `${COVERAGE_TYPES["no-sla"].label} (${getEssentialChecks("no-sla").size} checks)` },
-            { value: "us-based", label: `${COVERAGE_TYPES["us-based"].label} (${getEssentialChecks("us-based").size} checks)` },
-            { value: "basic", label: `Basic (${basicCount} checks)` },
-            { value: "full", label: `Full (${allCount} checks)` },
-          ];
-          const activeLabel = viewOptions.find((o) => o.value === checkView)?.label ?? checkView;
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger className="inline-flex items-center gap-1.5 outline-none">
-                <Badge variant="secondary" className="cursor-pointer text-xs gap-1 font-medium">
-                  {activeLabel}
-                  <ChevronDown className="h-3 w-3 opacity-50" />
-                </Badge>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-64">
-                {viewOptions.map((opt) => (
-                  <DropdownMenuItem
-                    key={opt.value}
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => {
-                      setCheckView(opt.value);
-                      if (opt.value === "basic" || opt.value === "full") {
-                        setAuditType(opt.value);
-                        if (auditId) updateAuditType(auditId, opt.value);
-                      }
-                      if (siteId && (opt.value === "sla" || opt.value === "no-sla" || opt.value === "us-based" || opt.value === "unknown")) {
-                        updateSite(siteId, { coverageType: opt.value });
-                      }
-                    }}
-                  >
-                    <Check className={`h-3.5 w-3.5 shrink-0 ${checkView === opt.value ? "opacity-100" : "opacity-0"}`} />
-                    <span>{opt.label}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        })()}
-        {checkView === "unknown" && (
-          <span className="text-xs text-amber-600 dark:text-amber-400">Select a client type before scanning</span>
         )}
       </div>
+
+      {legendOpen && <ChecklistLegendContent />}
+
+      {showHistory && scanRuns.length > 0 && (
+        <div className="space-y-1">
+          {scanRuns.map((run) => {
+            const findings = JSON.parse(run.findings) as { checkKey: string; status: string; summary: string }[];
+            const issues = findings.filter((f) => f.status === "issue").length;
+            return (
+              <div key={run.id} className="flex items-center gap-3 text-xs text-muted-foreground px-2 py-1.5 rounded-md bg-muted/50">
+                <Clock className="h-3 w-3 shrink-0" />
+                <span>{new Date(run.startedAt).toLocaleString()}</span>
+                <Badge variant="secondary" className="text-[10px]">
+                  {run.scanType === "page-scan" ? "Scan" : run.scanType === "cookiebot" ? "Cookiebot" : "AI"}
+                </Badge>
+                <span className="truncate">{run.url}</span>
+                {run.status === "completed" ? (
+                  <>
+                    <span>{findings.length} checks</span>
+                    {issues > 0 && <Badge variant="destructive" className="text-[10px]">{issues}</Badge>}
+                  </>
+                ) : (
+                  <Badge variant="secondary" className="text-[10px] bg-amber-500/15 text-amber-600">Failed</Badge>
+                )}
+                <button
+                  className="ml-auto text-muted-foreground hover:text-destructive shrink-0"
+                  onClick={async () => {
+                    await deleteScanRun(run.id);
+                    setScanRuns((prev) => prev.filter((r) => r.id !== run.id));
+                  }}
+                  aria-label="Delete scan run"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {auditNotesOpen && auditId && (
+        <div>
+          <textarea
+            className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
+            placeholder="General notes about this audit - observations, patterns, client communication, things to follow up on. Not included in the client report."
+            value={auditNotes}
+            onChange={(e) => {
+              setAuditNotes(e.target.value);
+              if (auditNotesTimer.current) clearTimeout(auditNotesTimer.current);
+              auditNotesTimer.current = setTimeout(() => {
+                if (auditId) saveAuditNotes(auditId, e.target.value);
+              }, 800);
+            }}
+          />
+          <p className="text-[10px] text-muted-foreground mt-1">Internal only - not included in client reports. Auto-saves.</p>
+        </div>
+      )}
 
       {completedForType && (
         <div className="flex items-center gap-2 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm">
@@ -977,6 +928,55 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             <CheckCircle2 className="h-3 w-3" />
             Mark complete ({COVERAGE_TYPES[checkView as CoverageType]?.label})
           </Button>
+        )}
+        {(() => {
+          const allCount = CHECKLIST.reduce((s, c) => s + c.checks.length, 0);
+          const basicCount = CHECKLIST.reduce((s, c) => s + c.checks.filter((ch) => ch.tier === "basic").length, 0);
+          const viewOptions: { value: string; label: string }[] = [
+            { value: "unknown", label: `${COVERAGE_TYPES.unknown.label} (${allCount} checks)` },
+            { value: "sla", label: `${COVERAGE_TYPES.sla.label} (${getEssentialChecks("sla").size} checks)` },
+            { value: "no-sla", label: `${COVERAGE_TYPES["no-sla"].label} (${getEssentialChecks("no-sla").size} checks)` },
+            { value: "us-based", label: `${COVERAGE_TYPES["us-based"].label} (${getEssentialChecks("us-based").size} checks)` },
+            { value: "basic", label: `Basic (${basicCount} checks)` },
+            { value: "full", label: `Full (${allCount} checks)` },
+          ];
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center gap-1.5 outline-none">
+                <Badge
+                  variant="secondary"
+                  className="cursor-pointer text-xs gap-1 font-medium"
+                >
+                  Audit type
+                  <ChevronDown className="h-3 w-3 opacity-50" />
+                </Badge>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-64">
+                {viewOptions.map((opt) => (
+                  <DropdownMenuItem
+                    key={opt.value}
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={() => {
+                      setCheckView(opt.value);
+                      if (opt.value === "basic" || opt.value === "full") {
+                        setAuditType(opt.value);
+                        if (auditId) updateAuditType(auditId, opt.value);
+                      }
+                      if (siteId && (opt.value === "sla" || opt.value === "no-sla" || opt.value === "us-based" || opt.value === "unknown")) {
+                        updateSite(siteId, { coverageType: opt.value });
+                      }
+                    }}
+                  >
+                    <Check className={`h-3.5 w-3.5 shrink-0 ${checkView === opt.value ? "opacity-100" : "opacity-0"}`} />
+                    <span>{opt.label}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        })()}
+        {checkView === "unknown" && (
+          <span className="text-xs text-amber-600 dark:text-amber-400">Select a client type before scanning</span>
         )}
         {(() => {
           const activeStatusFilter = Array.from(activeFilters).find((f) => !f.startsWith("auto:") && f !== "has_comments" && f !== "has_internal_note");

@@ -69,7 +69,7 @@ test.describe("Sites page", () => {
   test("platform select shows all options", async ({ page }) => {
     await page.goto("/sites");
     await page.getByRole("main").getByRole("button", { name: "Add site" }).click();
-    const trigger = page.getByRole("dialog").getByRole("combobox");
+    const trigger = page.getByRole("dialog").getByRole("combobox").first();
     await trigger.click();
     await expect(page.getByRole("option", { name: "Webflow" })).toBeVisible();
     await expect(page.getByRole("option", { name: "HubSpot" })).toBeVisible();

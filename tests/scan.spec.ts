@@ -12,13 +12,12 @@ test.describe("Scan and AI analyze (demo mode)", () => {
     await expect(
       page.getByRole("button", { name: "Scan site" })
     ).toBeDisabled();
-    await expect(
-      page.getByRole("button", { name: "AI Analyze" })
-    ).toBeDisabled();
   });
 
   test("scan rejects invalid URL formats", async ({ page }) => {
     const input = page.locator("input[placeholder*='URL']");
+    await page.getByText("Audit type").click();
+    await page.getByText("SLA client (19 checks)").click();
     const scanBtn = page.getByRole("button", { name: "Scan site" });
 
     for (const invalid of ["just-text", "http://", "ftp://something", ".com"]) {
@@ -45,6 +44,8 @@ test.describe("Scan and AI analyze (demo mode)", () => {
     page,
   }) => {
     const input = page.locator("input[placeholder*='URL']");
+    await page.getByText("Audit type").click();
+    await page.getByText("SLA client (19 checks)").click();
     await input.fill("not-valid");
     await page.getByRole("button", { name: "Scan site" }).click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();
@@ -52,25 +53,14 @@ test.describe("Scan and AI analyze (demo mode)", () => {
     await expect(page.getByText("Enter a valid domain")).not.toBeVisible();
   });
 
-  test("AI analyze button is disabled when URL is empty", async ({ page }) => {
-    const input = page.locator("input[placeholder*='URL']");
-    await input.clear();
-    await expect(
-      page.getByRole("button", { name: "AI Analyze" })
-    ).toBeDisabled();
-  });
-
-  test("scan buttons are present and labeled correctly", async ({ page }) => {
+  test("scan button is present and labeled correctly", async ({ page }) => {
     await expect(
       page.getByRole("button", { name: "Scan site" })
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "AI Analyze" })
     ).toBeVisible();
   });
 
   test("progress counter starts at zero in demo", async ({ page }) => {
-    await expect(page.getByText(/Progress: 0\/\d+ checked/)).toBeVisible();
+    await expect(page.getByText(/0\/\d+ checked/)).toBeVisible();
   });
 
   test("all checklist categories are visible", async ({ page }) => {
@@ -92,15 +82,14 @@ test.describe("Check item interactions (demo mode)", () => {
       .filter({ hasText: "A1" })
       .first();
     await checkRow.click();
-    await expect(
-      page.locator("textarea[placeholder*='Add notes']").first()
-    ).toBeVisible();
+    const statusSelect = page.getByRole("combobox").first();
+    await expect(statusSelect).toBeVisible();
   });
 
-  test("guide drawer shows step-by-step and legal info", async ({ page }) => {
+  test("guide drawer shows how-to-check and legal info", async ({ page }) => {
     await page.locator("button[aria-label*='Guide for A1']").click();
     await expect(page.getByText("Why this matters")).toBeVisible();
-    await expect(page.getByText("Step-by-step")).toBeVisible();
+    await expect(page.getByText("How to check")).toBeVisible();
   });
 
   test("multiple categories can be collapsed independently", async ({

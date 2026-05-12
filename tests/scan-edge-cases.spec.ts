@@ -24,17 +24,17 @@ test.describe("Scan edge cases (demo mode)", () => {
     ).toBeDisabled();
   });
 
-  test("AI analyze button disabled when URL is empty", async ({ page }) => {
-    const input = page.locator("input[placeholder*='URL']");
-    await input.clear();
+  test("scan button disabled when no audit type selected", async ({ page }) => {
     await expect(
-      page.getByRole("button", { name: "AI Analyze" })
+      page.getByRole("button", { name: "Scan site" })
     ).toBeDisabled();
   });
 
   test("scan rejects protocol-only URLs", async ({ page }) => {
     const input = page.locator("input[placeholder*='URL']");
     const scanBtn = page.getByRole("button", { name: "Scan site" });
+    await page.getByText("Audit type").click();
+    await page.getByText("SLA client (19 checks)").click();
     await input.fill("http://");
     await scanBtn.click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();
@@ -43,6 +43,8 @@ test.describe("Scan edge cases (demo mode)", () => {
   test("scan rejects non-http protocols", async ({ page }) => {
     const input = page.locator("input[placeholder*='URL']");
     const scanBtn = page.getByRole("button", { name: "Scan site" });
+    await page.getByText("Audit type").click();
+    await page.getByText("SLA client (19 checks)").click();
     await input.fill("ftp://files.example.com");
     await scanBtn.click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();
@@ -51,6 +53,8 @@ test.describe("Scan edge cases (demo mode)", () => {
   test("scan rejects dot-only input", async ({ page }) => {
     const input = page.locator("input[placeholder*='URL']");
     const scanBtn = page.getByRole("button", { name: "Scan site" });
+    await page.getByText("Audit type").click();
+    await page.getByText("SLA client (19 checks)").click();
     await input.fill(".com");
     await scanBtn.click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();
@@ -59,6 +63,8 @@ test.describe("Scan edge cases (demo mode)", () => {
   test("scan rejects plain text without TLD", async ({ page }) => {
     const input = page.locator("input[placeholder*='URL']");
     const scanBtn = page.getByRole("button", { name: "Scan site" });
+    await page.getByText("Audit type").click();
+    await page.getByText("SLA client (19 checks)").click();
     await input.fill("just-text");
     await scanBtn.click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();
@@ -86,6 +92,8 @@ test.describe("Scan edge cases (demo mode)", () => {
     page,
   }) => {
     const input = page.locator("input[placeholder*='URL']");
+    await page.getByText("Audit type").click();
+    await page.getByText("SLA client (19 checks)").click();
     const scanBtn = page.getByRole("button", { name: "Scan site" });
     await input.fill("not-valid");
     await scanBtn.click();
@@ -96,10 +104,11 @@ test.describe("Scan edge cases (demo mode)", () => {
 
   test("Enter key in URL input triggers scan", async ({ page }) => {
     const input = page.locator("input[placeholder*='URL']");
+    await page.getByText("Audit type").click();
+    await page.getByText("SLA client (19 checks)").click();
     await input.fill("example.com");
     await input.press("Enter");
-    await expect(
-      page.getByRole("button", { name: "Scanning..." })
-    ).toBeVisible();
+    // The scan button disappears and is replaced by status text + cancel button
+    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible({ timeout: 10000 });
   });
 });

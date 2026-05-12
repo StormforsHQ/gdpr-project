@@ -10,14 +10,13 @@ test.describe("Checklist view (demo mode)", () => {
     await expect(page.getByText("Demo mode", { exact: true })).toBeVisible();
   });
 
-  test("shows scan URL input and buttons", async ({ page }) => {
+  test("shows scan URL input and button", async ({ page }) => {
     await expect(page.locator("input[placeholder*='URL']")).toBeVisible();
     await expect(page.getByRole("button", { name: "Scan site" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "AI Analyze" })).toBeVisible();
   });
 
   test("shows progress counter", async ({ page }) => {
-    await expect(page.getByText(/Progress: \d+\/\d+ checked/)).toBeVisible();
+    await expect(page.getByText(/\d+\/\d+ checked/)).toBeVisible();
   });
 
   test("shows checklist categories", async ({ page }) => {
@@ -36,14 +35,16 @@ test.describe("Checklist view (demo mode)", () => {
     }
   });
 
-  test("scan button disabled when URL is empty", async ({ page }) => {
+  test("scan button disabled when no audit type selected", async ({ page }) => {
     await expect(page.getByRole("button", { name: "Scan site" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "AI Analyze" })).toBeDisabled();
   });
 
   test("URL validation shows error for invalid URL", async ({ page }) => {
     const input = page.locator("input[placeholder*='URL']");
     await input.fill("not a url");
+    // Select an audit type first so the scan button is enabled
+    await page.getByText("Audit type").click();
+    await page.getByText("SLA client (19 checks)").click();
     await page.getByRole("button", { name: "Scan site" }).click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();
   });
@@ -51,6 +52,8 @@ test.describe("Checklist view (demo mode)", () => {
   test("URL validation clears on valid input", async ({ page }) => {
     const input = page.locator("input[placeholder*='URL']");
     await input.fill("not a url");
+    await page.getByText("Audit type").click();
+    await page.getByText("SLA client (19 checks)").click();
     await page.getByRole("button", { name: "Scan site" }).click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();
     await input.fill("example.com");
@@ -60,12 +63,13 @@ test.describe("Checklist view (demo mode)", () => {
   test("check item expands with status and notes", async ({ page }) => {
     const checkRow = page.locator("[class*='border-b']").filter({ hasText: "A1" }).first();
     await checkRow.click();
-    await expect(page.locator("textarea[placeholder*='Add notes']").first()).toBeVisible();
+    const statusSelect = page.getByRole("combobox").first();
+    await expect(statusSelect).toBeVisible();
   });
 
   test("check guide drawer opens from info button", async ({ page }) => {
     await page.locator("button[aria-label*='Guide for A1']").click();
     await expect(page.getByText("Why this matters")).toBeVisible();
-    await expect(page.getByText("Step-by-step")).toBeVisible();
+    await expect(page.getByText("How to check")).toBeVisible();
   });
 });

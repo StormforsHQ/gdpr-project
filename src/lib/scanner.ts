@@ -611,6 +611,7 @@ function checkB1($: cheerio.CheerioAPI, html: string): CheckResult {
           element: script.outerHtml.slice(0, 200),
           detail: `${tracker.name} loaded directly (${script.location}). Should be inside GTM.`,
           severity: "error",
+          scriptContent: script.outerHtml,
         });
       }
     }
@@ -637,6 +638,7 @@ function checkD1($: cheerio.CheerioAPI, html: string): CheckResult {
           element: script.outerHtml.slice(0, 200),
           detail: `${ghost.name} script detected (${script.location}). Verify if still in use.`,
           severity: "warning",
+          scriptContent: script.outerHtml,
         });
       }
     }
@@ -669,10 +671,12 @@ function checkD3($: cheerio.CheerioAPI, html: string): CheckResult {
     const src = $(el).attr("src") || $(el).html() || "";
     for (const pixel of pixelPatterns) {
       if (pixel.pattern.test(src)) {
+        const fullScript = $(el).attr("src") ? `<script src="${$(el).attr("src")}"></script>` : `<script>\n${$(el).html()}\n</script>`;
         findings.push({
           element: `<script> ${pixel.name}`,
           detail: `${pixel.name} placed directly in <head> instead of GTM`,
           severity: "error",
+          scriptContent: fullScript,
         });
       }
     }
@@ -699,6 +703,7 @@ function checkE1($: cheerio.CheerioAPI): CheckResult {
         element: `<iframe src="${src.slice(0, 100)}">`,
         detail: "YouTube embed should use youtube-nocookie.com domain",
         severity: "error",
+        scriptContent: $.html(el) || undefined,
       });
     }
 
@@ -707,6 +712,7 @@ function checkE1($: cheerio.CheerioAPI): CheckResult {
         element: `<iframe src="${src.slice(0, 100)}">`,
         detail: "Vimeo embed found. Must block until consent or use click-to-load.",
         severity: "warning",
+        scriptContent: $.html(el) || undefined,
       });
     }
   });
@@ -768,6 +774,7 @@ function checkE3($: cheerio.CheerioAPI): CheckResult {
         element: `<iframe src="${src.slice(0, 100)}">`,
         detail: "Google Maps embed loads without consent. Block until consent or use static image.",
         severity: "error",
+        scriptContent: $.html(el) || undefined,
       });
     }
     if (/api\.mapbox\.com/i.test(src)) {
@@ -775,6 +782,7 @@ function checkE3($: cheerio.CheerioAPI): CheckResult {
         element: `<iframe src="${src.slice(0, 100)}">`,
         detail: "Mapbox embed found. Block until consent or use static image.",
         severity: "warning",
+        scriptContent: $.html(el) || undefined,
       });
     }
   });
@@ -786,6 +794,7 @@ function checkE3($: cheerio.CheerioAPI): CheckResult {
         element: script.outerHtml.slice(0, 200),
         detail: "Google Maps JavaScript API loaded via script. Must be consent-gated (transfers IP to Google).",
         severity: "error",
+        scriptContent: script.outerHtml,
       });
     }
   }
@@ -813,6 +822,7 @@ function checkE4($: cheerio.CheerioAPI, html: string): CheckResult {
           element: script.outerHtml.slice(0, 200),
           detail: `${widget.name} loads without consent check. Gate behind consent if non-essential cookies.`,
           severity: "warning",
+          scriptContent: script.outerHtml,
         });
       }
     }
@@ -841,6 +851,7 @@ function checkE5($: cheerio.CheerioAPI, html: string): CheckResult {
           element: script.outerHtml.slice(0, 200),
           detail: `${embed.name} loaded. Verify consent gating if it sets non-essential cookies.`,
           severity: "warning",
+          scriptContent: script.outerHtml,
         });
       }
     }
@@ -853,6 +864,7 @@ function checkE5($: cheerio.CheerioAPI, html: string): CheckResult {
         element: `<iframe src="${src.slice(0, 100)}">`,
         detail: "Social media embed found. Block until consent.",
         severity: "warning",
+        scriptContent: $.html(el) || undefined,
       });
     }
   });
@@ -885,6 +897,7 @@ function checkF1($: cheerio.CheerioAPI): CheckResult {
       element: `<form id="${id}" action="${action}" method="${method}">`,
       detail: `Fields: ${fields || "none detected"}`,
       severity: "info",
+      scriptContent: $.html(el) || undefined,
     });
   });
 
@@ -921,6 +934,7 @@ function checkF3($: cheerio.CheerioAPI): CheckResult {
         element: `<form id="${formId}">`,
         detail: "No privacy policy link found at or near this form",
         severity: "error",
+        scriptContent: formHtml || undefined,
       });
     }
   });
@@ -952,6 +966,7 @@ function checkF5($: cheerio.CheerioAPI): CheckResult {
         element: `<form id="${formId}" action="${action}">`,
         detail: "Form submits over HTTP (unencrypted). Must use HTTPS.",
         severity: "error",
+        scriptContent: $.html(el) || undefined,
       });
     }
   });

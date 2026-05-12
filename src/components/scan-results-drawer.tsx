@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CHECKLIST, RESPONSIBILITY_CONFIG } from "@/lib/checklist";
-import type { ScanResult } from "@/lib/scanner";
+import type { ScanResult, HeadElementType } from "@/lib/scanner";
 import { REMEDIATION } from "@/lib/remediation";
 import { CHECK_GUIDES } from "@/lib/check-guides";
 import type { FixAnalysisResult, ScriptAnalysis } from "@/app/actions/fixes";
@@ -43,6 +43,16 @@ const SEVERITY_ICON = {
   error: <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />,
   warning: <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />,
   info: <Info className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />,
+};
+
+const SCAN_TYPE_BADGE: Record<HeadElementType, { className: string; label: string } | null> = {
+  script: null,
+  style: { className: "bg-violet-500/15 text-violet-600 dark:text-violet-400", label: "style" },
+  meta: { className: "bg-sky-500/15 text-sky-600 dark:text-sky-400", label: "meta" },
+  link: { className: "bg-sky-500/15 text-sky-600 dark:text-sky-400", label: "link" },
+  comment: { className: "bg-zinc-500/15 text-zinc-500", label: "comment" },
+  noscript: { className: "bg-teal-500/15 text-teal-600 dark:text-teal-400", label: "noscript" },
+  other: { className: "bg-zinc-500/15 text-zinc-500", label: "other" },
 };
 
 function getCheckLabel(key: string): string {
@@ -206,7 +216,10 @@ export function ScanResultsDrawer({
                       <div key={i} className="space-y-1">
                         <div className="flex items-start gap-2">
                           {SEVERITY_ICON[finding.severity]}
-                          <p className="text-sm whitespace-pre-line">{finding.detail}</p>
+                          <div className="flex-1 min-w-0">
+                            {(() => { const b = SCAN_TYPE_BADGE[finding.elementType || "script"]; return b ? <span className={`inline-block text-[9px] font-medium px-1 py-0.5 rounded mr-1.5 ${b.className}`}>{b.label}</span> : null; })()}
+                            <span className="text-sm whitespace-pre-line">{finding.detail}</span>
+                          </div>
                         </div>
                         {finding.element && finding.element !== "page" && (
                           <code className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded block ml-5 break-all">

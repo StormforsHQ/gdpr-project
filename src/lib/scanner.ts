@@ -3,12 +3,15 @@ import { normalizeUrl } from "@/lib/url";
 import { detectVendors, type DetectedVendor } from "@/lib/vendors";
 import { prisma } from "@/lib/db";
 
+export type HeadElementType = "script" | "style" | "meta" | "comment" | "link" | "noscript" | "other";
+
 export interface ScanFinding {
   element: string;
   detail: string;
   severity: "error" | "warning" | "info";
   pageUrl?: string;
   scriptContent?: string;
+  elementType?: HeadElementType;
 }
 
 export interface CheckResult {
@@ -481,70 +484,178 @@ function classifyScript($: cheerio.CheerioAPI, el: Parameters<cheerio.CheerioAPI
 
 function checkA1($: cheerio.CheerioAPI, html: string): CheckResult {
   const findings: ScanFinding[] = [];
-  const headScripts = $("head script").toArray();
   let issueCount = 0;
+  let scriptIndex = 0;
 
+  const headScripts = $("head script").toArray();
   const consentIdx = headScripts.findIndex((el) => {
     const src = $(el).attr("src") || $(el).html() || "";
     return isGtmScript(src) || isCookiebotScript(src);
   });
 
-  for (let i = 0; i < headScripts.length; i++) {
-    const el = headScripts[i];
-    const src = $(el).attr("src") || "";
-    const inline = $(el).html() || "";
-    if (!src && !inline.trim()) continue;
+  const headChildren = $("head").contents().toArray();
 
-    const { label, severity } = classifyScript($, el, src, inline);
-    const loadsBefore = consentIdx >= 0 && i < consentIdx;
-    const preview = scriptPreview(src, inline);
-    const fullContent = scriptFullContent($(el), src, inline);
+  for (const node of headChildren) {
+    if (node.type === "comment") {
+      const text = (node as unknown as { data: string }).data?.trim();
+      if (!text) continue;
+      const preview = text.length > 120 ? `${text.slice(0, 120)}...` : text;
+      findings.push({
+        element: `<!-- ${preview} -->`,
+        detail: "HTML comment",
+        severity: "info",
+        elementType: "comment",
+        scriptContent: text.length > 120 ? `<!-- ${text} -->` : undefined,
+      });
+      continue;
+    }
 
-    if (severity === "info") {
+    if (node.type !== "tag") continue;
+    const el = node;
+    const tagName = ((el as { tagName?: string }).tagName || "").toLowerCase();
+
+    if (tagName === "meta") {
+      const name = $(el).attr("name") || $(el).attr("property") || $(el).attr("http-equiv") || "";
+      const content = $(el).attr("content") || "";
+      const charset = $(el).attr("charset") || "";
+      let label = "Meta tag";
+      if (charset) label = `charset: ${charset}`;
+      else if (name) label = `${name}`;
+      const outerHtml = $.html(el).trim();
+      const preview = outerHtml.length > 120 ? `${outerHtml.slice(0, 120)}...` : outerHtml;
       findings.push({
         element: preview,
         detail: label,
         severity: "info",
-        scriptContent: fullContent,
+        elementType: "meta",
+        scriptContent: outerHtml.length > 120 ? outerHtml : undefined,
       });
-    } else if (severity === "error") {
-      issueCount++;
-      const orderNote = loadsBefore
-        ? ` Loads BEFORE GTM/Cookiebot, so it fires without user consent.`
-        : "";
+      continue;
+    }
+
+    if (tagName === "link") {
+      const rel = $(el).attr("rel") || "";
+      const href = $(el).attr("href") || "";
+      const label = rel ? `<link rel="${rel}">` : "<link>";
+      const outerHtml = $.html(el).trim();
+      const preview = outerHtml.length > 120 ? `${outerHtml.slice(0, 120)}...` : outerHtml;
       findings.push({
         element: preview,
-        detail: `${label} loaded directly in <head>.${orderNote} Remove this script from the site header and add it as a tag inside the GTM container instead, so it only fires after the visitor gives consent.`,
-        severity: "error",
-        scriptContent: fullContent,
+        detail: label,
+        severity: "info",
+        elementType: "link",
+        scriptContent: outerHtml.length > 120 ? outerHtml : undefined,
       });
-    } else {
-      issueCount++;
-      if (loadsBefore) {
+      continue;
+    }
+
+    if (tagName === "style") {
+      const content = $(el).html() || "";
+      if (!content.trim()) continue;
+      const preview = `<style> ${content.trim().slice(0, 120)}${content.trim().length > 120 ? "..." : ""}`;
+      findings.push({
+        element: preview,
+        detail: "Inline stylesheet",
+        severity: "info",
+        elementType: "style",
+        scriptContent: `<style>\n${content}\n</style>`,
+      });
+      continue;
+    }
+
+    if (tagName === "noscript") {
+      const content = $(el).html() || "";
+      if (!content.trim()) continue;
+      const preview = `<noscript> ${content.trim().slice(0, 120)}${content.trim().length > 120 ? "..." : ""}`;
+      const isGtmNoscript = content.includes("googletagmanager.com/ns.html");
+      findings.push({
+        element: preview,
+        detail: isGtmNoscript ? "GTM noscript fallback" : "Noscript content",
+        severity: "info",
+        elementType: "noscript",
+        scriptContent: `<noscript>\n${content}\n</noscript>`,
+      });
+      continue;
+    }
+
+    if (tagName === "script") {
+      const src = $(el).attr("src") || "";
+      const inline = $(el).html() || "";
+      if (!src && !inline.trim()) { scriptIndex++; continue; }
+
+      const { label, severity } = classifyScript($, el, src, inline);
+      const loadsBefore = consentIdx >= 0 && scriptIndex < consentIdx;
+      const preview = scriptPreview(src, inline);
+      const fullContent = scriptFullContent($(el), src, inline);
+
+      if (severity === "info") {
         findings.push({
           element: preview,
-          detail: "Unrecognized script loads BEFORE GTM/Cookiebot. It fires before consent is obtained. Check what this script does - if it tracks users or sets cookies, move it into the GTM container. If it's a harmless utility, move it after the GTM script so consent loads first.",
+          detail: label,
+          severity: "info",
+          scriptContent: fullContent,
+          elementType: "script",
+        });
+      } else if (severity === "error") {
+        issueCount++;
+        const orderNote = loadsBefore
+          ? ` Loads BEFORE GTM/Cookiebot, so it fires without user consent.`
+          : "";
+        findings.push({
+          element: preview,
+          detail: `${label} loaded directly in <head>.${orderNote} Remove this script from the site header and add it as a tag inside the GTM container instead, so it only fires after the visitor gives consent.`,
           severity: "error",
           scriptContent: fullContent,
+          elementType: "script",
         });
       } else {
-        findings.push({
-          element: preview,
-          detail: "Unrecognized script - not in our known tracker list. Check manually: does it set cookies, track users, or send data to third parties? If yes, move it into the GTM container. If unsure, treat it as a potential issue.",
-          severity: "warning",
-          scriptContent: fullContent,
-        });
+        issueCount++;
+        if (loadsBefore) {
+          findings.push({
+            element: preview,
+            detail: "Unrecognized script loads BEFORE GTM/Cookiebot. It fires before consent is obtained. Check what this script does - if it tracks users or sets cookies, move it into the GTM container. If it's a harmless utility, move it after the GTM script so consent loads first.",
+            severity: "error",
+            scriptContent: fullContent,
+            elementType: "script",
+          });
+        } else {
+          findings.push({
+            element: preview,
+            detail: "Unrecognized script - not in our known tracker list. Check manually: does it set cookies, track users, or send data to third parties? If yes, move it into the GTM container. If unsure, treat it as a potential issue.",
+            severity: "warning",
+            scriptContent: fullContent,
+            elementType: "script",
+          });
+        }
       }
+      scriptIndex++;
+      continue;
+    }
+
+    if (!["title", "base"].includes(tagName)) {
+      const outerHtml = $.html(el).trim();
+      if (!outerHtml) continue;
+      const preview = outerHtml.length > 120 ? `${outerHtml.slice(0, 120)}...` : outerHtml;
+      findings.push({
+        element: preview,
+        detail: `<${tagName}> element`,
+        severity: "info",
+        elementType: "other",
+        scriptContent: outerHtml.length > 120 ? outerHtml : undefined,
+      });
     }
   }
+
+  const scriptCount = findings.filter((f) => f.elementType === "script").length;
+  const totalCount = findings.length;
 
   return {
     checkKey: "A1",
     status: issueCount > 0 ? "issue" : "ok",
     findings,
     summary: issueCount > 0
-      ? `${issueCount} issue(s) in <head>: tracking scripts outside GTM or scripts loading before consent. ${findings.length} total scripts found.`
-      : `${findings.length} script(s) in <head> - all safe (GTM, Cookiebot, platform scripts)`,
+      ? `${issueCount} issue(s) in <head>: tracking scripts outside GTM or scripts loading before consent. ${totalCount} elements found (${scriptCount} scripts).`
+      : `${totalCount} elements in <head> (${scriptCount} scripts) - all safe`,
   };
 }
 

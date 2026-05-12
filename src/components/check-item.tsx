@@ -501,8 +501,8 @@ export function CheckItem({
                   placeholder="Note for this check - will be shown in the client report appendix."
                   value={notes}
                   onChange={(e) => onNotesChange(e.target.value)}
-                  rows={2}
-                  className="w-full rounded-lg border border-border bg-muted/30 px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 resize-y min-h-[2rem]"
+                  rows={3}
+                  className="w-full rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs leading-relaxed transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 resize-y min-h-[2.5rem]"
                 />
               )}
             </div>
@@ -524,8 +524,8 @@ export function CheckItem({
                     placeholder="Private note - for reminders, things to double-check, or questions for the team."
                     value={internalNote}
                     onChange={(e) => onInternalNoteChange(e.target.value)}
-                    rows={2}
-                    className="w-full rounded-lg border border-border bg-muted/30 px-2.5 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 resize-y min-h-[2rem]"
+                    rows={3}
+                    className="w-full rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs leading-relaxed transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 resize-y min-h-[2.5rem]"
                   />
                 )}
               </div>

@@ -446,6 +446,10 @@ function isFrameworkScript($el: ReturnType<cheerio.CheerioAPI>, src: string): bo
   if (/js\.hsforms\.net/i.test(src)) return true;
   if (/js\.hscollectedforms\.net/i.test(src)) return true;
 
+  // Weglot translation widget (no tracking)
+  if (/cdn\.weglot\.com/i.test(src)) return true;
+  if (/Weglot\.initialize/i.test(src)) return true;
+
   return false;
 }
 

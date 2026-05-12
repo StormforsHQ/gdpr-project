@@ -4,7 +4,12 @@ CLAUDE.md
 .mcp.json
 
 # personal reference docs (not team-facing)
-docs/
+docs/nextjs-standard.md
+docs/deploy-guide.md
+docs/tasks.md
+docs/quick-start.md
+docs/session-handoffs/
+docs/*.html
 
 # dependencies
 node_modules/

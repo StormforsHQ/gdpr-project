@@ -1291,10 +1291,10 @@ function checkB5($: cheerio.CheerioAPI, html: string, gtmId: string | null, cook
   if (gtmId && cookiebotId) {
     findings.push({
       element: "GTM + Cookiebot",
-      detail: "Both GTM and Cookiebot are configured for this site. Google Consent Mode V2 is enabled through the Cookiebot CMP template inside GTM - this is the standard and recommended setup.",
-      severity: "info",
+      detail: "Both GTM and Cookiebot are detected, but Consent Mode V2 can't be verified from the page HTML alone - it's configured inside GTM via the Cookiebot CMP template. Check in the Cookiebot admin under Analytics > Google Consent Mode that all parameters pass, or verify in GTM Preview Mode that consent defaults are set.",
+      severity: "warning",
     });
-    return { checkKey: "B5", status: "ok", findings, summary: "Consent Mode V2 configured via Cookiebot CMP in GTM" };
+    return { checkKey: "B5", status: "not_checked", findings, summary: "GTM + Cookiebot detected - verify Consent Mode V2 in Cookiebot admin or GTM Preview" };
   }
 
   findings.push({

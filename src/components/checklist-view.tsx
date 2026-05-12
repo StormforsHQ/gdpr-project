@@ -118,12 +118,11 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   useEffect(() => {
     if (!scanning) return;
     const messages = [
-      "Analyzing page...",
-      "Checking scripts and embeds...",
-      "Scanning for forms...",
-      "Reviewing consent setup...",
-      "Checking cookie configuration...",
-      "Verifying tag management...",
+      "Analyzing...",
+      "Scanning...",
+      "Checking...",
+      "Verifying...",
+      "Almost done...",
       "Wrapping up...",
     ];
     let index = 0;
@@ -734,7 +733,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                   className="gap-2 pointer-events-none"
                 >
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="inline-block w-[200px] text-left">{scanStatus}</span>
+                  {scanStatus}
                 </Button>
                 <Button
                   onClick={cancelScan}
@@ -758,7 +757,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               </Button>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-2">Scanning checks the page, Cookiebot, GTM, and runs AI analysis. This can take a couple of minutes.</p>
+          <p className="text-xs text-amber-500 mt-2">Scanning may take a few minutes.</p>
           {scanResult && !scanResult.error && (
             <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
               <span>Scanned: {scanResult.url}</span>

@@ -192,6 +192,20 @@ export function CheckGuideDrawer({
               </p>
             </div>
 
+            {check?.method && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                    How this is checked
+                  </h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {check.method}
+                  </p>
+                </div>
+              </>
+            )}
+
             <Separator />
 
             <div>

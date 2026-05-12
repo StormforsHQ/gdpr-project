@@ -362,7 +362,10 @@ ${scanContext}`
       `You are a GDPR compliance auditor analyzing web forms for data minimization (GDPR Art. 5(1)(c)).
 ${RESPONSE_FORMAT_INSTRUCTION}
 
-IMPORTANT: In each finding, start the detail text with the form name in brackets, e.g. [Contact form] or [Newsletter signup]. This tells the auditor exactly which form has the issue.`,
+IMPORTANT:
+- In each finding, start the detail text with the form name in brackets, e.g. [Contact form] or [Newsletter signup].
+- The summary MUST always list every form you found and what fields each collects. This lets the auditor verify your analysis. Example: "2 forms found: [Contact form] collects name, email, message (appropriate), [Job application] collects name, email, phone, date of birth, gender (excessive)."
+- Even when status is "ok", include an info-level finding for each form listing its fields and why they are appropriate for its purpose.`,
       `Analyze forms from ${url} for data minimization. Check if each form collects only what's necessary for its stated purpose.
 
 Flag issues like:
@@ -404,7 +407,10 @@ ${formsWithLabels.slice(0, 8000)}${scanContext}`
       `You are a GDPR compliance auditor checking consent separation in web forms.
 ${RESPONSE_FORMAT_INSTRUCTION}
 
-IMPORTANT: In each finding, start the detail text with the form name in brackets, e.g. [Contact form] or [Newsletter signup]. This tells the auditor exactly which form has the issue.`,
+IMPORTANT:
+- In each finding, start the detail text with the form name in brackets, e.g. [Contact form] or [Newsletter signup].
+- The summary MUST always list every form you found and what consent mechanisms each has (checkboxes, opt-ins, or none). This lets the auditor verify your analysis. Example: "3 forms found: [Contact form] no consent fields (inquiry only), [Newsletter] separate marketing opt-in checkbox, [Partner signup] bundled consent checkbox covering two purposes."
+- Even when status is "ok", include an info-level finding for each form describing what you observed: its purpose, whether it has consent checkboxes, and why it passes.`,
       `Analyze these HTML forms from ${url} for proper consent separation (GDPR Art. 6-7):
 
 Check for:

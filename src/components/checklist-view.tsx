@@ -375,6 +375,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     preScanStateRef.current = { checkStates: { ...checkStates }, scanResult, scanRuns: [...scanRuns] };
     setScanning(true);
     clearErrors();
+    setScanResult(null);
     let totalSkipped = 0;
     const collectedResults: CheckResult[] = [];
     const newScanRunIds: string[] = [];

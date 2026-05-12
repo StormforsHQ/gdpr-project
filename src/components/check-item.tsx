@@ -79,7 +79,8 @@ export function CheckItem({
   const [internalNoteOpen, setInternalNoteOpen] = useState(!!internalNote.trim());
   const [legalOpen, setLegalOpen] = useState(false);
   const [issuesOpen, setIssuesOpen] = useState(false);
-  const fellBackToBrowser = scanResult?.status === "blocked" && /check in browser/i.test(scanResult.summary || "");
+  const hasManualStatus = status !== "not_checked";
+  const fellBackToBrowser = !hasManualStatus && scanResult?.status === "blocked" && /check in browser/i.test(scanResult.summary || "");
   const automationInfo = fellBackToBrowser ? AUTOMATION_CONFIG["browser-manual"] : AUTOMATION_CONFIG[check.automation];
 
   const requirements = CHECK_REQUIREMENTS[check.key] || [];

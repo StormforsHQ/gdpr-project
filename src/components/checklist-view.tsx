@@ -145,15 +145,15 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     for (const run of completedRuns) {
       const findings = JSON.parse(run.findings) as CheckResult[];
       for (const check of findings) {
-        if (!seenKeys.has(check.checkKey)) {
-          seenKeys.add(check.checkKey);
-          allChecks.push({
-            checkKey: check.checkKey,
-            status: check.status,
-            summary: check.summary,
-            findings: check.findings ?? [],
-          });
-        }
+        if (seenKeys.has(check.checkKey)) continue;
+        if (automationByKey.get(check.checkKey) === "browser-manual") continue;
+        seenKeys.add(check.checkKey);
+        allChecks.push({
+          checkKey: check.checkKey,
+          status: check.status,
+          summary: check.summary,
+          findings: check.findings ?? [],
+        });
       }
     }
     return allChecks.length > 0

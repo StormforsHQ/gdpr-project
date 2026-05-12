@@ -945,7 +945,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               <DropdownMenuTrigger className="inline-flex items-center gap-1.5 outline-none">
                 <Badge
                   variant="secondary"
-                  className="cursor-pointer text-xs gap-1 font-medium"
+                  className={`cursor-pointer text-xs gap-1 font-medium ${checkView !== "unknown" ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
                 >
                   Audit type
                   <ChevronDown className="h-3 w-3 opacity-50" />
@@ -998,7 +998,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                   variant="secondary"
                   className={`cursor-pointer text-xs gap-1 ${activeStatusFilter || activeFilters.has("has_comments") || activeFilters.has("has_internal_note") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
                 >
-                  {activeLabel ?? "Status"}
+                  Status
                   <ChevronDown className="h-3 w-3 opacity-50" />
                 </Badge>
               </DropdownMenuTrigger>
@@ -1057,7 +1057,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                   variant="secondary"
                   className={`cursor-pointer text-xs gap-1 ${activeAutoFilter ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
                 >
-                  {activeLabel ?? "Check type"}
+                  Check type
                   <ChevronDown className="h-3 w-3 opacity-50" />
                 </Badge>
               </DropdownMenuTrigger>

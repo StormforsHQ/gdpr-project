@@ -111,6 +111,8 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const [scanUrl, setScanUrl] = useState(siteUrl || "");
   const [scanning, setScanning] = useState(false);
   const [scanStatus, setScanStatus] = useState("Scanning...");
+  const scanCancelledRef = useRef(false);
+  const preScanStateRef = useRef<{ checkStates: CheckState; scanResult: ScanResult | null; scanRuns: ScanRunEntry[] } | null>(null);
 
   useEffect(() => {
     if (!scanning) return;
@@ -363,13 +365,21 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     ([, s]) => s.status !== "not_checked"
   );
 
+  const cancelScan = () => {
+    scanCancelledRef.current = true;
+  };
+
   const executeScan = async () => {
+    scanCancelledRef.current = false;
+    preScanStateRef.current = { checkStates: { ...checkStates }, scanResult, scanRuns: [...scanRuns] };
     setScanning(true);
     clearErrors();
     let totalSkipped = 0;
     const collectedResults: CheckResult[] = [];
+    const newScanRunIds: string[] = [];
     try {
       const result = await runPageScan(scanUrl, siteId);
+      if (scanCancelledRef.current) { restorePreScanState(newScanRunIds); return; }
       if (!result.error) {
         setLastScanType("page-scan");
         totalSkipped += applyCheckResults(result.checks, "scan");
@@ -379,6 +389,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         }
         if (auditId) {
           const run = await saveScanRun(auditId, "page-scan", scanUrl, result.checks);
+          newScanRunIds.push(run.id);
           setScanRuns((prev) => [run, ...prev]);
         }
 
@@ -396,11 +407,14 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         if (cbid && needsCookiebotGtm) {
           setScanStatus("Checking Cookiebot...");
           try {
+            if (scanCancelledRef.current) { restorePreScanState(newScanRunIds); return; }
             const cbResults = await runCookiebotScan(cbid, scanUrl);
+            if (scanCancelledRef.current) { restorePreScanState(newScanRunIds); return; }
             totalSkipped += applyCheckResults(cbResults, "scan");
             collectedResults.push(...cbResults);
             if (auditId) {
               const cbRun = await saveScanRun(auditId, "cookiebot", scanUrl, cbResults);
+              newScanRunIds.push(cbRun.id);
               setScanRuns((prev) => [cbRun, ...prev]);
             }
           } catch (err) {
@@ -412,11 +426,14 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         if (gtmId && needsCookiebotGtm) {
           setScanStatus("Checking GTM (may take a minute)...");
           try {
+            if (scanCancelledRef.current) { restorePreScanState(newScanRunIds); return; }
             const gtmResults = await runGtmScan(gtmId, cbid || undefined);
+            if (scanCancelledRef.current) { restorePreScanState(newScanRunIds); return; }
             totalSkipped += applyCheckResults(gtmResults, "scan");
             collectedResults.push(...gtmResults);
             if (auditId) {
               const gtmRun = await saveScanRun(auditId, "gtm-api", scanUrl, gtmResults);
+              newScanRunIds.push(gtmRun.id);
               setScanRuns((prev) => [gtmRun, ...prev]);
             }
           } catch (err) {
@@ -427,6 +444,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         addError("scan", `Page scan failed: ${result.error}`, scanUrl);
         if (auditId) {
           const run = await saveScanRun(auditId, "page-scan", scanUrl, [], result.error);
+          newScanRunIds.push(run.id);
           setScanRuns((prev) => [run, ...prev]);
         }
       }
@@ -434,14 +452,19 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       addError("scan", "Page scan crashed", err instanceof Error ? err.message : "Unknown error");
     }
 
+    if (scanCancelledRef.current) { restorePreScanState(newScanRunIds); return; }
+
     setScanStatus("Running AI analysis...");
     try {
       const credits = await checkOpenRouterCredits();
       if (credits.available) {
+        if (scanCancelledRef.current) { restorePreScanState(newScanRunIds); return; }
         const aiResult = await runAllAIChecks(scanUrl, collectedResults);
+        if (scanCancelledRef.current) { restorePreScanState(newScanRunIds); return; }
         totalSkipped += applyCheckResults(aiResult.checks, "ai");
         if (auditId) {
           const run = await saveScanRun(auditId, "ai-agent", scanUrl, aiResult.checks, undefined, aiResult.cost);
+          newScanRunIds.push(run.id);
           setScanRuns((prev) => [run, ...prev]);
         }
       } else {
@@ -453,6 +476,32 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
     setLastSkippedCount(totalSkipped);
     setScanning(false);
+  };
+
+  const restorePreScanState = async (scanRunIdsToDelete: string[]) => {
+    const saved = preScanStateRef.current;
+    if (saved) {
+      setCheckStates(saved.checkStates);
+      setScanResult(saved.scanResult);
+      setScanRuns(saved.scanRuns);
+      if (auditId) {
+        for (const id of scanRunIdsToDelete) {
+          try { await deleteScanRun(id); } catch {}
+        }
+        const allKeys = new Set([...Object.keys(saved.checkStates), ...Object.keys(checkStates)]);
+        for (const key of allKeys) {
+          const entry = saved.checkStates[key];
+          if (entry) {
+            persistCheck(key, entry.status, entry.notes, entry.source);
+          } else {
+            persistCheck(key, "not_checked", "", "manual");
+          }
+        }
+      }
+    }
+    clearErrors();
+    setScanning(false);
+    preScanStateRef.current = null;
   };
 
   const validateUrl = (url: string): boolean => {
@@ -676,19 +725,33 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               className="flex-1 h-9 text-sm"
               onKeyDown={(e) => e.key === "Enter" && handleScan()}
             />
-            <Button
-              onClick={handleScan}
-              disabled={scanning || !scanUrl.trim() || checkView === "unknown"}
-              size="sm"
-              className="gap-2"
-            >
-              {scanning ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
+            {scanning ? (
+              <Button
+                onClick={cancelScan}
+                size="sm"
+                variant="destructive"
+                className="gap-2"
+              >
+                <X className="h-4 w-4" />
+                Cancel
+              </Button>
+            ) : (
+              <Button
+                onClick={handleScan}
+                disabled={!scanUrl.trim() || checkView === "unknown"}
+                size="sm"
+                className="gap-2"
+              >
                 <Scan className="h-4 w-4" />
-              )}
-              {scanning ? scanStatus : "Scan site"}
-            </Button>
+                Scan site
+              </Button>
+            )}
+            {scanning && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {scanStatus}
+              </span>
+            )}
           </div>
           {scanResult && !scanResult.error && (
             <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">

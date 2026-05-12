@@ -930,7 +930,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           );
         })()}
         {checkView === "unknown" && (
-          <span className="text-xs text-amber-600 dark:text-amber-400">Select a coverage type before scanning</span>
+          <span className="text-xs text-amber-600 dark:text-amber-400">Select a client type before scanning</span>
         )}
       </div>
 

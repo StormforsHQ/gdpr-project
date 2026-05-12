@@ -188,7 +188,7 @@ export function AddSiteDialog() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="coverage">Coverage</Label>
+            <Label htmlFor="coverage">Client type</Label>
             <Select value={coverageType} onValueChange={(v) => v && setCoverageType(v as CoverageType)}>
               <SelectTrigger>
                 <SelectValue>{COVERAGE_TYPES[coverageType].label}</SelectValue>

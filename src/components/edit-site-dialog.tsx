@@ -208,7 +208,7 @@ export function EditSiteDialog({ site, open, onOpenChange }: EditSiteDialogProps
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-coverage">Coverage</Label>
+            <Label htmlFor="edit-coverage">Client type</Label>
             <Select value={coverageType} onValueChange={(v) => v && setCoverageType(v as CoverageType)}>
               <SelectTrigger>
                 <SelectValue>{COVERAGE_TYPES[coverageType].label}</SelectValue>

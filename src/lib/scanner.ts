@@ -510,7 +510,7 @@ function checkA1($: cheerio.CheerioAPI, html: string): CheckResult {
       continue;
     }
 
-    if (node.type !== "tag") continue;
+    if (node.type !== "tag" && node.type !== "script" && node.type !== "style") continue;
     const el = node;
     const tagName = ((el as { tagName?: string }).tagName || "").toLowerCase();
 

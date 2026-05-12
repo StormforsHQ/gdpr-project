@@ -13,18 +13,20 @@ export interface SidebarSite {
   name: string;
   platform: string;
   auditProgress: "none" | "partial" | "complete";
+  completedForType?: string | null;
 }
 
 async function loadSidebarSites(): Promise<SidebarSite[]> {
   try {
     const sites = await getSites();
     return sites.filter((s) => s.active).map((s) => {
-      const results = s.audits[0]?.results ?? [];
+      const audit = s.audits[0];
+      const results = audit?.results ?? [];
       const checked = results.filter((r) => r.status !== "not_checked").length;
       let auditProgress: SidebarSite["auditProgress"] = "none";
       if (checked > 0) auditProgress = "partial";
-      if (checked >= 69) auditProgress = "complete";
-      return { id: s.id, name: s.name, platform: s.platform, auditProgress };
+      if (audit?.completedForType) auditProgress = "complete";
+      return { id: s.id, name: s.name, platform: s.platform, auditProgress, completedForType: audit?.completedForType };
     });
   } catch {
     return [];

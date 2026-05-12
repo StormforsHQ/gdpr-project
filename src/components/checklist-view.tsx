@@ -945,9 +945,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               <DropdownMenuTrigger className="inline-flex items-center gap-1.5 outline-none">
                 <Badge
                   variant="secondary"
-                  className={`cursor-pointer text-xs gap-1 font-medium ${checkView !== "unknown" ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+                  className="cursor-pointer text-xs gap-1 font-medium"
                 >
-                  Audit type
+                  <span className="text-muted-foreground">Audit type:</span> {viewOptions.find((o) => o.value === checkView)?.label ?? "Not set"}
                   <ChevronDown className="h-3 w-3 opacity-50" />
                 </Badge>
               </DropdownMenuTrigger>
@@ -996,9 +996,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               <DropdownMenuTrigger className="inline-flex items-center gap-1.5 outline-none">
                 <Badge
                   variant="secondary"
-                  className={`cursor-pointer text-xs gap-1 ${activeStatusFilter || activeFilters.has("has_comments") || activeFilters.has("has_internal_note") ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+                  className="cursor-pointer text-xs gap-1"
                 >
-                  Status
+                  <span className="text-muted-foreground">Status:</span> {activeLabel ?? "All"}
                   <ChevronDown className="h-3 w-3 opacity-50" />
                 </Badge>
               </DropdownMenuTrigger>
@@ -1055,9 +1055,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               <DropdownMenuTrigger className="inline-flex items-center gap-1.5 outline-none">
                 <Badge
                   variant="secondary"
-                  className={`cursor-pointer text-xs gap-1 ${activeAutoFilter ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""}`}
+                  className="cursor-pointer text-xs gap-1"
                 >
-                  Check type
+                  <span className="text-muted-foreground">Check type:</span> {activeLabel ?? "All"}
                   <ChevronDown className="h-3 w-3 opacity-50" />
                 </Badge>
               </DropdownMenuTrigger>

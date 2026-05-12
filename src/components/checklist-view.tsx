@@ -87,11 +87,15 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     if (!initialStates) return {};
     const states: CheckState = {};
     for (const [key, value] of Object.entries(initialStates)) {
+      const source = (value.source as "manual" | "scan" | "ai") || "manual";
+      if (automationByKey.get(key) === "browser-manual" && source !== "manual") {
+        continue;
+      }
       states[key] = {
         status: value.status as CheckStatus,
         notes: value.notes,
         internalNote: value.internalNote || "",
-        source: (value.source as "manual" | "scan" | "ai") || "manual",
+        source,
       };
     }
     return states;

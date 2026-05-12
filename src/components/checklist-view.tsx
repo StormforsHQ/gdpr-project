@@ -731,10 +731,10 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               <>
                 <Button
                   size="sm"
-                  className="gap-2 min-w-[260px] justify-start pointer-events-none"
+                  className="gap-2 pointer-events-none"
                 >
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {scanStatus}
+                  <span className="inline-block w-[200px] text-left">{scanStatus}</span>
                 </Button>
                 <Button
                   onClick={cancelScan}
@@ -758,9 +758,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               </Button>
             )}
           </div>
-          {!scanning && (
-            <p className="text-xs text-amber-500 mt-2 text-right">Scanning checks the page, Cookiebot, GTM, and runs AI analysis. This can take a couple of minutes.</p>
-          )}
+          <p className="text-xs text-muted-foreground mt-2">Scanning checks the page, Cookiebot, GTM, and runs AI analysis. This can take a couple of minutes.</p>
           {scanResult && !scanResult.error && (
             <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
               <span>Scanned: {scanResult.url}</span>

@@ -17,7 +17,7 @@ test.describe("Scan and AI analyze (demo mode)", () => {
   test("scan rejects invalid URL formats", async ({ page }) => {
     const input = page.locator("input[placeholder*='URL']");
     await page.getByText("Audit type").click();
-    await page.getByText("SLA client (19 checks)").click();
+    await page.getByText("SLA client (20 checks)").click();
     const scanBtn = page.getByRole("button", { name: "Scan site" });
 
     for (const invalid of ["just-text", "http://", "ftp://something", ".com"]) {
@@ -45,7 +45,7 @@ test.describe("Scan and AI analyze (demo mode)", () => {
   }) => {
     const input = page.locator("input[placeholder*='URL']");
     await page.getByText("Audit type").click();
-    await page.getByText("SLA client (19 checks)").click();
+    await page.getByText("SLA client (20 checks)").click();
     await input.fill("not-valid");
     await page.getByRole("button", { name: "Scan site" }).click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();

@@ -44,7 +44,7 @@ test.describe("Checklist view (demo mode)", () => {
     await input.fill("not a url");
     // Select an audit type first so the scan button is enabled
     await page.getByText("Audit type").click();
-    await page.getByText("SLA client (19 checks)").click();
+    await page.getByText("SLA client (20 checks)").click();
     await page.getByRole("button", { name: "Scan site" }).click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();
   });
@@ -53,7 +53,7 @@ test.describe("Checklist view (demo mode)", () => {
     const input = page.locator("input[placeholder*='URL']");
     await input.fill("not a url");
     await page.getByText("Audit type").click();
-    await page.getByText("SLA client (19 checks)").click();
+    await page.getByText("SLA client (20 checks)").click();
     await page.getByRole("button", { name: "Scan site" }).click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();
     await input.fill("example.com");

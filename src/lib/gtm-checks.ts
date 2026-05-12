@@ -385,6 +385,106 @@ export function checkG1Gtm(tags: GtmTag[], storedCookiebotId?: string): CheckRes
   };
 }
 
+export function checkB6(tags: GtmTag[]): CheckResult {
+  const googleTags = tags.filter((t) => t.type === "googtag" && !t.paused);
+  const ga4EventTags = tags.filter((t) => t.type === "gaawe" && !t.paused);
+  const ga4ConversionTags = tags.filter((t) => t.type === "gaawc" && !t.paused);
+  const hasGa4Related = ga4EventTags.length > 0 || ga4ConversionTags.length > 0;
+
+  if (!hasGa4Related && googleTags.length === 0) {
+    return {
+      checkKey: "B6",
+      status: "na",
+      findings: [{ element: "GTM", detail: "No Google Analytics tags found in container", severity: "info" }],
+      summary: "No GA4 tags in container",
+    };
+  }
+
+  if (googleTags.length === 0 && hasGa4Related) {
+    const relatedNames = [...ga4EventTags, ...ga4ConversionTags].map((t) => t.name).join(", ");
+    return {
+      checkKey: "B6",
+      status: "issue",
+      findings: [{
+        element: "GTM",
+        detail: `GA4 tags found (${relatedNames}) but no Google Tag to send data. In GTM, go to Tags > New > choose "Google Tag", enter the measurement ID (G-XXXXXXXXXX), set trigger to "Initialization - All Pages", and publish.`,
+        severity: "error",
+      }],
+      summary: "Missing Google Tag - GA4 is not collecting any data",
+    };
+  }
+
+  return {
+    checkKey: "B6",
+    status: "ok",
+    findings: googleTags.map((t) => ({
+      element: t.name,
+      detail: `Google Tag present (ID: ${t.parameter?.find((p) => p.key === "tagId")?.value || "unknown"})`,
+      severity: "info" as const,
+    })),
+    summary: `${googleTags.length} Google Tag${googleTags.length !== 1 ? "s" : ""} configured`,
+  };
+}
+
+export function checkB7(tags: GtmTag[], storedCookiebotId?: string): CheckResult {
+  const pausedTags = tags.filter((t) => t.paused);
+
+  if (pausedTags.length === 0) {
+    return {
+      checkKey: "B7",
+      status: "ok",
+      findings: [{ element: "GTM", detail: "No paused tags found", severity: "info" }],
+      summary: "No paused tags in container",
+    };
+  }
+
+  const findings: CheckResult["findings"] = pausedTags.map((t) => ({
+    element: t.name,
+    detail: `Tag is paused (type: ${t.type}). If this is intentional, ignore. Otherwise, open the tag in GTM and unpause it.`,
+    severity: (isGoogleTag(t) || isCookiebotTag(t, storedCookiebotId) ? "error" : "warning") as "error" | "warning",
+  }));
+
+  const criticalPaused = pausedTags.filter((t) => isGoogleTag(t) || isCookiebotTag(t, storedCookiebotId));
+
+  return {
+    checkKey: "B7",
+    status: criticalPaused.length > 0 ? "issue" : "ok",
+    findings,
+    summary: criticalPaused.length > 0
+      ? `${criticalPaused.length} critical tag${criticalPaused.length !== 1 ? "s" : ""} paused (Google or Cookiebot)`
+      : `${pausedTags.length} non-critical tag${pausedTags.length !== 1 ? "s" : ""} paused`,
+  };
+}
+
+export function checkB8(tags: GtmTag[], storedCookiebotId?: string): CheckResult {
+  const tagsWithoutTriggers = tags.filter((t) => {
+    if (t.paused) return false;
+    if (isCookiebotTag(t, storedCookiebotId)) return false;
+    const triggers = t.firingTriggerId || [];
+    return triggers.length === 0;
+  });
+
+  if (tagsWithoutTriggers.length === 0) {
+    return {
+      checkKey: "B8",
+      status: "ok",
+      findings: [{ element: "GTM", detail: "All active tags have firing triggers", severity: "info" }],
+      summary: "All tags have triggers assigned",
+    };
+  }
+
+  return {
+    checkKey: "B8",
+    status: "issue",
+    findings: tagsWithoutTriggers.map((t) => ({
+      element: t.name,
+      detail: `No firing trigger assigned (type: ${t.type}). This tag never fires. Open it in GTM and either assign a trigger or delete the tag.`,
+      severity: "warning" as const,
+    })),
+    summary: `${tagsWithoutTriggers.length} tag${tagsWithoutTriggers.length !== 1 ? "s" : ""} have no trigger and never fire`,
+  };
+}
+
 export function runGtmChecks(tags: GtmTag[], triggers: GtmTrigger[], storedCookiebotId?: string): CheckResult[] {
   const results: CheckResult[] = [
     checkA3(tags, triggers, storedCookiebotId),
@@ -394,6 +494,10 @@ export function runGtmChecks(tags: GtmTag[], triggers: GtmTrigger[], storedCooki
     checkB3(tags, triggers, storedCookiebotId),
     checkB4(tags, triggers, storedCookiebotId),
   ];
+
+  results.push(checkB6(tags));
+  results.push(checkB7(tags, storedCookiebotId));
+  results.push(checkB8(tags, storedCookiebotId));
 
   const g1 = checkG1Gtm(tags, storedCookiebotId);
   results.push(g1);

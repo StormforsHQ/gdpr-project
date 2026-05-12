@@ -34,7 +34,7 @@ test.describe("Scan edge cases (demo mode)", () => {
     const input = page.locator("input[placeholder*='URL']");
     const scanBtn = page.getByRole("button", { name: "Scan site" });
     await page.getByText("Audit type").click();
-    await page.getByText("SLA client (19 checks)").click();
+    await page.getByText("SLA client (20 checks)").click();
     await input.fill("http://");
     await scanBtn.click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();
@@ -44,7 +44,7 @@ test.describe("Scan edge cases (demo mode)", () => {
     const input = page.locator("input[placeholder*='URL']");
     const scanBtn = page.getByRole("button", { name: "Scan site" });
     await page.getByText("Audit type").click();
-    await page.getByText("SLA client (19 checks)").click();
+    await page.getByText("SLA client (20 checks)").click();
     await input.fill("ftp://files.example.com");
     await scanBtn.click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();
@@ -54,7 +54,7 @@ test.describe("Scan edge cases (demo mode)", () => {
     const input = page.locator("input[placeholder*='URL']");
     const scanBtn = page.getByRole("button", { name: "Scan site" });
     await page.getByText("Audit type").click();
-    await page.getByText("SLA client (19 checks)").click();
+    await page.getByText("SLA client (20 checks)").click();
     await input.fill(".com");
     await scanBtn.click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();
@@ -64,7 +64,7 @@ test.describe("Scan edge cases (demo mode)", () => {
     const input = page.locator("input[placeholder*='URL']");
     const scanBtn = page.getByRole("button", { name: "Scan site" });
     await page.getByText("Audit type").click();
-    await page.getByText("SLA client (19 checks)").click();
+    await page.getByText("SLA client (20 checks)").click();
     await input.fill("just-text");
     await scanBtn.click();
     await expect(page.getByText("Enter a valid domain")).toBeVisible();
@@ -93,7 +93,7 @@ test.describe("Scan edge cases (demo mode)", () => {
   }) => {
     const input = page.locator("input[placeholder*='URL']");
     await page.getByText("Audit type").click();
-    await page.getByText("SLA client (19 checks)").click();
+    await page.getByText("SLA client (20 checks)").click();
     const scanBtn = page.getByRole("button", { name: "Scan site" });
     await input.fill("not-valid");
     await scanBtn.click();
@@ -105,7 +105,7 @@ test.describe("Scan edge cases (demo mode)", () => {
   test("Enter key in URL input triggers scan", async ({ page }) => {
     const input = page.locator("input[placeholder*='URL']");
     await page.getByText("Audit type").click();
-    await page.getByText("SLA client (19 checks)").click();
+    await page.getByText("SLA client (20 checks)").click();
     await input.fill("example.com");
     await input.press("Enter");
     // The scan button disappears and is replaced by status text + cancel button

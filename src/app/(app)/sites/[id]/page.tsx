@@ -95,6 +95,7 @@ export default async function SitePage({ params }: SitePageProps) {
         initialScanRuns={scanRuns}
         initialAuditNotes={audit.notes}
         siteFields={{ platform: site.platform, webflowId: site.webflowId, cookiebotId: site.cookiebotId, gtmId: site.gtmId }}
+        initialCompletedForType={(audit as Record<string, unknown>).completedForType as string | null ?? null}
       />
     </div>
   );

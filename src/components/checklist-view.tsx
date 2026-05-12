@@ -12,7 +12,7 @@ import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { runPageScan, runSingleAICheck, runAllAIChecks, checkOpenRouterCredits, runCookiebotScan, runGtmScan } from "@/app/actions/scan";
 import { updateSite } from "@/app/actions/sites";
 import { isValidUrl } from "@/lib/url";
-import { saveCheckResult, saveInternalNote, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType, resetAllChecks, saveAuditNotes } from "@/app/actions/audits";
+import { saveCheckResult, saveInternalNote, saveScanRun, deleteScanRun, deleteAllScanRuns, updateAuditType, resetAllChecks, saveAuditNotes, markAuditComplete, reopenAudit } from "@/app/actions/audits";
 import { getFixAvailability, applyFix, analyzeFix, verifyGtmSetup, pushGtmSnippetToSite, deleteApiManagedScript, type FixAvailability, type FixAnalysisResult } from "@/app/actions/fixes";
 import type { ScanResult, CheckResult } from "@/lib/scanner";
 import {
@@ -33,7 +33,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, ChevronRight, Scan, Loader2, AlertCircle, History, Clock, Trash2, X, RotateCcw, Check, MessageSquare, UserCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, Scan, Loader2, AlertCircle, History, Clock, Trash2, X, RotateCcw, Check, CheckCircle2, MessageSquare, UserCircle } from "lucide-react";
 
 
 const GTM_DEPENDENT_CHECKS = [
@@ -63,11 +63,12 @@ interface ChecklistViewProps {
   initialScanRuns?: ScanRunEntry[];
   initialAuditNotes?: string;
   siteFields?: { platform?: string | null; webflowId?: string | null; cookiebotId?: string | null; gtmId?: string | null };
+  initialCompletedForType?: string | null;
 }
 
 const automationByKey = new Map(CHECKLIST.flatMap((c) => c.checks.map((ch) => [ch.key, ch.automation] as const)));
 
-export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", coverageType = "unknown", initialStates, initialScanRuns, initialAuditNotes = "", siteFields: initialSiteFields }: ChecklistViewProps) {
+export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", coverageType = "unknown", initialStates, initialScanRuns, initialAuditNotes = "", siteFields: initialSiteFields, initialCompletedForType }: ChecklistViewProps) {
   const { errors, addError, clearErrors } = useErrorLog();
   const [auditType, setAuditType] = useState<"basic" | "full">(initialAuditType);
   const [checkView, setCheckView] = useState<string>(coverageType);
@@ -170,6 +171,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
   const [fixConfirm, setFixConfirm] = useState<{ checkKey: string; warning: string; label: string } | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<FixAnalysisResult | null>(null);
+  const [completedForType, setCompletedForType] = useState<string | null>(initialCompletedForType ?? null);
 
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -934,11 +936,47 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         )}
       </div>
 
+      {completedForType && (
+        <div className="flex items-center gap-2 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm">
+          <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+          <span className="text-green-700 dark:text-green-400">
+            Audit marked complete for <strong>{COVERAGE_TYPES[completedForType as CoverageType]?.label ?? completedForType}</strong>
+          </span>
+          {auditId && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto h-6 text-xs text-muted-foreground hover:text-foreground"
+              onClick={async () => {
+                await reopenAudit(auditId);
+                setCompletedForType(null);
+              }}
+            >
+              Reopen
+            </Button>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground text-xs mr-1">
           {totalChecked}/{totalChecks} checked
           {totalIssues > 0 && ` - ${totalIssues} issue${totalIssues !== 1 ? "s" : ""}`}
         </span>
+        {!completedForType && auditId && checkView !== "unknown" && checkView !== "basic" && checkView !== "full" && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-6 text-xs gap-1 text-green-600 border-green-500/30 hover:bg-green-500/10 hover:text-green-600"
+            onClick={async () => {
+              await markAuditComplete(auditId, checkView);
+              setCompletedForType(checkView);
+            }}
+          >
+            <CheckCircle2 className="h-3 w-3" />
+            Mark complete ({COVERAGE_TYPES[checkView as CoverageType]?.label})
+          </Button>
+        )}
         {(() => {
           const activeStatusFilter = Array.from(activeFilters).find((f) => !f.startsWith("auto:") && f !== "has_comments" && f !== "has_internal_note");
           const statusItems: { key: string; label: string; count: number }[] = [

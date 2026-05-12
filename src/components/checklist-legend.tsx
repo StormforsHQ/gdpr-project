@@ -23,7 +23,7 @@ export function ChecklistLegend() {
             <div className="space-y-1.5">
               <div className="flex items-start gap-2">
                 <Scan className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <p><span className="text-foreground">Scan site</span> - Runs all applicable checks based on the selected coverage view: page HTML analysis, Cookiebot API, GTM API, and AI evaluation. Cookiebot and GTM checks only run for SLA clients. Uses OpenRouter credits for the AI portion.</p>
+                <p><span className="text-foreground">Scan site</span> - Runs all applicable checks based on the selected client type: page HTML analysis, Cookiebot API, GTM API, and AI evaluation. Cookiebot and GTM checks only run for SLA clients. Uses OpenRouter credits for the AI portion.</p>
               </div>
             </div>
           </div>

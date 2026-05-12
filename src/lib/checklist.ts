@@ -39,13 +39,13 @@ export const COVERAGE_TYPES: Record<CoverageType, { label: string; description: 
     className: "bg-orange-500/15 text-orange-600 dark:text-orange-400",
   },
   "us-based": {
-    label: "US-based",
+    label: "US-based client",
     description: "GDPR does not apply - US privacy laws may apply",
     className: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
   },
   unknown: {
     label: "Not set",
-    description: "Coverage type not yet determined",
+    description: "Client type not yet determined",
     className: "bg-muted text-muted-foreground",
   },
 };

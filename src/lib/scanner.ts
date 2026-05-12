@@ -345,6 +345,12 @@ export async function scanSite(url: string, platform?: string | null, opts?: { s
   const siteWideChecks = runSiteWideChecks(home$, homeHtml, effectiveGtmId, effectiveCookiebotId);
   siteWideChecks.push(checkJ1(vendors), checkJ3(vendors));
 
+  for (const check of siteWideChecks) {
+    for (const finding of check.findings) {
+      if (!finding.pageUrl) finding.pageUrl = normalizedUrl;
+    }
+  }
+
   const homePageSpecific = runPageSpecificChecks(home$, homeHtml, normalizedUrl);
 
   const { fetchSitemapUrls } = await import("@/lib/sitemap");

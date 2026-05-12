@@ -728,15 +728,24 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               onKeyDown={(e) => e.key === "Enter" && handleScan()}
             />
             {scanning ? (
-              <Button
-                onClick={cancelScan}
-                size="sm"
-                variant="destructive"
-                className="gap-2"
-              >
-                <X className="h-4 w-4" />
-                Cancel
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  className="gap-2 min-w-[260px] justify-start pointer-events-none"
+                >
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {scanStatus}
+                </Button>
+                <Button
+                  onClick={cancelScan}
+                  size="sm"
+                  variant="destructive"
+                  className="gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+              </>
             ) : (
               <Button
                 onClick={handleScan}
@@ -747,12 +756,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                 <Scan className="h-4 w-4" />
                 Scan site
               </Button>
-            )}
-            {scanning && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                {scanStatus}
-              </span>
             )}
           </div>
           {!scanning && (

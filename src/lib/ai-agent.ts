@@ -174,6 +174,7 @@ export async function runAICheck(checkKey: string, url: string, priorResults: Ch
       status: result.status,
       findings: result.findings.map((f) => ({
         element: "",
+        pageUrl: url,
         ...f,
       })),
       summary: result.summary,
@@ -347,7 +348,10 @@ ${scanContext}`
         || $form.find("h1,h2,h3,h4").first().text().trim()
         || $form.closest("section").find("h1,h2,h3,h4").first().text().trim();
       const label = nearestHeading || id || action || `Form #${i + 1}`;
-      return { label, html: $.html(el) };
+      const fields = $form.find("input, textarea, select").toArray()
+        .map((inp) => $(inp).attr("name") || $(inp).attr("type") || "unnamed")
+        .join(", ");
+      return { label, html: $.html(el), fields: fields || "none detected", action };
     });
 
     if (formEntries.length === 0) {
@@ -357,6 +361,10 @@ ${scanContext}`
     const formsWithLabels = formEntries.map((f) =>
       `=== FORM: "${f.label}" ===\n${f.html}`
     ).join("\n---\n");
+
+    const formContext = formEntries.map((f) =>
+      `[${f.label}] fields: ${f.fields} | action: ${f.action || "(none)"}`
+    ).join("\n");
 
     const raw = await callOpenRouter(
       `You are a GDPR compliance auditor analyzing web forms for data minimization (GDPR Art. 5(1)(c)).
@@ -379,7 +387,12 @@ ${formEntries.length} form${formEntries.length !== 1 ? "s" : ""} found on this p
 
 ${formsWithLabels.slice(0, 8000)}${scanContext}`
     );
-    return parseAIResponse(raw);
+    const result = parseAIResponse(raw);
+    result.findings.unshift({
+      detail: `Page: ${url}\nForms analyzed:\n${formContext}`,
+      severity: "info" as const,
+    });
+    return result;
   },
 
   F4: async (html, _text, url, scanContext) => {
@@ -392,16 +405,23 @@ ${formsWithLabels.slice(0, 8000)}${scanContext}`
         || $form.find("h1,h2,h3,h4").first().text().trim()
         || $form.closest("section").find("h1,h2,h3,h4").first().text().trim();
       const label = nearestHeading || id || action || `Form #${i + 1}`;
-      return { label, html: $.html(el) };
+      const fields = $form.find("input, textarea, select").toArray()
+        .map((inp) => $(inp).attr("name") || $(inp).attr("type") || "unnamed")
+        .join(", ");
+      return { label, html: $.html(el), fields: fields || "none detected", action };
     });
 
     if (formEntries.length === 0) {
       return { status: "na" as const, findings: [], summary: "No forms found on page" };
     }
 
-    const formsWithLabels = formEntries.map((f, i) =>
+    const formsWithLabels = formEntries.map((f) =>
       `=== FORM: "${f.label}" ===\n${f.html}`
     ).join("\n---\n");
+
+    const formContext = formEntries.map((f) =>
+      `[${f.label}] fields: ${f.fields} | action: ${f.action || "(none)"}`
+    ).join("\n");
 
     const raw = await callOpenRouter(
       `You are a GDPR compliance auditor checking consent separation in web forms.
@@ -423,7 +443,12 @@ ${formEntries.length} form${formEntries.length !== 1 ? "s" : ""} found on this p
 
 ${formsWithLabels.slice(0, 8000)}${scanContext}`
     );
-    return parseAIResponse(raw);
+    const result = parseAIResponse(raw);
+    result.findings.unshift({
+      detail: `Page: ${url}\nForms analyzed:\n${formContext}`,
+      severity: "info" as const,
+    });
+    return result;
   },
 
   G2: async (html, _text, _url, scanContext) => {

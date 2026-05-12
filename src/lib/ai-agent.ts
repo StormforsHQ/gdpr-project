@@ -354,7 +354,23 @@ ${scanContext}`
       const fields = $form.find("input, textarea, select").toArray()
         .map((inp) => $(inp).attr("name") || $(inp).attr("type") || "unnamed")
         .join(", ");
-      return { label, html: $.html(el), fields: fields || "none detected", action };
+      const surroundingText: string[] = [];
+      $form.parent().children().each((_, child) => {
+        if (child !== el) {
+          const txt = $(child).text().trim();
+          if (txt && txt.length < 500) surroundingText.push(txt);
+        }
+      });
+      $form.nextAll("p, div, span, small").slice(0, 3).each((_, sibling) => {
+        const txt = $(sibling).text().trim();
+        if (txt && !surroundingText.includes(txt)) surroundingText.push(txt);
+      });
+      $form.prevAll("p, div, span, small").slice(0, 3).each((_, sibling) => {
+        const txt = $(sibling).text().trim();
+        if (txt && !surroundingText.includes(txt)) surroundingText.push(txt);
+      });
+      const context = surroundingText.length > 0 ? `\nText near form: ${surroundingText.join(" | ")}` : "";
+      return { label, html: $.html(el) + context, fields: fields || "none detected", action };
     });
 
     if (formEntries.length === 0) {
@@ -411,7 +427,23 @@ ${formsWithLabels.slice(0, 8000)}${scanContext}`
       const fields = $form.find("input, textarea, select").toArray()
         .map((inp) => $(inp).attr("name") || $(inp).attr("type") || "unnamed")
         .join(", ");
-      return { label, html: $.html(el), fields: fields || "none detected", action };
+      const surroundingText: string[] = [];
+      $form.parent().children().each((_, child) => {
+        if (child !== el) {
+          const text = $(child).text().trim();
+          if (text && text.length < 500) surroundingText.push(text);
+        }
+      });
+      $form.nextAll("p, div, span, small").slice(0, 3).each((_, sibling) => {
+        const text = $(sibling).text().trim();
+        if (text && !surroundingText.includes(text)) surroundingText.push(text);
+      });
+      $form.prevAll("p, div, span, small").slice(0, 3).each((_, sibling) => {
+        const text = $(sibling).text().trim();
+        if (text && !surroundingText.includes(text)) surroundingText.push(text);
+      });
+      const context = surroundingText.length > 0 ? `\nText near form: ${surroundingText.join(" | ")}` : "";
+      return { label, html: $.html(el) + context, fields: fields || "none detected", action };
     });
 
     if (formEntries.length === 0) {
@@ -441,6 +473,8 @@ Check for:
 - Pre-ticked consent checkboxes (must be opt-in, not opt-out)
 - Missing separate consent for marketing vs. service communication
 - Bundled consent (inquiry + newsletter in one checkbox)
+- Text near the form that implies submitting = accepting terms/privacy policy (e.g., "By subscribing you accept our privacy policy"). This is bundled consent - the user should actively opt in via a separate checkbox, not have consent implied by the act of submitting.
+- Pay close attention to "Text near form:" lines - these are text elements adjacent to the form that may contain consent language even if there are no checkboxes inside the form itself.
 
 ${formEntries.length} form${formEntries.length !== 1 ? "s" : ""} found on this page:
 

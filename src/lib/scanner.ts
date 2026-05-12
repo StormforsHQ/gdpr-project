@@ -132,7 +132,6 @@ function runSiteWideChecks($: cheerio.CheerioAPI, html: string, detectedGtmId: s
     checkI3($),
     checkI4($),
     g1Result,
-    checkG8($, html, hasBanner),
     checkB5($, html, detectedGtmId, detectedCookiebotId),
   ];
 }
@@ -966,70 +965,6 @@ function checkG1($: cheerio.CheerioAPI, html: string, detectedGtmId: string | nu
   });
 
   return { checkKey: "G1", status: "issue", findings, summary: "No cookie consent banner found" };
-}
-
-function checkG8($: cheerio.CheerioAPI, html: string, hasBanner: boolean): CheckResult {
-  const findings: ScanFinding[] = [];
-
-  const hasCookiebotScript = $("script[src*='consent.cookiebot.com'], script[src*='consentcdn.cookiebot.com']").length > 0;
-  const hasCookiebotWidget = /CookiebotWidget|CookieConsent\.renew|Cookiebot\.renew/i.test(html);
-  const hasConsentLink = $("a").toArray().some((a) => {
-    const href = $(a).attr("href") || "";
-    const text = $(a).text() || "";
-    const onclick = $(a).attr("onclick") || "";
-    return /cookie.*settings|consent.*settings|manage.*cookies|cookie.*preferences|hantera.*kakor|cookie-?settings/i.test(text)
-      || /cookie.*settings|consent.*settings/i.test(href)
-      || /CookieConsent\.renew|Cookiebot\.renew/i.test(onclick);
-  });
-  const hasConsentButton = $("button").toArray().some((btn) => {
-    const text = $(btn).text() || "";
-    const onclick = $(btn).attr("onclick") || "";
-    return /cookie.*settings|manage.*cookies|consent.*settings|hantera.*kakor/i.test(text)
-      || /CookieConsent\.renew|Cookiebot\.renew/i.test(onclick);
-  });
-
-  if (hasCookiebotWidget) {
-    findings.push({
-      element: "CookiebotWidget",
-      detail: "Cookiebot persistent consent widget detected",
-      severity: "info",
-    });
-    return { checkKey: "G8", status: "ok", findings, summary: "Consent withdrawal widget found" };
-  }
-
-  if (hasConsentLink || hasConsentButton) {
-    findings.push({
-      element: "consent link/button",
-      detail: "Consent management link or button found on page",
-      severity: "info",
-    });
-    return { checkKey: "G8", status: "ok", findings, summary: "Consent settings link found" };
-  }
-
-  if (hasCookiebotScript || hasBanner) {
-    findings.push({
-      element: "page",
-      detail: "The consent widget can't be checked automatically because it loads after the page renders. Open the site in a browser and look for a small floating cookie icon (usually bottom-left) or a 'Cookie settings' link in the footer. Visitors need one of these to change their consent choice.",
-      severity: "warning",
-    });
-    return { checkKey: "G8", status: "blocked", findings, summary: "Check in browser: can visitors change their cookie choice?" };
-  }
-
-  if (!hasBanner) {
-    return {
-      checkKey: "G8",
-      status: "blocked",
-      findings: [{ element: "", detail: "No consent banner detected (see G1) - withdrawal mechanism check not applicable", severity: "info" }],
-      summary: "No consent banner found (see G1)",
-    };
-  }
-
-  findings.push({
-    element: "page",
-    detail: "No persistent consent widget, link, or button found. Users must be able to withdraw consent at any time.",
-    severity: "error",
-  });
-  return { checkKey: "G8", status: "issue", findings, summary: "No consent withdrawal mechanism found" };
 }
 
 function checkB5($: cheerio.CheerioAPI, html: string, gtmId: string | null, cookiebotId: string | null): CheckResult {

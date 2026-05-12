@@ -79,8 +79,7 @@ export function CheckItem({
   const [internalNoteOpen, setInternalNoteOpen] = useState(!!internalNote.trim());
   const [legalOpen, setLegalOpen] = useState(false);
   const [issuesOpen, setIssuesOpen] = useState(false);
-  const fellBackToBrowser = scanResult?.status === "blocked" && /check in browser/i.test(scanResult.summary || "");
-  const automationInfo = fellBackToBrowser ? AUTOMATION_CONFIG["browser-manual"] : AUTOMATION_CONFIG[check.automation];
+  const automationInfo = AUTOMATION_CONFIG[check.automation];
 
   const requirements = CHECK_REQUIREMENTS[check.key] || [];
   const missingRequirements = siteFields
@@ -130,7 +129,7 @@ export function CheckItem({
             </TooltipContent>
           </Tooltip>
         )}
-        {!isBlockedByRequirement && !fellBackToBrowser && status === "blocked" && scanResult && (
+        {!isBlockedByRequirement && status === "blocked" && scanResult && (
           <Tooltip>
             <TooltipTrigger>
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
@@ -177,21 +176,12 @@ export function CheckItem({
               </p>
             </div>
           )}
-          {status === "blocked" && scanResult && !fellBackToBrowser && (
+          {status === "blocked" && scanResult && (
             <div className="flex items-start gap-1.5">
               <AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-600 dark:text-amber-400">
                 {scanResult.summary}
               </p>
-            </div>
-          )}
-          {fellBackToBrowser && scanResult && (
-            <div className="flex items-start gap-1.5 p-2.5 rounded-md bg-blue-500/10 border border-blue-500/20">
-              <Info className="h-3 w-3 text-blue-500 mt-0.5 shrink-0" />
-              <div className="text-xs text-blue-700 dark:text-blue-400">
-                <p className="font-medium mb-0.5">Verify in browser</p>
-                <p>{scanResult.summary}</p>
-              </div>
             </div>
           )}
           {status === "client_managed" && (

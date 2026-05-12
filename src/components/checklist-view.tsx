@@ -247,6 +247,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         if (automationByKey.get(check.checkKey) === "browser-manual") {
           continue;
         }
+        if (check.status === "blocked" && /check in browser/i.test(check.summary || "")) {
+          continue;
+        }
         const existing = prev[check.checkKey];
         if (existing?.source === "manual" && existing.status !== "not_checked") {
           skipped++;

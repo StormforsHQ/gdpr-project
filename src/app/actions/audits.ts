@@ -218,3 +218,31 @@ export async function getAuditProgress(auditId: string) {
 
   return { total, checked, issues, ok };
 }
+
+export async function markAuditComplete(auditId: string, completedForType: string) {
+  const audit = await prisma.audit.update({
+    where: { id: auditId },
+    data: {
+      completedForType,
+      completedAt: new Date(),
+      status: "complete",
+    },
+  });
+  revalidatePath(`/sites/${audit.siteId}`);
+  revalidatePath("/sites");
+  return audit;
+}
+
+export async function reopenAudit(auditId: string) {
+  const audit = await prisma.audit.update({
+    where: { id: auditId },
+    data: {
+      completedForType: null,
+      completedAt: null,
+      status: "in_progress",
+    },
+  });
+  revalidatePath(`/sites/${audit.siteId}`);
+  revalidatePath("/sites");
+  return audit;
+}

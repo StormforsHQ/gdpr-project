@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import type { SidebarSite } from "@/app/(app)/layout";
+import { COVERAGE_TYPES, type CoverageType } from "@/lib/checklist";
 import {
   ChevronRight,
   ChevronLeft,
@@ -33,11 +34,14 @@ const STATUS_COLORS: Record<SidebarSite["auditProgress"], string> = {
   none: "bg-blue-400/60 dark:bg-blue-400/50",
 };
 
-const STATUS_LABELS: Record<SidebarSite["auditProgress"], string> = {
-  complete: "Audit complete",
-  partial: "Audit in progress",
-  none: "Not started",
-};
+function getStatusLabel(site: SidebarSite): string {
+  if (site.auditProgress === "complete" && site.completedForType) {
+    const label = COVERAGE_TYPES[site.completedForType as CoverageType]?.label;
+    return label ? `Audit complete (${label})` : "Audit complete";
+  }
+  if (site.auditProgress === "partial") return "Audit in progress";
+  return "Not started";
+}
 
 interface SidebarProps {
   sites: SidebarSite[];
@@ -167,7 +171,7 @@ export function Sidebar({ sites }: SidebarProps) {
                       >
                         <span
                           className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUS_COLORS[site.auditProgress]}`}
-                          title={STATUS_LABELS[site.auditProgress]}
+                          title={getStatusLabel(site)}
                         />
                         <span className="truncate">{site.name}</span>
                       </Link>

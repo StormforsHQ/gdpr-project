@@ -28,50 +28,94 @@ export interface ScanResult {
   detectedVendors?: DetectedVendor[];
 }
 
-const KNOWN_TRACKING_SCRIPTS = [
+// --- Analytics & measurement ---
+const ANALYTICS_SCRIPTS = [
   { pattern: /google-analytics\.com\/analytics\.js/i, name: "Google Analytics (analytics.js)" },
   { pattern: /googletagmanager\.com\/gtag\/js/i, name: "Google Analytics (gtag.js)" },
+  { pattern: /analytics\.google\.com/i, name: "Google Analytics" },
+  { pattern: /plausible\.io\/js/i, name: "Plausible Analytics" },
+  { pattern: /cdn\.usefathom\.com/i, name: "Fathom Analytics" },
+  { pattern: /simpleanalytics\.com\/latest/i, name: "Simple Analytics" },
+  { pattern: /umami\.is\/script|analytics\.umami/i, name: "Umami Analytics" },
+  { pattern: /cdn\.counter\.dev/i, name: "Counter.dev" },
+  { pattern: /goatcounter\.com\/count/i, name: "GoatCounter" },
+  { pattern: /cdn\.matomo\.cloud|matomo\.js|piwik\.js/i, name: "Matomo/Piwik" },
+  { pattern: /js\.hs-scripts\.com|js\.hs-analytics\.net/i, name: "HubSpot Tracking" },
+  { pattern: /cdn\.amplitude\.com/i, name: "Amplitude" },
+  { pattern: /cdn\.mxpnl\.com|cdn\.mixpanel\.com/i, name: "Mixpanel" },
+  { pattern: /cdn\.heapanalytics\.com/i, name: "Heap Analytics" },
+  { pattern: /cdn\.segment\.com/i, name: "Segment" },
+  { pattern: /cdn\.rudderstacks\.com|rudderanalytics/i, name: "RudderStack" },
+  { pattern: /js\.posthog\.com|posthog-js/i, name: "PostHog" },
+  { pattern: /d\.snowplowanalytics\.com|sp\.js/i, name: "Snowplow Analytics" },
+  { pattern: /kissmetrics\.com|doug1izaez\.cloudfront/i, name: "Kissmetrics" },
+  { pattern: /chartbeat\.com\/js/i, name: "Chartbeat" },
+  { pattern: /cdn\.parsely\.com/i, name: "Parse.ly" },
+  { pattern: /static\.woopra\.com/i, name: "Woopra" },
+  { pattern: /d2dq2ahtl5zl1z\.cloudfront\.net.*gauges/i, name: "Gauges" },
+  { pattern: /cdn\.mparticle\.com/i, name: "mParticle" },
+  { pattern: /cdn\.countly\.com/i, name: "Countly" },
+  { pattern: /js\.tealiumiq\.com|tags\.tiqcdn\.com/i, name: "Tealium" },
+  { pattern: /script\.hotjar\.com|static\.hotjar\.com/i, name: "Hotjar" },
+  { pattern: /clarity\.ms/i, name: "Microsoft Clarity" },
+];
+
+// --- Advertising, retargeting & conversion pixels ---
+const ADVERTISING_SCRIPTS = [
   { pattern: /connect\.facebook\.net/i, name: "Meta Pixel" },
   { pattern: /snap\.licdn\.com/i, name: "LinkedIn Insight Tag" },
   { pattern: /platform\.twitter\.com/i, name: "Twitter/X Pixel" },
   { pattern: /static\.ads-twitter\.com/i, name: "Twitter/X Ads" },
   { pattern: /analytics\.tiktok\.com/i, name: "TikTok Pixel" },
-  { pattern: /sc-static\.net\/scevent\.min\.js/i, name: "Snapchat Pixel" },
+  { pattern: /sc-static\.net\/scevent/i, name: "Snapchat Pixel" },
   { pattern: /tr\.snapchat\.com/i, name: "Snapchat Conversion" },
   { pattern: /bat\.bing\.com/i, name: "Microsoft/Bing UET" },
-  { pattern: /cdn\.segment\.com/i, name: "Segment" },
-  { pattern: /cdn\.amplitude\.com/i, name: "Amplitude" },
-  { pattern: /cdn\.mxpnl\.com|cdn\.mixpanel\.com/i, name: "Mixpanel" },
-  { pattern: /plausible\.io\/js/i, name: "Plausible Analytics" },
-  { pattern: /js\.hs-scripts\.com|js\.hs-analytics\.net/i, name: "HubSpot Tracking" },
-  { pattern: /static\.hotjar\.com/i, name: "HotJar" },
-  { pattern: /clarity\.ms/i, name: "Microsoft Clarity" },
-  { pattern: /widgets\.openli\.com|legalmonster/i, name: "Openli Cookie Consent" },
-  { pattern: /cdn\.iubenda\.com/i, name: "iubenda" },
-  { pattern: /cdn\.termly\.io/i, name: "Termly" },
-  { pattern: /cdn\.onetrust\.com|optanon/i, name: "OneTrust" },
-  { pattern: /cdn\.cookielaw\.org/i, name: "CookieLaw (OneTrust)" },
-  { pattern: /quantcast\.mgr\.consensu\.org|cmp\.quantcast/i, name: "Quantcast Choice" },
-  { pattern: /cdn\.usercentrics\.eu/i, name: "Usercentrics" },
-  { pattern: /app\.complianz\.io/i, name: "Complianz" },
+  { pattern: /googleadservices\.com|googlesyndication\.com/i, name: "Google Ads" },
+  { pattern: /doubleclick\.net/i, name: "Google DoubleClick" },
+  { pattern: /s\.amazon-adsystem\.com/i, name: "Amazon Ads" },
+  { pattern: /static\.criteo\.net|dynamic\.criteo\.com/i, name: "Criteo" },
+  { pattern: /d\.adroll\.com|s\.adroll\.com/i, name: "AdRoll" },
+  { pattern: /cdn\.taboola\.com/i, name: "Taboola" },
+  { pattern: /widgets\.outbrain\.com/i, name: "Outbrain" },
+  { pattern: /ct\.pinterest\.com|pintrk/i, name: "Pinterest Tag" },
+  { pattern: /q\.quora\.com/i, name: "Quora Pixel" },
+  { pattern: /alb\.reddit\.com|rdt\.li/i, name: "Reddit Pixel" },
+  { pattern: /cdn\.pdst\.fm|podsights\.com/i, name: "Podsights" },
+  { pattern: /cdn\.branch\.io/i, name: "Branch.io" },
+  { pattern: /cdn\.appsflyer\.com/i, name: "AppsFlyer" },
+  { pattern: /cdn\.adjust\.com/i, name: "Adjust" },
+  { pattern: /cdn\.leadfeeder\.net|lf\.leadfeeder/i, name: "Leadfeeder" },
+  { pattern: /munchkin\.marketo\.net/i, name: "Marketo Munchkin" },
+  { pattern: /pi\.pardot\.com/i, name: "Pardot/Salesforce" },
+  { pattern: /trackcmp\.net|activecampaign\.com\/f\/tr/i, name: "ActiveCampaign" },
+  { pattern: /chimpstatic\.com|mailchimp\.com\/js/i, name: "Mailchimp Tracking" },
+  { pattern: /getdrip\.com/i, name: "Drip" },
 ];
 
-const GHOST_SCRIPTS = [
-  { pattern: /static\.hotjar\.com/i, name: "HotJar" },
-  { pattern: /cdn\.leadfeeder\.net/i, name: "Leadfeeder" },
-  { pattern: /js\.driftt\.com|drift\.com\/include/i, name: "Drift" },
-  { pattern: /app\.getbeamer\.com/i, name: "Beamer" },
-  { pattern: /cdn\.heapanalytics\.com/i, name: "Heap Analytics" },
-  { pattern: /d2wy8f7a9ursnm\.cloudfront\.net.*bugsnag/i, name: "Bugsnag" },
-  { pattern: /cdn\.optimizely\.com/i, name: "Optimizely" },
+// --- Session recording & heatmaps ---
+const SESSION_RECORDING_SCRIPTS = [
   { pattern: /cdn\.mouseflow\.com/i, name: "Mouseflow" },
   { pattern: /cdn\.luckyorange\.com/i, name: "Lucky Orange" },
-  { pattern: /static\.zdassets\.com|widget\.zopim\.com/i, name: "Zendesk Widget (old)" },
   { pattern: /cdn\.inspectlet\.com/i, name: "Inspectlet" },
-  { pattern: /js\.intercomcdn\.com/i, name: "Intercom" },
-  { pattern: /cdn\.usefathom\.com/i, name: "Fathom Analytics" },
+  { pattern: /rs\.fullstory\.com|fullstory\.com\/s\/fs\.js/i, name: "FullStory" },
+  { pattern: /cdn\.logrocket\.io|cdn\.lr-ingest\.io/i, name: "LogRocket" },
+  { pattern: /web-sdk\.smartlook\.com|rec\.smartlook\.com/i, name: "Smartlook" },
+  { pattern: /script\.crazyegg\.com/i, name: "Crazy Egg" },
+  { pattern: /ws\.sessioncam\.com/i, name: "SessionCam" },
+  { pattern: /cdn-app\.contentsquare\.com|c\.contentsquare\.net/i, name: "Contentsquare" },
+  { pattern: /d2wy8f7a9ursnm\.cloudfront\.net.*bugsnag/i, name: "Bugsnag" },
+  { pattern: /app\.getbeamer\.com/i, name: "Beamer" },
 ];
 
+// --- A/B testing ---
+const AB_TESTING_SCRIPTS = [
+  { pattern: /cdn\.optimizely\.com/i, name: "Optimizely" },
+  { pattern: /dev\.visualwebsiteoptimizer\.com|d22rdv1y0bwxx4\.cloudfront/i, name: "VWO" },
+  { pattern: /cdn-app\.abtasty\.com|try\.abtasty\.com/i, name: "AB Tasty" },
+  { pattern: /cdn-3\.convertexperiments\.com/i, name: "Convert" },
+];
+
+// --- Chat widgets (set cookies, track users) ---
 const CHAT_WIDGETS = [
   { pattern: /js\.intercomcdn\.com|widget\.intercom\.io/i, name: "Intercom" },
   { pattern: /js\.driftt\.com|drift\.com/i, name: "Drift" },
@@ -82,8 +126,11 @@ const CHAT_WIDGETS = [
   { pattern: /embed\.tawk\.to/i, name: "Tawk.to" },
   { pattern: /js\.hubspot\.com.*messages/i, name: "HubSpot Chat" },
   { pattern: /cdn\.olark\.com/i, name: "Olark" },
+  { pattern: /wchat\.freshchat\.com|assets\.freshdesk\.com/i, name: "Freshchat/Freshdesk" },
+  { pattern: /chatwoot\.com\/packs/i, name: "Chatwoot" },
 ];
 
+// --- Social embeds (track users) ---
 const SOCIAL_EMBEDS = [
   { pattern: /platform\.twitter\.com\/widgets/i, name: "Twitter/X Embed" },
   { pattern: /connect\.facebook\.net.*sdk/i, name: "Facebook SDK" },
@@ -91,6 +138,41 @@ const SOCIAL_EMBEDS = [
   { pattern: /platform\.linkedin\.com/i, name: "LinkedIn Widget" },
   { pattern: /assets\.pinterest\.com/i, name: "Pinterest Widget" },
   { pattern: /embedsocial\.com/i, name: "EmbedSocial" },
+  { pattern: /addthis\.com/i, name: "AddThis" },
+  { pattern: /addtoany\.com/i, name: "AddToAny" },
+  { pattern: /sharethis\.com/i, name: "ShareThis" },
+];
+
+// --- Consent management platforms (not Cookiebot) ---
+const CONSENT_SCRIPTS = [
+  { pattern: /widgets\.openli\.com|legalmonster/i, name: "Openli Cookie Consent" },
+  { pattern: /cdn\.onetrust\.com|optanon/i, name: "OneTrust" },
+  { pattern: /cdn\.cookielaw\.org/i, name: "CookieLaw (OneTrust)" },
+  { pattern: /cdn\.iubenda\.com/i, name: "iubenda" },
+  { pattern: /cdn\.termly\.io/i, name: "Termly" },
+  { pattern: /quantcast\.mgr\.consensu\.org|cmp\.quantcast/i, name: "Quantcast Choice" },
+  { pattern: /cdn\.usercentrics\.eu/i, name: "Usercentrics" },
+  { pattern: /app\.complianz\.io/i, name: "Complianz" },
+  { pattern: /consent\.trustarc\.com|truste\.com\/notice/i, name: "TrustArc" },
+  { pattern: /sdk\.didomi\.io/i, name: "Didomi" },
+  { pattern: /policy\.cookie-information\.com/i, name: "Cookie Information" },
+  { pattern: /cdn\.cookieyes\.com/i, name: "CookieYes" },
+  { pattern: /cc\.cdn\.civiccomputing\.com/i, name: "Civic Cookie Control" },
+  { pattern: /cdn\.osano\.com|cmp\.osano\.com/i, name: "Osano" },
+  { pattern: /cdn\.klaro\.org|kiprotect\.com\/klaro/i, name: "Klaro" },
+  { pattern: /cdn\.cookie-script\.com/i, name: "Cookie Script" },
+  { pattern: /cdn\.axept\.io/i, name: "Axeptio" },
+];
+
+// --- Other privacy-sensitive third-party scripts ---
+const OTHER_PRIVACY_SCRIPTS = [
+  { pattern: /recaptcha.*api\.js|google\.com\/recaptcha/i, name: "Google reCAPTCHA" },
+  { pattern: /hcaptcha\.com/i, name: "hCaptcha" },
+  { pattern: /js\.sentry-cdn\.com|browser\.sentry-cdn/i, name: "Sentry" },
+  { pattern: /js-agent\.newrelic\.com|nr-data\.net/i, name: "New Relic" },
+  { pattern: /browser-intake-datadoghq\.com|dd-rum/i, name: "Datadog RUM" },
+  { pattern: /cdn\.ravenjs\.com/i, name: "Raven.js (Sentry legacy)" },
+  { pattern: /cdn\.rollbar\.com/i, name: "Rollbar" },
 ];
 
 
@@ -357,14 +439,19 @@ function isFrameworkScript($el: ReturnType<cheerio.CheerioAPI>, src: string): bo
   return false;
 }
 
+const ALL_KNOWN_SCRIPTS = [
+  ...ANALYTICS_SCRIPTS,
+  ...ADVERTISING_SCRIPTS,
+  ...SESSION_RECORDING_SCRIPTS,
+  ...AB_TESTING_SCRIPTS,
+  ...CHAT_WIDGETS,
+  ...SOCIAL_EMBEDS,
+  ...CONSENT_SCRIPTS,
+  ...OTHER_PRIVACY_SCRIPTS,
+];
+
 function isTrackingOrPrivacyConcern(src: string): string | null {
-  const allPatterns = [
-    ...KNOWN_TRACKING_SCRIPTS,
-    ...GHOST_SCRIPTS,
-    ...CHAT_WIDGETS,
-    ...SOCIAL_EMBEDS,
-  ];
-  for (const p of allPatterns) {
+  for (const p of ALL_KNOWN_SCRIPTS) {
     if (p.pattern.test(src)) return p.name;
   }
   return null;
@@ -395,25 +482,26 @@ function checkA1($: cheerio.CheerioAPI, html: string): CheckResult {
     if (trackerName) {
       trackingCount++;
       const orderNote = loadsBefore
-        ? " Loads BEFORE GTM/Cookiebot, so it fires without user consent."
+        ? ` Loads BEFORE GTM/Cookiebot, so it fires without user consent.`
         : "";
       findings.push({
         element: `<script src="${displaySrc}">`,
-        detail: `${trackerName} found in <head>.${orderNote} Should be loaded through GTM so it respects consent settings.`,
+        detail: `${trackerName} loaded directly in <head>.${orderNote} Remove this script from the site header and add it as a tag inside the GTM container instead, so it only fires after the visitor gives consent.`,
         severity: "error",
       });
     } else if (loadsBefore) {
       trackingCount++;
       findings.push({
         element: `<script src="${displaySrc}">`,
-        detail: "Script loads before GTM/Cookiebot in <head>. Any script before the consent mechanism can fire without user consent. Review if it sets cookies or collects data.",
+        detail: "Unrecognized script loads BEFORE GTM/Cookiebot. It fires before consent is obtained. Check what this script does - if it tracks users or sets cookies, move it into the GTM container. If it's a harmless utility, move it after the GTM script so consent loads first.",
         severity: "error",
       });
     } else {
+      trackingCount++;
       findings.push({
         element: `<script src="${displaySrc}">`,
-        detail: "External script in <head> - not a known tracker. Review manually if it sets cookies or collects user data.",
-        severity: "info",
+        detail: "Unrecognized script in <head> - not in our known tracker list. Check manually: does it set cookies, track users, or send data to third parties? If yes, move it into the GTM container. If unsure, treat it as a potential issue.",
+        severity: "warning",
       });
     }
   }
@@ -448,14 +536,15 @@ function checkA2($: cheerio.CheerioAPI, html: string): CheckResult {
       trackingCount++;
       findings.push({
         element: `<script src="${displaySrc}">`,
-        detail: `${trackerName} found in <body>. This is a tracking/analytics script that should be loaded through GTM so it respects consent settings.`,
+        detail: `${trackerName} loaded directly in <body>. Remove this script from the site footer/body and add it as a tag inside the GTM container instead, so it only fires after the visitor gives consent.`,
         severity: "error",
       });
     } else {
+      trackingCount++;
       findings.push({
         element: `<script src="${displaySrc}">`,
-        detail: "External script in <body> - not a known tracker. Review manually if it sets cookies or collects user data.",
-        severity: "info",
+        detail: "Unrecognized script in <body> - not in our known tracker list. Check manually: does it set cookies, track users, or send data to third parties? If yes, move it into the GTM container. If unsure, treat it as a potential issue.",
+        severity: "warning",
       });
     }
   }
@@ -465,10 +554,8 @@ function checkA2($: cheerio.CheerioAPI, html: string): CheckResult {
     status: trackingCount > 0 ? "issue" : "ok",
     findings,
     summary: trackingCount > 0
-      ? `${trackingCount} tracking script(s) found in <body> outside GTM`
-      : findings.length > 0
-        ? `No tracking scripts in <body>, but ${findings.length} other external script(s) present`
-        : "No hardcoded scripts in body/footer",
+      ? `${trackingCount} script(s) found in <body> outside GTM`
+      : "No hardcoded scripts in body/footer",
   };
 }
 
@@ -477,7 +564,7 @@ function checkB1($: cheerio.CheerioAPI, html: string): CheckResult {
   const allScripts = getScriptSources($);
 
   for (const script of allScripts) {
-    for (const tracker of KNOWN_TRACKING_SCRIPTS) {
+    for (const tracker of ALL_KNOWN_SCRIPTS) {
       if (tracker.pattern.test(script.src)) {
         findings.push({
           element: script.outerHtml.slice(0, 200),
@@ -503,7 +590,7 @@ function checkD1($: cheerio.CheerioAPI, html: string): CheckResult {
   const allScripts = getScriptSources($);
 
   for (const script of allScripts) {
-    for (const ghost of GHOST_SCRIPTS) {
+    for (const ghost of [...SESSION_RECORDING_SCRIPTS, ...AB_TESTING_SCRIPTS]) {
       if (ghost.pattern.test(script.src)) {
         findings.push({
           element: script.outerHtml.slice(0, 200),

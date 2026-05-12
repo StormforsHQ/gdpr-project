@@ -277,15 +277,18 @@ const SCRIPT_CLASSIFICATION_SYSTEM = `You are a GDPR compliance auditor classify
 ${RESPONSE_FORMAT_INSTRUCTION}
 
 Classification rules:
-- TRACKING: analytics, advertising pixels, session recording, heatmaps, A/B testing that collects personal data, retargeting
-- PRIVACY_CONCERN: chat widgets that set cookies, social media embeds that track users, services that transmit user data to third parties without consent
+- TRACKING: analytics, advertising pixels, session recording, heatmaps, A/B testing that collects personal data, retargeting, cookie consent platforms (Openli, OneTrust, iubenda, Termly, etc.)
+- PRIVACY_CONCERN: chat widgets that set cookies, social media embeds that track users, services that transmit user data to third parties without consent, error monitoring that sends data to external servers
+- UNCERTAIN: scripts you cannot confidently classify as benign. Always flag these - a false positive is better than missing a tracker.
 - BENIGN: UI/animation libraries (Finsweet, GSAP, Swiper, Lottie, etc.), CSS frameworks, font loaders, CMS platform scripts (Webflow, jQuery, Next.js), utility libraries, payment processing, accessibility tools
 
-Return status "issue" ONLY if you find TRACKING or PRIVACY_CONCERN scripts. List each one as a finding with severity "error" and explain what it does and that it should be loaded through GTM to respect consent.
+For TRACKING or PRIVACY_CONCERN scripts: return as findings with severity "error". For each one, explain what it does and give a specific actionable fix: "Remove this script from the site header/footer and add it as a tag inside the GTM container, so it only fires after the visitor gives consent."
+
+For UNCERTAIN scripts: return as findings with severity "warning". Explain what you know about it and say: "Could not confirm this is safe. Check manually if it sets cookies or tracks users. If it does, move it into the GTM container."
 
 For BENIGN scripts, do NOT include them in findings. Just mention the count in your summary.
 
-If ALL scripts are benign, return status "ok" with empty findings.`;
+Return status "issue" if ANY TRACKING, PRIVACY_CONCERN, or UNCERTAIN scripts are found. Return "ok" only if ALL scripts are benign.`;
 
 const AI_CHECKS: Record<string, AICheckHandler> = {
   A1: async (html, _text, _url, scanContext) => {

@@ -19,7 +19,7 @@ import { AUTO_FIXES } from "@/lib/fixes";
 import { FixFlowPanel } from "@/components/fix-flow-panel";
 import type { ScanResult } from "@/lib/scanner";
 import type { FixAnalysisResult, ScriptAnalysis } from "@/app/actions/fixes";
-import { Wrench, Lightbulb, AlertTriangle, Info, AlertCircle, CheckCircle2, ExternalLink, Search } from "lucide-react";
+import { Wrench, Lightbulb, AlertTriangle, Info, AlertCircle, CheckCircle2, ExternalLink, Search, ChevronDown, ChevronRight, Code2 } from "lucide-react";
 
 interface SiteContext {
   platform?: string | null;
@@ -47,6 +47,45 @@ const SEVERITY_ICON = {
   warning: <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />,
   info: <Info className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />,
 };
+
+function DrawerFinding({ finding }: { finding: { element: string; detail: string; severity: "error" | "warning" | "info"; pageUrl?: string; scriptContent?: string } }) {
+  const [codeOpen, setCodeOpen] = useState(false);
+  return (
+    <div className="space-y-1">
+      <div className="flex items-start gap-2">
+        {SEVERITY_ICON[finding.severity]}
+        <p className="text-sm whitespace-pre-line">{finding.detail}</p>
+      </div>
+      {finding.element && finding.element !== "page" && (
+        <code className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded block ml-5 break-all">
+          {finding.element}
+        </code>
+      )}
+      {finding.pageUrl && (
+        <p className="text-xs text-muted-foreground ml-5">
+          Page: <a href={finding.pageUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">{new URL(finding.pageUrl).pathname}</a>
+        </p>
+      )}
+      {finding.scriptContent && (
+        <>
+          <button
+            className="flex items-center gap-1 ml-5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setCodeOpen(!codeOpen)}
+          >
+            {codeOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            <Code2 className="h-3 w-3" />
+            {codeOpen ? "Hide full script" : "Show full script"}
+          </button>
+          {codeOpen && (
+            <pre className="ml-5 p-2 bg-muted rounded text-[11px] font-mono overflow-x-auto max-h-[400px] overflow-y-auto whitespace-pre-wrap break-all">
+              {finding.scriptContent}
+            </pre>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 function RequirementsBox({ requirements }: { requirements: { label: string; reason: string }[] }) {
   const [expanded, setExpanded] = useState(false);
@@ -289,22 +328,7 @@ export function CheckGuideDrawer({
                     </h3>
                     <div className="space-y-3">
                       {checkResult.findings.map((finding, i) => (
-                        <div key={i} className="space-y-1">
-                          <div className="flex items-start gap-2">
-                            {SEVERITY_ICON[finding.severity]}
-                            <p className="text-sm whitespace-pre-line">{finding.detail}</p>
-                          </div>
-                          {finding.element && finding.element !== "page" && (
-                            <code className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded block ml-5 break-all">
-                              {finding.element}
-                            </code>
-                          )}
-                          {finding.pageUrl && (
-                            <p className="text-xs text-muted-foreground ml-5">
-                              Page: <a href={finding.pageUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">{new URL(finding.pageUrl).pathname}</a>
-                            </p>
-                          )}
-                        </div>
+                        <DrawerFinding key={i} finding={finding} />
                       ))}
                     </div>
                   </div>

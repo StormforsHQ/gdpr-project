@@ -46,6 +46,14 @@ const KNOWN_TRACKING_SCRIPTS = [
   { pattern: /js\.hs-scripts\.com|js\.hs-analytics\.net/i, name: "HubSpot Tracking" },
   { pattern: /static\.hotjar\.com/i, name: "HotJar" },
   { pattern: /clarity\.ms/i, name: "Microsoft Clarity" },
+  { pattern: /widgets\.openli\.com|legalmonster/i, name: "Openli Cookie Consent" },
+  { pattern: /cdn\.iubenda\.com/i, name: "iubenda" },
+  { pattern: /cdn\.termly\.io/i, name: "Termly" },
+  { pattern: /cdn\.onetrust\.com|optanon/i, name: "OneTrust" },
+  { pattern: /cdn\.cookielaw\.org/i, name: "CookieLaw (OneTrust)" },
+  { pattern: /quantcast\.mgr\.consensu\.org|cmp\.quantcast/i, name: "Quantcast Choice" },
+  { pattern: /cdn\.usercentrics\.eu/i, name: "Usercentrics" },
+  { pattern: /app\.complianz\.io/i, name: "Complianz" },
 ];
 
 const GHOST_SCRIPTS = [
@@ -365,26 +373,45 @@ function isTrackingOrPrivacyConcern(src: string): string | null {
 function checkA1($: cheerio.CheerioAPI, html: string): CheckResult {
   const findings: ScanFinding[] = [];
   const headScripts = $("head script").toArray();
+  let trackingCount = 0;
+
+  const consentIdx = headScripts.findIndex((el) => {
+    const src = $(el).attr("src") || $(el).html() || "";
+    return isGtmScript(src) || isCookiebotScript(src);
+  });
 
   const nonAllowed = headScripts.filter((el) => {
     const src = $(el).attr("src") || $(el).html() || "";
     return !isGtmScript(src) && !isCookiebotScript(src) && !isJsonLd($(el)) && !isFrameworkScript($(el), src) && src.trim().length > 0;
   });
 
-  let trackingCount = 0;
   for (const el of nonAllowed) {
-    const src = $(el).attr("src") || $(el).html()?.slice(0, 100) || "";
-    const trackerName = isTrackingOrPrivacyConcern(src);
+    const fullSrc = $(el).attr("src") || $(el).html() || "";
+    const displaySrc = $(el).attr("src") || $(el).html()?.slice(0, 100) || "";
+    const trackerName = isTrackingOrPrivacyConcern(fullSrc);
+    const scriptIdx = headScripts.indexOf(el);
+    const loadsBefore = consentIdx >= 0 && scriptIdx < consentIdx;
+
     if (trackerName) {
       trackingCount++;
+      const orderNote = loadsBefore
+        ? " Loads BEFORE GTM/Cookiebot, so it fires without user consent."
+        : "";
       findings.push({
-        element: `<script src="${src}">`,
-        detail: `${trackerName} found in <head>. This is a tracking/analytics script that should be loaded through GTM so it respects consent settings.`,
+        element: `<script src="${displaySrc}">`,
+        detail: `${trackerName} found in <head>.${orderNote} Should be loaded through GTM so it respects consent settings.`,
+        severity: "error",
+      });
+    } else if (loadsBefore) {
+      trackingCount++;
+      findings.push({
+        element: `<script src="${displaySrc}">`,
+        detail: "Script loads before GTM/Cookiebot in <head>. Any script before the consent mechanism can fire without user consent. Review if it sets cookies or collects data.",
         severity: "error",
       });
     } else {
       findings.push({
-        element: `<script src="${src}">`,
+        element: `<script src="${displaySrc}">`,
         detail: "External script in <head> - not a known tracker. Review manually if it sets cookies or collects user data.",
         severity: "info",
       });
@@ -396,7 +423,7 @@ function checkA1($: cheerio.CheerioAPI, html: string): CheckResult {
     status: trackingCount > 0 ? "issue" : "ok",
     findings,
     summary: trackingCount > 0
-      ? `${trackingCount} tracking script(s) found in <head> outside GTM`
+      ? `${trackingCount} issue(s) in <head>: tracking scripts outside GTM or scripts loading before consent`
       : findings.length > 0
         ? `No tracking scripts in <head>, but ${findings.length} other external script(s) present (review manually)`
         : "Only GTM (and Cookiebot/JSON-LD) scripts found in <head>",
@@ -414,18 +441,19 @@ function checkA2($: cheerio.CheerioAPI, html: string): CheckResult {
 
   let trackingCount = 0;
   for (const el of nonAllowed) {
-    const src = $(el).attr("src") || $(el).html()?.slice(0, 100) || "";
-    const trackerName = isTrackingOrPrivacyConcern(src);
+    const fullSrc = $(el).attr("src") || $(el).html() || "";
+    const displaySrc = $(el).attr("src") || $(el).html()?.slice(0, 100) || "";
+    const trackerName = isTrackingOrPrivacyConcern(fullSrc);
     if (trackerName) {
       trackingCount++;
       findings.push({
-        element: `<script src="${src}">`,
+        element: `<script src="${displaySrc}">`,
         detail: `${trackerName} found in <body>. This is a tracking/analytics script that should be loaded through GTM so it respects consent settings.`,
         severity: "error",
       });
     } else {
       findings.push({
-        element: `<script src="${src}">`,
+        element: `<script src="${displaySrc}">`,
         detail: "External script in <body> - not a known tracker. Review manually if it sets cookies or collects user data.",
         severity: "info",
       });

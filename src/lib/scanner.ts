@@ -8,6 +8,7 @@ export interface ScanFinding {
   detail: string;
   severity: "error" | "warning" | "info";
   pageUrl?: string;
+  scriptContent?: string;
 }
 
 export interface CheckResult {
@@ -457,105 +458,145 @@ function isTrackingOrPrivacyConcern(src: string): string | null {
   return null;
 }
 
+function scriptPreview(src: string, inline: string): string {
+  if (src) return `<script src="${src}">`;
+  return `<script> ${inline.slice(0, 120)}${inline.length > 120 ? "..." : ""}`;
+}
+
+function scriptFullContent($el: ReturnType<cheerio.CheerioAPI>, src: string, inline: string): string {
+  if (src) return `<script src="${src}"></script>`;
+  return `<script>\n${inline}\n</script>`;
+}
+
+function classifyScript($: cheerio.CheerioAPI, el: Parameters<cheerio.CheerioAPI>[0], src: string, inline: string): { label: string; severity: "error" | "warning" | "info" } {
+  const content = src || inline;
+  if (isGtmScript(content)) return { label: "Google Tag Manager (consent mechanism)", severity: "info" };
+  if (isCookiebotScript(content)) return { label: "Cookiebot (consent mechanism)", severity: "info" };
+  if (isJsonLd($(el))) return { label: "JSON-LD structured data", severity: "info" };
+  if (isFrameworkScript($(el), content)) return { label: "Platform/framework script (safe)", severity: "info" };
+  const tracker = isTrackingOrPrivacyConcern(content);
+  if (tracker) return { label: tracker, severity: "error" };
+  return { label: "Unknown script", severity: "warning" };
+}
+
 function checkA1($: cheerio.CheerioAPI, html: string): CheckResult {
   const findings: ScanFinding[] = [];
   const headScripts = $("head script").toArray();
-  let trackingCount = 0;
+  let issueCount = 0;
 
   const consentIdx = headScripts.findIndex((el) => {
     const src = $(el).attr("src") || $(el).html() || "";
     return isGtmScript(src) || isCookiebotScript(src);
   });
 
-  const nonAllowed = headScripts.filter((el) => {
-    const src = $(el).attr("src") || $(el).html() || "";
-    return !isGtmScript(src) && !isCookiebotScript(src) && !isJsonLd($(el)) && !isFrameworkScript($(el), src) && src.trim().length > 0;
-  });
+  for (let i = 0; i < headScripts.length; i++) {
+    const el = headScripts[i];
+    const src = $(el).attr("src") || "";
+    const inline = $(el).html() || "";
+    if (!src && !inline.trim()) continue;
 
-  for (const el of nonAllowed) {
-    const fullSrc = $(el).attr("src") || $(el).html() || "";
-    const displaySrc = $(el).attr("src") || $(el).html()?.slice(0, 100) || "";
-    const trackerName = isTrackingOrPrivacyConcern(fullSrc);
-    const scriptIdx = headScripts.indexOf(el);
-    const loadsBefore = consentIdx >= 0 && scriptIdx < consentIdx;
+    const { label, severity } = classifyScript($, el, src, inline);
+    const loadsBefore = consentIdx >= 0 && i < consentIdx;
+    const preview = scriptPreview(src, inline);
+    const fullContent = scriptFullContent($(el), src, inline);
 
-    if (trackerName) {
-      trackingCount++;
+    if (severity === "info") {
+      findings.push({
+        element: preview,
+        detail: label,
+        severity: "info",
+        scriptContent: fullContent,
+      });
+    } else if (severity === "error") {
+      issueCount++;
       const orderNote = loadsBefore
         ? ` Loads BEFORE GTM/Cookiebot, so it fires without user consent.`
         : "";
       findings.push({
-        element: `<script src="${displaySrc}">`,
-        detail: `${trackerName} loaded directly in <head>.${orderNote} Remove this script from the site header and add it as a tag inside the GTM container instead, so it only fires after the visitor gives consent.`,
+        element: preview,
+        detail: `${label} loaded directly in <head>.${orderNote} Remove this script from the site header and add it as a tag inside the GTM container instead, so it only fires after the visitor gives consent.`,
         severity: "error",
-      });
-    } else if (loadsBefore) {
-      trackingCount++;
-      findings.push({
-        element: `<script src="${displaySrc}">`,
-        detail: "Unrecognized script loads BEFORE GTM/Cookiebot. It fires before consent is obtained. Check what this script does - if it tracks users or sets cookies, move it into the GTM container. If it's a harmless utility, move it after the GTM script so consent loads first.",
-        severity: "error",
+        scriptContent: fullContent,
       });
     } else {
-      trackingCount++;
-      findings.push({
-        element: `<script src="${displaySrc}">`,
-        detail: "Unrecognized script in <head> - not in our known tracker list. Check manually: does it set cookies, track users, or send data to third parties? If yes, move it into the GTM container. If unsure, treat it as a potential issue.",
-        severity: "warning",
-      });
+      issueCount++;
+      if (loadsBefore) {
+        findings.push({
+          element: preview,
+          detail: "Unrecognized script loads BEFORE GTM/Cookiebot. It fires before consent is obtained. Check what this script does - if it tracks users or sets cookies, move it into the GTM container. If it's a harmless utility, move it after the GTM script so consent loads first.",
+          severity: "error",
+          scriptContent: fullContent,
+        });
+      } else {
+        findings.push({
+          element: preview,
+          detail: "Unrecognized script - not in our known tracker list. Check manually: does it set cookies, track users, or send data to third parties? If yes, move it into the GTM container. If unsure, treat it as a potential issue.",
+          severity: "warning",
+          scriptContent: fullContent,
+        });
+      }
     }
   }
 
   return {
     checkKey: "A1",
-    status: trackingCount > 0 ? "issue" : "ok",
+    status: issueCount > 0 ? "issue" : "ok",
     findings,
-    summary: trackingCount > 0
-      ? `${trackingCount} issue(s) in <head>: tracking scripts outside GTM or scripts loading before consent`
-      : findings.length > 0
-        ? `No tracking scripts in <head>, but ${findings.length} other external script(s) present (review manually)`
-        : "Only GTM (and Cookiebot/JSON-LD) scripts found in <head>",
+    summary: issueCount > 0
+      ? `${issueCount} issue(s) in <head>: tracking scripts outside GTM or scripts loading before consent. ${findings.length} total scripts found.`
+      : `${findings.length} script(s) in <head> - all safe (GTM, Cookiebot, platform scripts)`,
   };
 }
 
 function checkA2($: cheerio.CheerioAPI, html: string): CheckResult {
   const findings: ScanFinding[] = [];
   const bodyScripts = $("body script").toArray();
+  let issueCount = 0;
 
-  const nonAllowed = bodyScripts.filter((el) => {
-    const src = $(el).attr("src") || $(el).html() || "";
-    return !isGtmScript(src) && !isJsonLd($(el)) && !isFrameworkScript($(el), src) && src.trim().length > 0;
-  });
+  for (const el of bodyScripts) {
+    const src = $(el).attr("src") || "";
+    const inline = $(el).html() || "";
+    if (!src && !inline.trim()) continue;
 
-  let trackingCount = 0;
-  for (const el of nonAllowed) {
-    const fullSrc = $(el).attr("src") || $(el).html() || "";
-    const displaySrc = $(el).attr("src") || $(el).html()?.slice(0, 100) || "";
-    const trackerName = isTrackingOrPrivacyConcern(fullSrc);
-    if (trackerName) {
-      trackingCount++;
+    const { label, severity } = classifyScript($, el, src, inline);
+    const preview = scriptPreview(src, inline);
+    const fullContent = scriptFullContent($(el), src, inline);
+
+    if (severity === "info") {
       findings.push({
-        element: `<script src="${displaySrc}">`,
-        detail: `${trackerName} loaded directly in <body>. Remove this script from the site footer/body and add it as a tag inside the GTM container instead, so it only fires after the visitor gives consent.`,
+        element: preview,
+        detail: label,
+        severity: "info",
+        scriptContent: fullContent,
+      });
+    } else if (severity === "error") {
+      issueCount++;
+      findings.push({
+        element: preview,
+        detail: `${label} loaded directly in <body>. Remove this script from the site footer/body and add it as a tag inside the GTM container instead, so it only fires after the visitor gives consent.`,
         severity: "error",
+        scriptContent: fullContent,
       });
     } else {
-      trackingCount++;
+      issueCount++;
       findings.push({
-        element: `<script src="${displaySrc}">`,
-        detail: "Unrecognized script in <body> - not in our known tracker list. Check manually: does it set cookies, track users, or send data to third parties? If yes, move it into the GTM container. If unsure, treat it as a potential issue.",
+        element: preview,
+        detail: "Unrecognized script - not in our known tracker list. Check manually: does it set cookies, track users, or send data to third parties? If yes, move it into the GTM container. If unsure, treat it as a potential issue.",
         severity: "warning",
+        scriptContent: fullContent,
       });
     }
   }
 
   return {
     checkKey: "A2",
-    status: trackingCount > 0 ? "issue" : "ok",
+    status: issueCount > 0 ? "issue" : "ok",
     findings,
-    summary: trackingCount > 0
-      ? `${trackingCount} script(s) found in <body> outside GTM`
-      : "No hardcoded scripts in body/footer",
+    summary: issueCount > 0
+      ? `${issueCount} issue(s) in <body>: scripts outside GTM. ${findings.length} total scripts found.`
+      : findings.length > 0
+        ? `${findings.length} script(s) in <body> - all safe (platform scripts)`
+        : "No scripts in body/footer",
   };
 }
 

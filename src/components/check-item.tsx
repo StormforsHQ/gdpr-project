@@ -16,7 +16,48 @@ import { AUTOMATION_CONFIG, RESPONSIBILITY_CONFIG } from "@/lib/checklist";
 import { CHECK_REQUIREMENTS } from "@/lib/glossary";
 import { GlossaryText } from "@/components/glossary-text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench, Search, StickyNote, UserCircle } from "lucide-react";
+import type { ScanFinding } from "@/lib/scanner";
+import { CircleDashed, CheckCircle2, AlertCircle, MinusCircle, Info, Play, Loader2, Scale, Landmark, AlertTriangle, Wrench, Search, StickyNote, UserCircle, ChevronDown, ChevronRight, Code2 } from "lucide-react";
+
+const SEVERITY_STYLES = {
+  error: { icon: <AlertCircle className="h-3 w-3 text-destructive shrink-0 mt-0.5" />, border: "border-destructive/30", bg: "bg-destructive/5" },
+  warning: { icon: <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />, border: "border-amber-500/30", bg: "bg-amber-500/5" },
+  info: { icon: <CheckCircle2 className="h-3 w-3 text-green-500 shrink-0 mt-0.5" />, border: "border-border", bg: "" },
+};
+
+function FindingItem({ finding }: { finding: ScanFinding }) {
+  const [codeOpen, setCodeOpen] = useState(false);
+  const style = SEVERITY_STYLES[finding.severity];
+
+  return (
+    <li className={`text-xs border rounded-md p-2 ${style.border} ${style.bg}`}>
+      <div className="flex gap-1.5">
+        {style.icon}
+        <div className="min-w-0 flex-1">
+          {finding.element && finding.element !== "page" && (
+            <p className="font-mono text-[11px] text-foreground/70 truncate mb-0.5">{finding.element}</p>
+          )}
+          <p className="text-muted-foreground whitespace-pre-line">{finding.detail}</p>
+          {finding.scriptContent && (
+            <button
+              className="flex items-center gap-1 mt-1 text-[11px] text-muted-foreground/70 hover:text-foreground transition-colors"
+              onClick={(e) => { e.stopPropagation(); setCodeOpen(!codeOpen); }}
+            >
+              {codeOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+              <Code2 className="h-3 w-3" />
+              {codeOpen ? "Hide full script" : "Show full script"}
+            </button>
+          )}
+          {codeOpen && finding.scriptContent && (
+            <pre className="mt-1 p-2 bg-muted/50 rounded text-[10px] font-mono overflow-x-auto max-h-[300px] overflow-y-auto whitespace-pre-wrap break-all">
+              {finding.scriptContent}
+            </pre>
+          )}
+        </div>
+      </div>
+    </li>
+  );
+}
 
 const STATUS_ICONS: Record<CheckStatus, React.ReactNode> = {
   not_checked: <CircleDashed className="h-4 w-4 text-muted-foreground" />,
@@ -271,27 +312,27 @@ export function CheckItem({
                 onClick={(e) => { e.stopPropagation(); setIssuesOpen(!issuesOpen); }}
               >
                 <AlertCircle className="h-3 w-3 shrink-0" />
-                <span className="font-medium">Issues ({scanResult.findings.filter((f) => f.severity === "error").length})</span>
+                <span className="font-medium">
+                  {scanResult.findings.filter((f) => f.severity === "error").length > 0
+                    ? `Issues (${scanResult.findings.filter((f) => f.severity === "error").length})`
+                    : scanResult.findings.filter((f) => f.severity === "warning").length > 0
+                      ? `Warnings (${scanResult.findings.filter((f) => f.severity === "warning").length})`
+                      : `Scan results (${scanResult.findings.length})`}
+                </span>
               </button>
               {issuesOpen && (
-                <>
-                  <p className="text-xs pl-[18px] text-muted-foreground">
+                <div className="pl-[18px] space-y-2">
+                  <p className="text-xs text-muted-foreground">
                     {scanResult.summary}
                   </p>
-                  {scanResult.status === "issue" && scanResult.findings.filter((f) => f.severity === "error").length > 0 && (
-                    <ul className="space-y-1 pl-[18px]">
-                      {scanResult.findings.filter((f) => f.severity === "error").map((f, i) => (
-                        <li key={i} className="text-xs text-muted-foreground flex gap-1.5">
-                          <span className="shrink-0">-</span>
-                          <span>
-                            {f.element && f.element !== "page" && <span className="font-medium">{f.element}: </span>}
-                            {f.detail}
-                          </span>
-                        </li>
+                  {scanResult.findings.length > 0 && (
+                    <ul className="space-y-2">
+                      {scanResult.findings.map((f, i) => (
+                        <FindingItem key={i} finding={f} />
                       ))}
                     </ul>
                   )}
-                </>
+                </div>
               )}
             </div>
           )}

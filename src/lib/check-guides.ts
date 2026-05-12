@@ -156,6 +156,48 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
     tips: ["The V2-specific parameters are ad_user_data and ad_personalization. If these two are missing but the other 5 are present, you have V1 only, which is non-compliant since March 2024."],
   },
 
+  B6: {
+    key: "B6",
+    title: "Google Tag present for GA4",
+    why: "GA4 event tags send data through the base Google Tag. Without it, GA4 collects no data at all - no pageviews, no events, nothing. GTM flags this as 'Missing Google tags' in container quality.",
+    steps: [
+      "Open GTM > Tags",
+      "Look for a tag of type 'Google Tag' with a measurement ID (G-XXXXXXXXXX)",
+      "If missing: click New > choose 'Google Tag' > enter the GA4 measurement ID",
+      "Set the trigger to 'Initialization - All Pages'",
+      "Check Consent Settings at the bottom - should show built-in consent checks (ad_storage, analytics_storage, etc.)",
+      "Save and publish the container",
+    ],
+    tools: ["GTM (tagmanager.google.com)", "GA4 Admin (analytics.google.com) to find measurement ID"],
+    tips: ["The measurement ID is in GA4 > Admin > Data Streams > click your stream. It starts with G-."],
+  },
+  B7: {
+    key: "B7",
+    title: "No paused tracking tags",
+    why: "Paused tags silently stop working. A paused Cookiebot tag means no consent banner. A paused Google Tag means no analytics. These are easy to forget about after testing.",
+    steps: [
+      "Open GTM > Tags",
+      "Look for tags with a pause icon (two vertical bars)",
+      "For each paused tag, decide: unpause it if it should be active, or delete it if it's no longer needed",
+      "Pay special attention to Cookiebot, Google Tag, and conversion tags",
+      "Save and publish if you make changes",
+    ],
+    tools: ["GTM (tagmanager.google.com)"],
+  },
+  B8: {
+    key: "B8",
+    title: "All tags have firing triggers",
+    why: "A tag without a trigger never fires. This usually means someone created or edited a tag but forgot to assign a trigger, so it does nothing.",
+    steps: [
+      "Open GTM > Tags",
+      "Look for tags that show 'No triggers' or have an empty Triggering section",
+      "For each one: assign the correct trigger, or delete the tag if it's no longer needed",
+      "Common triggers: 'All Pages' for pageview tags, consent-aware custom events for third-party tags",
+      "Save and publish if you make changes",
+    ],
+    tools: ["GTM (tagmanager.google.com)"],
+  },
+
   // C. Cookie categories
   C1: {
     key: "C1",

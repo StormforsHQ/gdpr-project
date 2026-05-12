@@ -243,15 +243,25 @@ export const CHECKLIST: CheckCategory[] = [
       },
       {
         key: "B6", label: "Google Tag present for GA4", description: "If GA4 event tags exist in the container, there must also be a base Google Tag (with the matching measurement ID) that actually sends data to GA4. Without it, GA4 collects nothing.", automation: "gtm-api", tier: "basic", method: "Lists all tags via the GTM API. Checks if any GA4 event tags (type gaawe) exist. If they do, verifies that at least one Google Tag (type googtag) is also present. Flags an issue if GA4 event tags exist but the base Google Tag is missing.",
-        legalBasis: "Not a legal requirement, but a missing Google Tag means analytics data is not being collected at all, which undermines the ability to verify compliance and measure consent rates.",
+        legalBasis: "A missing Google Tag means analytics data is not being collected at all, which undermines the ability to verify compliance and measure consent rates.",
+        references: [
+          { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
+        ],
       },
       {
         key: "B7", label: "No paused tracking tags", description: "Important tags (Google Tag, Cookiebot, conversion tags) should not be paused. A paused tag silently stops working and is easy to forget about.", automation: "gtm-api", tier: "full", method: "Lists all tags via the GTM API and checks the paused flag. Flags any paused tags that are not obviously test or draft tags.",
         legalBasis: "A paused Cookiebot tag means no consent banner is shown. A paused Google Tag means no analytics. Both create blind spots in compliance monitoring.",
+        references: [
+          { label: "GDPR Art. 5(2) - Accountability", url: "https://gdpr-info.eu/art-5-gdpr/" },
+          { label: "GDPR Art. 25 - Data protection by design", url: "https://gdpr-info.eu/art-25-gdpr/" },
+        ],
       },
       {
         key: "B8", label: "All tags have firing triggers", description: "Every tag in the container should have at least one firing trigger assigned. A tag without a trigger never fires, which usually means a configuration mistake.", automation: "gtm-api", tier: "full", method: "Lists all tags via the GTM API and checks if each has at least one entry in firingTriggerId. Flags tags with no triggers assigned.",
         legalBasis: "Orphaned tags without triggers may indicate incomplete setup. If a consent-related tag has no trigger, the consent flow may be broken.",
+        references: [
+          { label: "GDPR Art. 25 - Data protection by design", url: "https://gdpr-info.eu/art-25-gdpr/" },
+        ],
       },
     ],
   },

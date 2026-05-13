@@ -253,6 +253,8 @@ export function checkB3(tags: GtmTag[], triggers: GtmTrigger[], storedCookiebotI
 
   for (const tag of nonGoogleNonSystem) {
     const consentStatus = tag.consentSettings?.consentStatus;
+    const consentTypes = tag.consentSettings?.consentType || [];
+    const hasBuiltInConsent = consentTypes.length > 0;
     const gatedByConsentSetting = consentStatus === "needed";
     const gatedByTrigger = hasConsentAwareTriggers(tag, triggers);
 
@@ -260,6 +262,13 @@ export function checkB3(tags: GtmTag[], triggers: GtmTrigger[], storedCookiebotI
       findings.push({
         element: tag.name,
         detail: `Consent requirement: "Require additional consent" (correct)`,
+        severity: "info",
+      });
+    } else if (hasBuiltInConsent) {
+      const types = consentTypes.map((c) => c.type).join(", ");
+      findings.push({
+        element: tag.name,
+        detail: `Built-in consent: ${types} (handled by tag template)`,
         severity: "info",
       });
     } else if (gatedByTrigger) {

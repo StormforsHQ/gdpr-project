@@ -178,6 +178,7 @@ const OTHER_PRIVACY_SCRIPTS = [
   { pattern: /browser-intake-datadoghq\.com|dd-rum/i, name: "Datadog RUM" },
   { pattern: /cdn\.ravenjs\.com/i, name: "Raven.js (Sentry legacy)" },
   { pattern: /cdn\.rollbar\.com/i, name: "Rollbar" },
+  { pattern: /bokabord\.se/i, name: "BokaBord (booking widget)" },
 ];
 
 
@@ -457,9 +458,6 @@ function isFrameworkScript($el: ReturnType<cheerio.CheerioAPI>, src: string): bo
 
   // Mapbox maps (utility, no user tracking)
   if (/api\.mapbox\.com\/mapbox-gl/i.test(src)) return true;
-
-  // BokaBord restaurant booking widget (no tracking)
-  if (/bokabord\.se\/widget/i.test(src)) return true;
 
   return false;
 }
@@ -1291,15 +1289,6 @@ function checkB5($: cheerio.CheerioAPI, html: string, gtmId: string | null, cook
     return { checkKey: "B5", status: "ok", findings, summary: "Consent Mode V2 configured via gtag" };
   }
 
-  if (hasCookiebotGCM) {
-    findings.push({
-      element: "Cookiebot GCM",
-      detail: "Cookiebot script has Consent Mode attributes configured",
-      severity: "info",
-    });
-    return { checkKey: "B5", status: "ok", findings, summary: "Consent Mode V2 configured via Cookiebot" };
-  }
-
   if (hasGtag && !hasConsentDefault) {
     findings.push({
       element: "gtag",
@@ -1312,10 +1301,10 @@ function checkB5($: cheerio.CheerioAPI, html: string, gtmId: string | null, cook
   if (gtmId && cookiebotId) {
     findings.push({
       element: "GTM + Cookiebot",
-      detail: "Both GTM and Cookiebot are detected, but Consent Mode V2 can't be verified from the page HTML alone - it's configured inside GTM via the Cookiebot CMP template. Check in the Cookiebot admin under Analytics > Google Consent Mode that all parameters pass, or verify in GTM Preview Mode that consent defaults are set.",
+      detail: "Consent Mode V2 can't be verified from the page HTML alone - the Cookiebot script attributes only confirm consent mode is toggled on, not that V2 is active and all signals are passing. Verify in Cookiebot admin (Analytics > Google Consent Mode) that it shows V2 with all 3 checks green. If Pre-check (G5) passed, this is likely fine.",
       severity: "warning",
     });
-    return { checkKey: "B5", status: "not_checked", findings, summary: "GTM + Cookiebot detected - verify Consent Mode V2 in Cookiebot admin or GTM Preview" };
+    return { checkKey: "B5", status: "not_checked", findings, summary: "Verify Consent Mode V2 in Cookiebot admin - can't confirm from HTML" };
   }
 
   findings.push({

@@ -19,7 +19,8 @@ export interface HandoffSite {
 }
 
 export async function getHandoffData(): Promise<HandoffSite[]> {
-  const { CHECKLIST } = await import("@/lib/checklist");
+  const { CHECKLIST, getEssentialChecks } = await import("@/lib/checklist");
+  type CoverageType = import("@/lib/checklist").CoverageType;
 
   const checkMap = new Map<string, { label: string; description: string }>();
   for (const cat of CHECKLIST) {
@@ -40,7 +41,9 @@ export async function getHandoffData(): Promise<HandoffSite[]> {
   const sites: HandoffSite[] = [];
 
   for (const audit of audits) {
-    const issueResults = audit.results.filter((r) => r.status === "issue");
+    const coverageType = (audit.site.coverageType || "unknown") as CoverageType;
+    const essentialChecks = getEssentialChecks(coverageType);
+    const issueResults = audit.results.filter((r) => r.status === "issue" && essentialChecks.has(r.checkKey));
     if (issueResults.length === 0) continue;
 
     const latestScanByType = new Map<string, (typeof audit.scans)[0]>();

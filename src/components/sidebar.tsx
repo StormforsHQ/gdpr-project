@@ -121,7 +121,7 @@ export function Sidebar({ sites }: SidebarProps) {
           className={navLinkClass(isActive("/"))}
         >
           <LayoutDashboard className="h-4 w-4" />
-          Dashboard
+          Overview
         </Link>
 
         <div>

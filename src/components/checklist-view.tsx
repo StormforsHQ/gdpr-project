@@ -601,6 +601,9 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
     setRunningChecks((prev) => new Set(prev).add(checkKey));
     try {
+      let rerunResult: CheckResult | null = null;
+      let rerunSource: "scan" | "ai" = "scan";
+
       if (automation === "cookiebot-api") {
         const cbid = siteFields?.cookiebotId;
         if (!cbid) {
@@ -609,14 +612,11 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
             status: "blocked",
             findings: [{ element: "", detail: "Requires Cookiebot ID to run this check", severity: "info" }],
             summary: "Needs Cookiebot ID",
-          }], "scan");
+          }], "scan", true);
           return;
         }
         const results = await runCookiebotScan(cbid);
-        const checkResult = results.find((c) => c.checkKey === checkKey);
-        if (checkResult) {
-          applyCheckResults([checkResult], "scan", true);
-        }
+        rerunResult = results.find((c) => c.checkKey === checkKey) ?? null;
       } else if (automation === "page-scan") {
         const result = await runPageScan(scanUrl, siteId);
         if (!result.error) {
@@ -627,10 +627,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               gtmId: result.detectedGtmId || prev?.gtmId,
             }));
           }
-          const checkResult = result.checks.find((c) => c.checkKey === checkKey);
-          if (checkResult) {
-            applyCheckResults([checkResult], "scan", true);
-          }
+          rerunResult = result.checks.find((c) => c.checkKey === checkKey) ?? null;
         } else {
           addError("scan", `Scan check ${checkKey} failed`, result.error);
         }
@@ -646,15 +643,21 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
           return;
         }
         const gtmResults = await runGtmScan(gtmId, siteFields?.cookiebotId || undefined);
-        const checkResult = gtmResults.find((c) => c.checkKey === checkKey);
-        if (checkResult) {
-          applyCheckResults([checkResult], "scan", true);
-        }
+        rerunResult = gtmResults.find((c) => c.checkKey === checkKey) ?? null;
       } else {
+        rerunSource = "ai";
         const result = await runSingleAICheck(checkKey, scanUrl);
-        applyCheckResults([result], "ai", true);
+        rerunResult = result;
         if (result.status === "na" && result.findings.some((f) => f.severity === "warning")) {
           addError("ai", `AI check ${checkKey} failed`, result.summary);
+        }
+      }
+
+      if (rerunResult) {
+        applyCheckResults([rerunResult], rerunSource, true);
+        if (auditId) {
+          const run = await saveScanRun(auditId, automation as "page-scan" | "ai-agent" | "gtm-api" | "cookiebot", scanUrl, [rerunResult]);
+          setScanRuns((prev) => [run, ...prev]);
         }
       }
     } catch (err) {

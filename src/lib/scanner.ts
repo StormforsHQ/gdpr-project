@@ -622,7 +622,7 @@ function checkA1($: cheerio.CheerioAPI, html: string): CheckResult {
           : "";
         findings.push({
           element: preview,
-          detail: `${label} loaded directly in <head>.${orderNote} Remove this script from the site header and add it as a tag inside the GTM container instead, so it only fires after the visitor gives consent.`,
+          detail: `${label} loaded directly in <head>.${orderNote} Remove this script from the site header and recreate it in GTM: Tags > New > choose tag type (or Custom HTML) > paste the script > set trigger and consent requirements (ad_storage for marketing, analytics_storage for analytics) > publish.`,
           severity: "error",
           scriptContent: fullContent,
           elementType: "script",
@@ -632,7 +632,7 @@ function checkA1($: cheerio.CheerioAPI, html: string): CheckResult {
         if (loadsBefore) {
           findings.push({
             element: preview,
-            detail: "Unrecognized script loads BEFORE GTM/Cookiebot. It fires before consent is obtained. Check what this script does - if it tracks users or sets cookies, move it into the GTM container. If it's a harmless utility, move it after the GTM script so consent loads first.",
+            detail: "Unrecognized script loads BEFORE GTM/Cookiebot. It fires before consent is obtained. Check what this script does - if it tracks users or sets cookies, move it into GTM: Tags > New > Custom HTML > paste the script > set trigger and consent requirements > publish. Then remove it from the site header. If it's a harmless utility, move it after the GTM script so consent loads first.",
             severity: "error",
             scriptContent: fullContent,
             elementType: "script",
@@ -640,7 +640,7 @@ function checkA1($: cheerio.CheerioAPI, html: string): CheckResult {
         } else {
           findings.push({
             element: preview,
-            detail: "Unrecognized script - not in our known tracker list. Check manually: does it set cookies, track users, or send data to third parties? If yes, move it into the GTM container. If unsure, treat it as a potential issue.",
+            detail: "Unrecognized script - not in our known tracker list. Check manually: does it set cookies, track users, or send data to third parties? If yes, move it into GTM: Tags > New > Custom HTML > paste the script > set trigger and consent requirements > publish. Then remove it from the site header. If unsure, treat it as a potential issue.",
             severity: "warning",
             scriptContent: fullContent,
             elementType: "script",
@@ -711,7 +711,7 @@ function checkA2($: cheerio.CheerioAPI, html: string): CheckResult {
       issueCount++;
       findings.push({
         element: preview,
-        detail: "Unrecognized script - not in our known tracker list. Check manually: does it set cookies, track users, or send data to third parties? If yes, move it into the GTM container. If unsure, treat it as a potential issue.",
+        detail: "Unrecognized script - not in our known tracker list. Check manually: does it set cookies, track users, or send data to third parties? If yes, move it into GTM: Tags > New > Custom HTML > paste the script > set trigger and consent requirements > publish. Then remove it from the site footer. If unsure, treat it as a potential issue.",
         severity: "warning",
         scriptContent: fullContent,
       });

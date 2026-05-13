@@ -746,7 +746,10 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
 
   const visibleScanChecks = scanResult?.checks.filter((c) => visibleCheckKeys.has(c.checkKey)) ?? [];
   const scannedCheckCount = visibleScanChecks.length;
-  const scanIssueCount = visibleScanChecks.filter((c) => c.status === "issue").length;
+  const scanIssueCount = visibleScanChecks.filter((c) => {
+    const current = checkStates[c.checkKey];
+    return current ? current.status === "issue" : c.status === "issue";
+  }).length;
 
   return (
     <div className="space-y-4">

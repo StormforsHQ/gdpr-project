@@ -128,10 +128,11 @@ function parseAIResponse(raw: string): AICheckResult {
     return { status: status as AICheckResult["status"], findings, summary: (parsed.summary as string) || "AI analysis complete" };
   } catch {
     console.error("Failed to parse AI response:", raw.slice(0, 500));
+    const preview = raw.slice(0, 200).replace(/\n/g, " ").trim();
     return {
       status: "blocked",
-      findings: [{ detail: "Could not parse AI response", severity: "warning" }],
-      summary: "AI check could not run",
+      findings: [{ detail: `Could not parse AI response. Raw output: "${preview}${raw.length > 200 ? "..." : ""}"`, severity: "warning" }],
+      summary: "AI check could not run - the AI model returned an unexpected format. Try re-running the scan.",
     };
   }
 }

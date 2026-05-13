@@ -469,6 +469,7 @@ function isFrameworkScript($el: ReturnType<cheerio.CheerioAPI>, src: string): bo
   // Animation/utility libraries (no tracking)
   if (/cdnjs\.cloudflare\.com\/ajax\/libs\/gsap/i.test(src)) return true;
   if (/cdn\.jsdelivr\.net\/npm\/gsap/i.test(src)) return true;
+  if (/unpkg\.com\/split-type|cdn\.jsdelivr\.net\/npm\/split-type/i.test(src)) return true;
 
   return false;
 }

@@ -106,7 +106,11 @@ export async function listTags(accountId: string, containerId: string, workspace
   const data = await gtmFetch(
     `/accounts/${accountId}/containers/${containerId}/workspaces/${workspaceId}/tags`
   );
-  return data.tag || [];
+  const tags = (data.tag || []) as GtmTag[];
+  for (const tag of tags) {
+    tag.paused = tag.paused === true || (tag.paused as unknown) === "true";
+  }
+  return tags;
 }
 
 export async function getTag(path: string): Promise<GtmTag> {

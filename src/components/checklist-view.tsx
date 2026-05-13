@@ -634,6 +634,22 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
         } else {
           addError("scan", `Scan check ${checkKey} failed`, result.error);
         }
+      } else if (automation === "gtm-api") {
+        const gtmId = siteFields?.gtmId;
+        if (!gtmId) {
+          applyCheckResults([{
+            checkKey,
+            status: "blocked",
+            findings: [{ element: "", detail: "Requires GTM container ID to run this check", severity: "info" }],
+            summary: "Needs GTM ID",
+          }], "scan");
+          return;
+        }
+        const gtmResults = await runGtmScan(gtmId, siteFields?.cookiebotId || undefined);
+        const checkResult = gtmResults.find((c) => c.checkKey === checkKey);
+        if (checkResult) {
+          applyCheckResults([checkResult], "scan");
+        }
       } else {
         const result = await runSingleAICheck(checkKey, scanUrl);
         applyCheckResults([result], "ai");
@@ -1272,7 +1288,7 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                       onNotesChange={(n) => updateCheck(check.key, "notes", n)}
                       onInternalNoteChange={(n) => updateInternalNote(check.key, n)}
                       onOpenGuide={openGuide}
-                      onRunCheck={(check.automation === "ai-agent" || check.automation === "page-scan" || check.automation === "cookiebot-api") ? (key) => handleRunCheck(key, check.automation) : undefined}
+                      onRunCheck={(check.automation === "ai-agent" || check.automation === "page-scan" || check.automation === "cookiebot-api" || check.automation === "gtm-api") ? (key) => handleRunCheck(key, check.automation) : undefined}
                       onApplyFix={handleApplyFix}
                       onAnalyzeFix={handleAnalyzeFix}
                     />

@@ -355,7 +355,8 @@ export async function scanSite(url: string, platform?: string | null, opts?: { s
 
   const { fetchSitemapUrls } = await import("@/lib/sitemap");
   const sitemapUrls = await fetchSitemapUrls(normalizedUrl);
-  const subpageUrls = sitemapUrls.filter((u) => u !== normalizedUrl);
+  const EXCLUDED_PATHS = /\/(dev|test|staging|draft|sandbox)(\/|$)/i;
+  const subpageUrls = sitemapUrls.filter((u) => u !== normalizedUrl && !EXCLUDED_PATHS.test(new URL(u).pathname));
 
   const allPageSpecific: CheckResult[][] = [homePageSpecific];
 

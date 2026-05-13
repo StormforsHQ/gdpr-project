@@ -67,6 +67,7 @@ interface ChecklistViewProps {
 }
 
 const automationByKey = new Map(CHECKLIST.flatMap((c) => c.checks.map((ch) => [ch.key, ch.automation] as const)));
+const MANUAL_AUTOMATION_TYPES = new Set(["human", "browser-manual", "browser-test"]);
 
 export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAuditType = "full", coverageType = "unknown", initialStates, initialScanRuns, initialAuditNotes = "", siteFields: initialSiteFields, initialCompletedForType }: ChecklistViewProps) {
   const { errors, addError, clearErrors } = useErrorLog();
@@ -377,6 +378,18 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
     setScanning(true);
     clearErrors();
     setScanResult(null);
+
+    setCheckStates((prev) => {
+      const next = { ...prev };
+      for (const [key, state] of Object.entries(prev)) {
+        const automation = automationByKey.get(key);
+        if (automation && !MANUAL_AUTOMATION_TYPES.has(automation)) {
+          next[key] = { ...state, status: "not_checked" };
+        }
+      }
+      return next;
+    });
+
     let totalSkipped = 0;
     const collectedResults: CheckResult[] = [];
     const newScanRunIds: string[] = [];

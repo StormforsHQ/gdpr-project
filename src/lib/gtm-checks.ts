@@ -44,7 +44,7 @@ function isSystemTag(tag: GtmTag, storedCookiebotId?: string): boolean {
 }
 
 function isStructuredDataTag(tag: GtmTag): boolean {
-  return /schema\.org|json-ld|structured.?data/i.test(tag.name);
+  return /schema\.?org|json-ld|structured.?data/i.test(tag.name);
 }
 
 function hasBuiltInConsentHandling(tag: GtmTag): boolean {

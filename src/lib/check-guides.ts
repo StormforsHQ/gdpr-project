@@ -108,7 +108,7 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
   B3: {
     key: "B3",
     title: "Non-Google tags: consent gated",
-    why: "Non-Google tags (Meta Pixel, LinkedIn, HotJar, etc.) don't support Google's Consent Mode. They must be blocked until the user grants consent. There are two ways to do this: via consent settings (Consent Overview) or via consent-aware triggers. Both work, but using consent settings is recommended as defense in depth.",
+    why: "Non-Google tags (Meta Pixel, LinkedIn, HotJar, etc.) don't have built-in consent checks. They must be blocked until the user grants consent. In GTM, open Consent Overview (shield icon, top right) and set each non-Google tag to require the relevant consent types (e.g. ad_storage, analytics_storage). The tag won't fire until Cookiebot signals that the visitor accepted.",
     steps: [
       "In GTM, open the site's container workspace, go to Tags, and click the shield icon (top right) to open Consent Overview",
       "Look at the 'Consent Not Configured' section for tags without consent settings",

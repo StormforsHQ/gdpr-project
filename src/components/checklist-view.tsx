@@ -620,16 +620,16 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       if (automation === "cookiebot-api") {
         const cbid = siteFields?.cookiebotId;
         if (!cbid) {
-          applyCheckResults([{
+          rerunResult = {
             checkKey,
             status: "blocked",
             findings: [{ element: "", detail: "Requires Cookiebot ID to run this check", severity: "info" }],
             summary: "Needs Cookiebot ID",
-          }], "scan", true);
-          return;
+          };
+        } else {
+          const results = await runCookiebotScan(cbid);
+          rerunResult = results.find((c) => c.checkKey === checkKey) ?? null;
         }
-        const results = await runCookiebotScan(cbid);
-        rerunResult = results.find((c) => c.checkKey === checkKey) ?? null;
       } else if (automation === "page-scan") {
         const result = await runPageScan(scanUrl, siteId);
         if (!result.error) {
@@ -647,16 +647,16 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
       } else if (automation === "gtm-api") {
         const gtmId = siteFields?.gtmId;
         if (!gtmId) {
-          applyCheckResults([{
+          rerunResult = {
             checkKey,
             status: "blocked",
             findings: [{ element: "", detail: "Requires GTM container ID to run this check", severity: "info" }],
             summary: "Needs GTM ID",
-          }], "scan", true);
-          return;
+          };
+        } else {
+          const gtmResults = await runGtmScan(gtmId, siteFields?.cookiebotId || undefined);
+          rerunResult = gtmResults.find((c) => c.checkKey === checkKey) ?? null;
         }
-        const gtmResults = await runGtmScan(gtmId, siteFields?.cookiebotId || undefined);
-        rerunResult = gtmResults.find((c) => c.checkKey === checkKey) ?? null;
       } else {
         rerunSource = "ai";
         const result = await runSingleAICheck(checkKey, scanUrl);

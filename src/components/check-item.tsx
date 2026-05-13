@@ -386,9 +386,11 @@ export function CheckItem({
                 <TooltipContent side="top" className="max-w-xs text-xs text-black dark:text-black">
                   {missingRequirements.length > 0
                     ? `Missing: ${missingRequirements.map((r) => r.label).join(", ")}`
-                    : status !== "not_checked"
-                      ? "Run this check again with fresh data"
-                      : "Run this automated check"}
+                    : check.automation === "gtm-api"
+                      ? "Runs via GTM API - takes 10-30 seconds. Stay on this page until it finishes."
+                      : status !== "not_checked"
+                        ? "Run this check again with fresh data"
+                        : "Run this automated check"}
                 </TooltipContent>
               </Tooltip>
             )}

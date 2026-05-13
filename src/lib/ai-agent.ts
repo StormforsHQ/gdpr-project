@@ -474,7 +474,8 @@ Check for:
 - Pre-ticked consent checkboxes (must be opt-in, not opt-out)
 - Missing separate consent for marketing vs. service communication
 - Bundled consent (inquiry + newsletter in one checkbox)
-- Text near the form that implies submitting = accepting terms/privacy policy (e.g., "By subscribing you accept our privacy policy"). This is bundled consent - the user should actively opt in via a separate checkbox, not have consent implied by the act of submitting.
+- Text near the form that implies submitting = accepting terms/privacy policy (e.g., "By submitting this form you accept our privacy policy"). This is bundled consent - the user should actively opt in via a separate checkbox, not have consent implied by the act of submitting.
+- EXCEPTION: A dedicated newsletter/subscription form (where the SOLE purpose is to sign up for emails) does NOT need a separate marketing consent checkbox. Subscribing to a newsletter IS the consent action itself. Only flag newsletter forms if they also collect data for other purposes (e.g., contact inquiry + newsletter in one form) or have pre-ticked checkboxes.
 - Pay close attention to "Text near form:" lines - these are text elements adjacent to the form that may contain consent language even if there are no checkboxes inside the form itself.
 
 ${formEntries.length} form${formEntries.length !== 1 ? "s" : ""} found on this page:

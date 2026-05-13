@@ -285,13 +285,13 @@ export function checkG3(data: CookiebotData): CheckResult {
   if (activeCategories.length === 0) {
     return {
       checkKey: "G3",
-      status: "issue",
+      status: "ok",
       findings: [{
         element: "Cookiebot",
-        detail: "No optional cookie categories found. Visitors should be able to choose which types of cookies to accept (statistics, marketing, preferences).",
-        severity: "warning",
+        detail: "Cookiebot is configured. Cookiebot banners always include granular category toggles (statistics, marketing, preferences) by default. No cookies have been catalogued in optional categories yet - this is normal for newly added sites or if Cookiebot hasn't completed a site scan.",
+        severity: "info",
       }],
-      summary: "No optional cookie categories found",
+      summary: "Cookiebot provides granular controls by default",
     };
   }
 

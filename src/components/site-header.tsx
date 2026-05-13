@@ -318,6 +318,14 @@ export function SiteHeader({ site, auditId, reportVersions }: SiteHeaderProps) {
             </div>
           </div>
         )}
+        {site.gtmId && (
+          <div className="flex items-start gap-2 rounded-md bg-muted px-3 py-2">
+            <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              GTM checks run via API and take 10-30 seconds each. Stay on this page until they finish - switching to another site cancels the request.
+            </p>
+          </div>
+        )}
       </CardContent>
 
       <EditSiteDialog

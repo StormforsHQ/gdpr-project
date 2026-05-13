@@ -47,6 +47,13 @@ function isStructuredDataTag(tag: GtmTag): boolean {
   return /schema\.org|json-ld|structured.?data/i.test(tag.name);
 }
 
+function hasBuiltInConsentHandling(tag: GtmTag): boolean {
+  if (/baut/i.test(tag.type)) return true;
+  if (/microsoft.*universal.*event|bing.*uet|\buet\b/i.test(tag.type)) return true;
+  if (/\(Microsoft UET\)|\bUET\b.*\d{5,}/i.test(tag.name)) return true;
+  return false;
+}
+
 function isConsentAwareTrigger(trigger: GtmTrigger): boolean {
   return trigger.type === "customEvent" && /consent|cookie|accept/i.test(trigger.name);
 }
@@ -237,7 +244,7 @@ export function checkB2(tags: GtmTag[]): CheckResult {
 }
 
 export function checkB3(tags: GtmTag[], triggers: GtmTrigger[], storedCookiebotId?: string): CheckResult {
-  const nonGoogleNonSystem = tags.filter((t) => !isGoogleTag(t) && !isSystemTag(t, storedCookiebotId) && !isStructuredDataTag(t) && !t.paused);
+  const nonGoogleNonSystem = tags.filter((t) => !isGoogleTag(t) && !isSystemTag(t, storedCookiebotId) && !isStructuredDataTag(t) && !hasBuiltInConsentHandling(t) && !t.paused);
 
   if (nonGoogleNonSystem.length === 0) {
     return {
@@ -311,7 +318,7 @@ export function checkB3(tags: GtmTag[], triggers: GtmTrigger[], storedCookiebotI
 }
 
 export function checkB4(tags: GtmTag[], triggers: GtmTrigger[], storedCookiebotId?: string): CheckResult {
-  const nonGoogleNonSystem = tags.filter((t) => !isGoogleTag(t) && !isSystemTag(t, storedCookiebotId) && !isStructuredDataTag(t) && !t.paused);
+  const nonGoogleNonSystem = tags.filter((t) => !isGoogleTag(t) && !isSystemTag(t, storedCookiebotId) && !isStructuredDataTag(t) && !hasBuiltInConsentHandling(t) && !t.paused);
 
   if (nonGoogleNonSystem.length === 0) {
     return {

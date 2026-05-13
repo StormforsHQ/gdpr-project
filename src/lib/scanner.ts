@@ -95,6 +95,9 @@ const ADVERTISING_SCRIPTS = [
   { pattern: /chimpstatic\.com|mailchimp\.com\/js/i, name: "Mailchimp Tracking" },
   { pattern: /getdrip\.com/i, name: "Drip" },
   { pattern: /thehotelsnetwork\.com/i, name: "The Hotels Network" },
+  { pattern: /track\.adform\.net|window\._adftrack/i, name: "Adform Tracking" },
+  { pattern: /gtag\s*\(\s*['"]event['"]\s*,\s*['"]conversion['"]/i, name: "Google Ads/Floodlight Conversion" },
+  { pattern: /function\s+gtag\s*\(\s*\)\s*\{\s*dataLayer\.push/i, name: "Google gtag.js (tracking foundation)" },
 ];
 
 // --- Session recording & heatmaps ---
@@ -458,6 +461,10 @@ function isFrameworkScript($el: ReturnType<cheerio.CheerioAPI>, src: string): bo
 
   // Mapbox maps (utility, no user tracking)
   if (/api\.mapbox\.com\/mapbox-gl/i.test(src)) return true;
+
+  // Animation/utility libraries (no tracking)
+  if (/cdnjs\.cloudflare\.com\/ajax\/libs\/gsap/i.test(src)) return true;
+  if (/cdn\.jsdelivr\.net\/npm\/gsap/i.test(src)) return true;
 
   return false;
 }

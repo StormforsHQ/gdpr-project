@@ -878,8 +878,9 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
     ],
     tools: ["Browser", "DevTools > Application > Cookies (verify cookies removed after withdrawal)"],
     tips: [
-      "Cookiebot provides a floating widget or a declarative link ('#CybotCookiebotDialogBodyLevelButtonPreferences') that can be placed in the footer",
-      "Common failure: the widget exists but clicking it doesn't actually re-open the consent dialog",
+      "The floating widget (Privacy trigger) is NOT required - a 'Cookie settings' link in the footer works just as well. Either option is legally valid as long as it reopens the consent banner",
+      "To add a footer link in Webflow: create a text link, set the URL to '#' and add onclick=\"Cookiebot.renew()\" as a custom attribute, or use Cookiebot's declarative link with href='#CybotCookiebotDialogBodyLevelButtonPreferences'",
+      "Common failure: the widget or link exists but clicking it doesn't actually re-open the consent dialog",
     ],
   },
   G9: {

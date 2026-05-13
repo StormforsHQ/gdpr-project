@@ -421,6 +421,10 @@ function isCookiebotScript(src: string): boolean {
   return /consent\.cookiebot\.com|consentcdn\.cookiebot\.com/i.test(src);
 }
 
+function isGcmConsentDefault(content: string): boolean {
+  return /gtag\s*\(\s*['"]consent['"]\s*,\s*['"]default['"]/i.test(content);
+}
+
 function isJsonLd($el: ReturnType<cheerio.CheerioAPI>): boolean {
   return $el.attr("type") === "application/ld+json";
 }
@@ -503,6 +507,7 @@ function classifyScript($: cheerio.CheerioAPI, el: Parameters<cheerio.CheerioAPI
   if (isCookiebotScript(content)) return { label: "Cookiebot (consent mechanism)", severity: "info" };
   if (isJsonLd($(el))) return { label: "JSON-LD structured data", severity: "info" };
   if (isFrameworkScript($(el), content)) return { label: "Platform/framework script (safe)", severity: "info" };
+  if (isGcmConsentDefault(content)) return { label: "Google Consent Mode defaults (required before GTM)", severity: "info" };
   const tracker = isTrackingOrPrivacyConcern(content);
   if (tracker) return { label: tracker, severity: "error" };
   return { label: "Unknown script", severity: "warning" };

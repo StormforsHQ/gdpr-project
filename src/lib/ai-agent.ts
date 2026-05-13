@@ -107,7 +107,7 @@ function parseAIResponse(raw: string): AICheckResult {
   try {
     if (!raw || !raw.trim()) {
       console.error("AI returned empty response");
-      return { status: "blocked", findings: [{ detail: "AI returned an empty response", severity: "warning" }], summary: "AI check could not run" };
+      return { status: "blocked", findings: [{ detail: "AI returned an empty response - try re-running the scan", severity: "warning" }], summary: "AI check failed: empty response from AI model" };
     }
     let cleaned = raw.replace(/^```json\s*/g, "").replace(/```\s*$/g, "").trim();
     let parsed: Record<string, unknown>;
@@ -195,16 +195,17 @@ export async function runAICheck(checkKey: string, url: string, priorResults: Ch
       summary: result.summary,
     };
   } catch (err) {
-    console.error(`AI check ${checkKey} failed:`, err);
+    const errMsg = err instanceof Error ? err.message : "Unknown error";
+    console.error(`AI check ${checkKey} failed:`, errMsg);
     return {
       checkKey,
       status: "blocked",
       findings: [{
         element: "",
-        detail: err instanceof Error ? err.message : "Unknown error",
+        detail: errMsg,
         severity: "warning",
       }],
-      summary: "AI check could not run",
+      summary: `AI check failed: ${errMsg.length > 120 ? errMsg.slice(0, 120) + "..." : errMsg}`,
     };
   }
 }

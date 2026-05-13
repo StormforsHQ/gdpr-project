@@ -471,6 +471,10 @@ function isFrameworkScript($el: ReturnType<cheerio.CheerioAPI>, src: string): bo
   if (/unpkg\.com\/split-type|cdn\.jsdelivr\.net\/npm\/split-type/i.test(src)) return true;
   if (/cdn\.skypack\.dev\/imagesloaded|unpkg\.com\/imagesloaded|cdn\.jsdelivr\.net\/npm\/imagesloaded/i.test(src)) return true;
 
+  // Webflow CMS/UI utility scripts (no tracking)
+  if (/cms-url\s*=\s*["']relative["']/i.test(src)) return true;
+  if (/127\.0\.0\.1|localhost/i.test(src)) return true;
+
   return false;
 }
 

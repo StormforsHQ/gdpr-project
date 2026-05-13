@@ -1,12 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Globe, ClipboardCheck, AlertTriangle, FileText } from "lucide-react";
 import { getSites } from "@/app/actions/sites";
-import { CHECKLIST } from "@/lib/checklist";
+import { COVERAGE_TYPES, getEssentialChecks, type CoverageType } from "@/lib/checklist";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
-
-const checksByKey = new Map(CHECKLIST.flatMap((c) => c.checks.map((ch) => [ch.key, ch])));
 
 export default async function OverviewPage() {
   const sites = await getSites();
@@ -14,19 +12,33 @@ export default async function OverviewPage() {
   const totalSites = sites.length;
   const activeSites = sites.filter((s) => s.active);
 
-  let totalIssues = 0;
   let auditsComplete = 0;
   let auditsInProgress = 0;
-  const sitesWithIssues: { id: string; name: string; issueCount: number; checkedCount: number; totalChecks: number }[] = [];
+
+  const issuesByType: Record<CoverageType, number> = { sla: 0, "no-sla": 0, "us-based": 0, unknown: 0 };
+  const siteCountByType: Record<CoverageType, number> = { sla: 0, "no-sla": 0, "us-based": 0, unknown: 0 };
+
+  const sitesWithIssues: {
+    id: string;
+    name: string;
+    coverageType: CoverageType;
+    issueCount: number;
+    checkedCount: number;
+    totalChecks: number;
+  }[] = [];
 
   for (const site of activeSites) {
     const audit = site.audits[0];
     if (!audit) continue;
 
-    const results = audit.results;
-    const issues = results.filter((r) => r.status === "issue").length;
-    const checked = results.filter((r) => r.status !== "not_checked").length;
-    totalIssues += issues;
+    const coverageType = (site.coverageType || "unknown") as CoverageType;
+    const essentialChecks = getEssentialChecks(coverageType);
+    const relevantResults = audit.results.filter((r) => essentialChecks.has(r.checkKey));
+    const issues = relevantResults.filter((r) => r.status === "issue").length;
+    const checked = relevantResults.filter((r) => r.status !== "not_checked").length;
+
+    issuesByType[coverageType] += issues;
+    siteCountByType[coverageType]++;
 
     if ((audit as { status?: string }).status === "in_progress") {
       auditsInProgress++;
@@ -38,12 +50,15 @@ export default async function OverviewPage() {
       sitesWithIssues.push({
         id: site.id,
         name: site.name,
+        coverageType,
         issueCount: issues,
         checkedCount: checked,
-        totalChecks: results.length,
+        totalChecks: relevantResults.length,
       });
     }
   }
+
+  const totalIssues = Object.values(issuesByType).reduce((a, b) => a + b, 0);
 
   sitesWithIssues.sort((a, b) => b.issueCount - a.issueCount);
 
@@ -90,9 +105,16 @@ export default async function OverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalIssues}</div>
-            <p className="text-xs text-muted-foreground">
-              across {sitesWithIssues.length} site{sitesWithIssues.length !== 1 ? "s" : ""}
-            </p>
+            <div className="mt-1 space-y-0.5">
+              {(Object.entries(issuesByType) as [CoverageType, number][])
+                .filter(([type]) => siteCountByType[type] > 0)
+                .map(([type, count]) => (
+                  <div key={type} className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{COVERAGE_TYPES[type].label}</span>
+                    <span className={count > 0 ? "text-destructive font-medium" : ""}>{count}</span>
+                  </div>
+                ))}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -100,7 +122,10 @@ export default async function OverviewPage() {
       {sitesWithIssues.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Sites with Issues</CardTitle>
+            <div>
+              <CardTitle className="text-base">Scanned Sites with Issues</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">Only sites that have been scanned</p>
+            </div>
             <Link
               href="/handoff"
               target="_blank"
@@ -112,19 +137,27 @@ export default async function OverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {sitesWithIssues.map((site) => (
-                <Link
-                  key={site.id}
-                  href={`/sites/${site.id}`}
-                  className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted/50 transition-colors"
-                >
-                  <span className="text-sm font-medium">{site.name}</span>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>{site.checkedCount}/{site.totalChecks} checked</span>
-                    <span className="text-destructive font-medium">{site.issueCount} issue{site.issueCount !== 1 ? "s" : ""}</span>
-                  </div>
-                </Link>
-              ))}
+              {sitesWithIssues.map((site) => {
+                const typeConfig = COVERAGE_TYPES[site.coverageType];
+                return (
+                  <Link
+                    key={site.id}
+                    href={`/sites/${site.id}`}
+                    className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{site.name}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${typeConfig.className}`}>
+                        {typeConfig.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>{site.checkedCount}/{site.totalChecks} checked</span>
+                      <span className="text-destructive font-medium">{site.issueCount} issue{site.issueCount !== 1 ? "s" : ""}</span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

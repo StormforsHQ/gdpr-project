@@ -328,7 +328,7 @@ export function CheckItem({
               )}
             </div>
           )}
-          {scanResult && (
+          {scanResult && status === "issue" && (
             <div className="space-y-1.5">
               <button
                 className={`flex items-center gap-1.5 text-xs transition-colors ${status === "issue" ? "text-destructive hover:text-destructive/80" : "text-muted-foreground hover:text-foreground"}`}
@@ -336,13 +336,11 @@ export function CheckItem({
               >
                 <AlertCircle className="h-3 w-3 shrink-0" />
                 <span className="font-medium">
-                  {status !== "issue" && status !== "not_checked"
-                    ? `Scan results (${scanResult.findings.length})`
-                    : scanResult.findings.filter((f) => f.severity === "error").length > 0
-                      ? `Issues (${scanResult.findings.filter((f) => f.severity === "error").length})`
-                      : scanResult.findings.filter((f) => f.severity === "warning").length > 0
-                        ? `Warnings (${scanResult.findings.filter((f) => f.severity === "warning").length})`
-                        : `Scan results (${scanResult.findings.length})`}
+                  {scanResult.findings.filter((f) => f.severity === "error").length > 0
+                    ? `Issues (${scanResult.findings.filter((f) => f.severity === "error").length})`
+                    : scanResult.findings.filter((f) => f.severity === "warning").length > 0
+                      ? `Warnings (${scanResult.findings.filter((f) => f.severity === "warning").length})`
+                      : `Findings (${scanResult.findings.length})`}
                 </span>
               </button>
               {issuesOpen && (

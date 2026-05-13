@@ -770,9 +770,6 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
               {scanIssueCount === 0 && (
                 <Badge variant="secondary" className="text-xs bg-green-500/15 text-green-600 dark:text-green-400">All clear</Badge>
               )}
-              {lastSkippedCount > 0 && (
-                <span className="text-amber-600 dark:text-amber-400">{lastSkippedCount} skipped (manually reviewed)</span>
-              )}
               {scanResult?.pagesScanned && scanResult.pagesScanned > 1 && (
                 <span className="text-muted-foreground">{scanResult.pagesScanned} pages scanned</span>
               )}

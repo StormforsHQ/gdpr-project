@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Globe, ClipboardCheck, AlertTriangle, FileText } from "lucide-react";
+import { Globe, ClipboardCheck, AlertTriangle } from "lucide-react";
 import { getSites } from "@/app/actions/sites";
 import { COVERAGE_TYPES, getEssentialChecks, type CoverageType } from "@/lib/checklist";
+import { DownloadHandoff } from "@/components/download-handoff";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -126,14 +127,7 @@ export default async function OverviewPage() {
               <CardTitle className="text-base">Scanned Sites with Issues</CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">Only sites that have been scanned</p>
             </div>
-            <Link
-              href="/handoff"
-              target="_blank"
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              Print issue handoff
-            </Link>
+            <DownloadHandoff />
           </CardHeader>
           <CardContent>
             <div className="space-y-2">

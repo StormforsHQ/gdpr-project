@@ -4,6 +4,94 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import type { CheckStatus } from "@/lib/checklist";
 
+export interface HandoffSite {
+  name: string;
+  url: string;
+  coverageType: string;
+  checks: {
+    key: string;
+    label: string;
+    description: string;
+    summary: string;
+    internalNote: string | null;
+    findings: { detail: string; severity: string; pageUrl?: string }[];
+  }[];
+}
+
+export async function getHandoffData(): Promise<HandoffSite[]> {
+  const { CHECKLIST } = await import("@/lib/checklist");
+
+  const checkMap = new Map<string, { label: string; description: string }>();
+  for (const cat of CHECKLIST) {
+    for (const check of cat.checks) {
+      checkMap.set(check.key, { label: check.label, description: check.description });
+    }
+  }
+
+  const audits = await prisma.audit.findMany({
+    where: { status: "in_progress" },
+    include: {
+      site: true,
+      results: true,
+      scans: { orderBy: { startedAt: "desc" } },
+    },
+  });
+
+  const sites: HandoffSite[] = [];
+
+  for (const audit of audits) {
+    const issueResults = audit.results.filter((r) => r.status === "issue");
+    if (issueResults.length === 0) continue;
+
+    const latestScanByType = new Map<string, (typeof audit.scans)[0]>();
+    for (const scan of audit.scans) {
+      if (!latestScanByType.has(scan.scanType)) {
+        latestScanByType.set(scan.scanType, scan);
+      }
+    }
+
+    const scanFindings = new Map<string, { summary: string; findings: { detail: string; severity: string; pageUrl?: string }[] }>();
+    for (const scan of latestScanByType.values()) {
+      try {
+        const parsed = JSON.parse(scan.findings) as { checkKey: string; status: string; summary: string; findings?: { detail: string; severity: string; pageUrl?: string }[] }[];
+        for (const f of parsed) {
+          if (f.status === "issue" || f.status === "blocked") {
+            scanFindings.set(f.checkKey, {
+              summary: f.summary || "",
+              findings: (f.findings || []).filter((ff) => ff.severity === "error" || ff.severity === "warning"),
+            });
+          }
+        }
+      } catch {}
+    }
+
+    const checks = issueResults.map((r) => {
+      const info = checkMap.get(r.checkKey);
+      const scan = scanFindings.get(r.checkKey);
+      return {
+        key: r.checkKey,
+        label: info?.label ?? r.checkKey,
+        description: info?.description ?? "",
+        summary: scan?.summary ?? "",
+        internalNote: r.internalNote,
+        findings: scan?.findings ?? [],
+      };
+    });
+
+    checks.sort((a, b) => a.key.localeCompare(b.key));
+
+    sites.push({
+      name: audit.site.name,
+      url: audit.site.url,
+      coverageType: audit.site.coverageType || "unknown",
+      checks,
+    });
+  }
+
+  sites.sort((a, b) => a.name.localeCompare(b.name));
+  return sites;
+}
+
 export async function getAudit(id: string) {
   return prisma.audit.findUnique({
     where: { id },

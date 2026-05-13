@@ -331,7 +331,7 @@ export function CheckItem({
           {scanResult && (
             <div className="space-y-1.5">
               <button
-                className={`flex items-center gap-1.5 text-xs transition-colors ${status === "issue" && scanResult.status === "issue" ? "text-destructive hover:text-destructive/80" : "text-muted-foreground hover:text-foreground"}`}
+                className={`flex items-center gap-1.5 text-xs transition-colors ${status === "issue" ? "text-destructive hover:text-destructive/80" : "text-muted-foreground hover:text-foreground"}`}
                 onClick={(e) => { e.stopPropagation(); setIssuesOpen(!issuesOpen); }}
               >
                 <AlertCircle className="h-3 w-3 shrink-0" />

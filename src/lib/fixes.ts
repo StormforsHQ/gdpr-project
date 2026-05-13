@@ -90,20 +90,6 @@ export const AUTO_FIXES: Record<string, FixDefinition> = {
     safetyLevel: "guided",
     warning: "These pixels need to be recreated as GTM tags first, then the old code removed from the Designer.",
   },
-  E1: {
-    checkKey: "E1",
-    label: "Fix YouTube embeds",
-    description: "Replaces youtube.com/embed URLs with youtube-nocookie.com.",
-    requires: ["webflow"],
-    safetyLevel: "safe",
-  },
-  I4: {
-    checkKey: "I4",
-    label: "Add privacy policy link",
-    description: "Adds a privacy policy link to the site footer.",
-    requires: ["webflow"],
-    safetyLevel: "safe",
-  },
 };
 
 export function getFixForCheck(checkKey: string): FixDefinition | null {

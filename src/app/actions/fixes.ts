@@ -304,10 +304,6 @@ export async function applyFix(
       return applyD1Fix(siteWebflowId!);
     case "D3":
       return applyD3Fix(siteWebflowId!);
-    case "E1":
-      return applyE1Fix(siteWebflowId!);
-    case "I4":
-      return applyI4Fix(siteWebflowId!);
     default:
       return { success: false, message: `Fix for ${checkKey} not implemented yet` };
   }
@@ -371,13 +367,6 @@ async function applyD3Fix(_webflowId: string) {
   };
 }
 
-async function applyE1Fix(_webflowId: string) {
-  return { success: false, message: "YouTube embed replacement requires page-level API access - apply manually in Webflow designer" };
-}
-
-async function applyI4Fix(_webflowId: string) {
-  return { success: false, message: "Footer link insertion requires page-level API access - apply manually in Webflow designer" };
-}
 
 // --- GTM fixes ---
 

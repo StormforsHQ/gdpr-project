@@ -316,7 +316,10 @@ export const CHECK_GUIDES: Record<string, CheckGuide> = {
       "Test: decline cookies, then try to play an embedded video - it should show a consent placeholder, not play",
     ],
     tools: ["View page source", "Search for iframe and youtube/vimeo"],
-    tips: ["In Webflow, use an Embed element with raw HTML instead of the native video component to add custom attributes"],
+    tips: [
+      "In Webflow, use an Embed element with raw HTML instead of the native video component to add custom attributes",
+      "Automatic fixing is not possible - video embeds are page content that can only be edited in the Webflow Designer (would need the Designer API)",
+    ],
   },
   E2: {
     key: "E2",

@@ -94,6 +94,7 @@ const ADVERTISING_SCRIPTS = [
   { pattern: /trackcmp\.net|activecampaign\.com\/f\/tr/i, name: "ActiveCampaign" },
   { pattern: /chimpstatic\.com|mailchimp\.com\/js/i, name: "Mailchimp Tracking" },
   { pattern: /getdrip\.com/i, name: "Drip" },
+  { pattern: /thehotelsnetwork\.com/i, name: "The Hotels Network" },
 ];
 
 // --- Session recording & heatmaps ---
@@ -450,6 +451,15 @@ function isFrameworkScript($el: ReturnType<cheerio.CheerioAPI>, src: string): bo
   // Weglot translation widget (no tracking)
   if (/cdn\.weglot\.com/i.test(src)) return true;
   if (/Weglot\.initialize/i.test(src)) return true;
+
+  // Finsweet Webflow attributes (UI utilities, no tracking)
+  if (/finsweet\.com\/attributes|@finsweet\/attributes/i.test(src)) return true;
+
+  // Mapbox maps (utility, no user tracking)
+  if (/api\.mapbox\.com\/mapbox-gl/i.test(src)) return true;
+
+  // BokaBord restaurant booking widget (no tracking)
+  if (/bokabord\.se\/widget/i.test(src)) return true;
 
   return false;
 }

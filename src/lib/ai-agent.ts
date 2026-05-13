@@ -48,6 +48,7 @@ async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise
               { role: "user", content: userPrompt },
             ],
             temperature: 0.1,
+            max_tokens: 2048,
             response_format: { type: "json_object" },
           }),
         });
@@ -71,6 +72,10 @@ async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise
         }
         const cost = data.usage?.cost ?? data.usage?.total_cost ?? 0;
         if (typeof cost === "number" && cost > 0) _sessionCost += cost;
+        const finishReason = data.choices?.[0]?.finish_reason;
+        if (finishReason === "length") {
+          console.warn(`OpenRouter ${model}: response truncated (finish_reason=length)`);
+        }
         return data.choices?.[0]?.message?.content || "";
       } catch (err) {
         if (err instanceof TypeError && attempt < MAX_RETRIES) {
@@ -111,9 +116,18 @@ function parseAIResponse(raw: string): AICheckResult {
     } catch {
       const jsonMatch = raw.match(/\{[\s\S]*"status"\s*:\s*"[\s\S]*\}/);
       if (jsonMatch) {
-        parsed = JSON.parse(jsonMatch[0]);
+        try {
+          parsed = JSON.parse(jsonMatch[0]);
+        } catch {
+          throw new Error("No valid JSON object found");
+        }
       } else {
-        throw new Error("No JSON object found");
+        const statusMatch = raw.match(/"status"\s*:\s*"(ok|issue|na|blocked)"/);
+        if (statusMatch) {
+          parsed = { status: statusMatch[1], findings: [], summary: "AI response was truncated - re-run this check" };
+        } else {
+          throw new Error("No JSON object found");
+        }
       }
     }
     const status = VALID_AI_STATUSES.has(parsed.status as string) ? (parsed.status as string) : "blocked";

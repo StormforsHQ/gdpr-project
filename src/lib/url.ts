@@ -5,6 +5,20 @@ export function normalizeUrl(url: string): string {
   return normalized;
 }
 
+export function getAlternateUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.startsWith("www.")) {
+      parsed.hostname = parsed.hostname.slice(4);
+    } else {
+      parsed.hostname = "www." + parsed.hostname;
+    }
+    return parsed.toString().replace(/\/+$/, "");
+  } catch {
+    return null;
+  }
+}
+
 export function isValidUrl(url: string): boolean {
   const trimmed = url.trim();
   if (!trimmed) return false;

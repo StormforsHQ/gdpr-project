@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import { normalizeUrl } from "@/lib/url";
+import { normalizeUrl, getAlternateUrl } from "@/lib/url";
 import { detectVendors, type DetectedVendor } from "@/lib/vendors";
 import { prisma } from "@/lib/db";
 
@@ -195,25 +195,32 @@ async function fetchPage(url: string): Promise<{ $: cheerio.CheerioAPI; html: st
     }
   } catch {}
 
-  try {
-    const response = await fetch(url, {
-      headers: { "User-Agent": "StormforsGDPRAudit/1.0" },
-      redirect: "follow",
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!response.ok) return null;
-    const html = await response.text();
+  const urls = [url];
+  const alt = getAlternateUrl(url);
+  if (alt) urls.push(alt);
+
+  for (const tryUrl of urls) {
     try {
-      await prisma.pageCache.upsert({
-        where: { url },
-        update: { html, fetchedAt: new Date() },
-        create: { url, html },
+      const response = await fetch(tryUrl, {
+        headers: { "User-Agent": "StormforsGDPRAudit/1.0" },
+        redirect: "follow",
+        signal: AbortSignal.timeout(15000),
       });
-    } catch {}
-    return { $: cheerio.load(html), html };
-  } catch {
-    return null;
+      if (!response.ok) continue;
+      const html = await response.text();
+      try {
+        await prisma.pageCache.upsert({
+          where: { url },
+          update: { html, fetchedAt: new Date() },
+          create: { url, html },
+        });
+      } catch {}
+      return { $: cheerio.load(html), html };
+    } catch {
+      continue;
+    }
   }
+  return null;
 }
 
 const PAGE_SPECIFIC_KEYS = new Set(["E1", "E3", "E4", "E5", "F1", "F3", "F5"]);

@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import type { CheckResult } from "@/lib/scanner";
-import { normalizeUrl } from "@/lib/url";
+import { normalizeUrl, getAlternateUrl } from "@/lib/url";
 import { getAISettings, getEffectiveAPIKey } from "@/app/actions/ai-settings";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -154,18 +154,30 @@ function parseAIResponse(raw: string): AICheckResult {
 
 async function fetchPageContent(url: string): Promise<{ html: string; text: string }> {
   const normalizedUrl = normalizeUrl(url);
-  const response = await fetch(normalizedUrl, {
-    headers: { "User-Agent": "StormforsGDPRAudit/1.0" },
-    redirect: "follow",
-    signal: AbortSignal.timeout(15000),
-  });
+  const urls = [normalizedUrl];
+  const alt = getAlternateUrl(normalizedUrl);
+  if (alt) urls.push(alt);
 
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const html = await response.text();
-  const $ = cheerio.load(html);
-  $("script, style, noscript").remove();
-  const text = $("body").text().replace(/\s+/g, " ").trim();
-  return { html, text };
+  let lastError: Error | null = null;
+  for (const tryUrl of urls) {
+    try {
+      const response = await fetch(tryUrl, {
+        headers: { "User-Agent": "StormforsGDPRAudit/1.0" },
+        redirect: "follow",
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok) { lastError = new Error(`HTTP ${response.status}`); continue; }
+      const html = await response.text();
+      const $ = cheerio.load(html);
+      $("script, style, noscript").remove();
+      const text = $("body").text().replace(/\s+/g, " ").trim();
+      return { html, text };
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error("fetch failed");
+      continue;
+    }
+  }
+  throw lastError || new Error("fetch failed");
 }
 
 export async function runAICheck(checkKey: string, url: string, priorResults: CheckResult[] = []): Promise<CheckResult> {

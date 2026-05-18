@@ -788,9 +788,10 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                 disabled={!scanUrl.trim() || checkView === "unknown"}
                 size="sm"
                 className="gap-2"
+                title={checkView === "unknown" ? "Select a client type first" : ""}
               >
                 <Scan className="h-4 w-4" />
-                Scan site
+                {checkView === "unknown" ? "Select client type first" : "Scan site"}
               </Button>
             )}
           </div>

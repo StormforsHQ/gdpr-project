@@ -474,6 +474,7 @@ function isFrameworkScript($el: ReturnType<cheerio.CheerioAPI>, src: string): bo
   if (/api\.mapbox\.com\/mapbox-gl/i.test(src)) return true;
 
   // Animation/utility libraries (no tracking)
+  if (/swiper-bundle|swiper\.min\.js|cdn\.jsdelivr\.net\/npm\/swiper/i.test(src)) return true;
   if (/cdnjs\.cloudflare\.com\/ajax\/libs\/gsap|cdn\.jsdelivr\.net\/npm\/gsap|cdn\.skypack\.dev\/gsap/i.test(src)) return true;
   if (/unpkg\.com\/split-type|cdn\.jsdelivr\.net\/npm\/split-type/i.test(src)) return true;
   if (/cdn\.skypack\.dev\/imagesloaded|unpkg\.com\/imagesloaded|cdn\.jsdelivr\.net\/npm\/imagesloaded/i.test(src)) return true;

@@ -783,16 +783,17 @@ export function ChecklistView({ siteUrl, siteId, auditId, auditType: initialAudi
                 </Button>
               </>
             ) : (
-              <Button
-                onClick={handleScan}
-                disabled={!scanUrl.trim() || checkView === "unknown"}
-                size="sm"
-                className="gap-2"
-                title={checkView === "unknown" ? "Select a client type first" : ""}
-              >
-                <Scan className="h-4 w-4" />
-                {checkView === "unknown" ? "Select client type first" : "Scan site"}
-              </Button>
+              <span title={checkView === "unknown" ? "Select a client type from the Audit type dropdown before scanning" : ""}>
+                <Button
+                  onClick={handleScan}
+                  disabled={!scanUrl.trim() || checkView === "unknown"}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Scan className="h-4 w-4" />
+                  Scan site
+                </Button>
+              </span>
             )}
           </div>
           <p className="text-xs text-amber-500 mt-2 text-right">Scanning may take a few minutes.</p>
